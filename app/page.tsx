@@ -23,5 +23,5 @@ import UserManagementPage from "./david/user-management-page.tsx"
 import LoanProductConfigPage from "./david/loan-product-config-page.tsx"
 
 export default function Page() {
-  return <StaffDashboardPage />
+  return <UserManagementPage />
 }
