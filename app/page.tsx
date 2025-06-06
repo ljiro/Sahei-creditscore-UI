@@ -20,9 +20,8 @@ import ApprovalQueuePage from "./ms-reyes/approval-queue-page.tsx"
 
 import AdminLoginPage from "./david/login-page.tsx"
 import UserManagementPage from "./david/user-management-page.tsx"
-import LoanProductConfigPage from "./david/loan-product-config-page.tsx"
-import SystemConfigPage from "./david/system-config-page.tsx" // You'll need to create this
-import AdminDashboardPage from "./david/dashboard-page.tsx" // You'll need to create this
+import LoanProductConfigPage from "./david/loan-product-config-page.tsx" // You'll need to create this
+import AdminDashboardPage from "./elena/dashboard-initial-page.tsx" // You'll need to create this
 
 import { usePathname } from 'next/navigation'
 
@@ -37,12 +36,15 @@ export default function Page() {
       return <UserManagementPage />
     case '/david/loan-products':
       return <LoanProductConfigPage />
+
+      /*
     case '/david/system-config':
       return <SystemConfigPage />
+      */
     case '/david/login':
       return <AdminLoginPage />
     // Add other routes as needed
     default:
-      return <AdminLoginPage />
+      return <UserManagementPage />
   }
 }
