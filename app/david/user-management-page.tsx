@@ -48,16 +48,21 @@ const users = [
 ]
 
 const bankBranches = [
-  { id: "branch1", name: "Main Branch" },
-  { id: "branch2", name: "North Branch" },
-  { id: "branch3", name: "South Branch" },
-  { id: "branch4", name: "East Branch" },
-  { id: "branch5", name: "West Branch" },
+  { id: "branch1", name: "LaTrinidad Branch" },
+  { id: "branch2", name: "Baguio Branch" },
+  { id: "branch3", name: "Ifugao Branch" },
+  { id: "branch4", name: "Sagada Branch" },
+  { id: "branch5", name: "Tublay Branch" },
 ]
 
 function BranchAccessPanel({ user }: { user: typeof users[0] }) {
   const [selectedBranches, setSelectedBranches] = useState<string[]>([])
   const [isOpen, setIsOpen] = useState(false)
+  const [email, setEmail] = useState(user.email)
+  const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [isEditingEmail, setIsEditingEmail] = useState(false)
+  const [isEditingPassword, setIsEditingPassword] = useState(false)
 
   const handleBranchToggle = (branchId: string) => {
     setSelectedBranches(prev =>
@@ -65,6 +70,18 @@ function BranchAccessPanel({ user }: { user: typeof users[0] }) {
         ? prev.filter(id => id !== branchId)
         : [...prev, branchId]
     )
+  }
+
+  const handleSaveChanges = () => {
+    console.log("Saved changes for user", user.id, {
+      email,
+      passwordChanged: !!password,
+      selectedBranches
+    })
+    setIsOpen(false)
+    setPassword("") // Clear password field after save
+    setIsEditingEmail(false)
+    setIsEditingPassword(false)
   }
 
   return (
@@ -76,9 +93,9 @@ function BranchAccessPanel({ user }: { user: typeof users[0] }) {
       </DialogTrigger>
       <DialogContent className="sm:max-w-[625px] bg-white">
         <DialogHeader>
-          <DialogTitle className="text-xl text-gray-800">Branch Access Management</DialogTitle>
+          <DialogTitle className="text-xl text-gray-800">User Account Management</DialogTitle>
           <DialogDescription className="text-gray-500">
-            Configure which branches this user can access
+            Configure user details and branch access
           </DialogDescription>
         </DialogHeader>
         
@@ -107,6 +124,125 @@ function BranchAccessPanel({ user }: { user: typeof users[0] }) {
             </div>
           </div>
 
+          {/* Email Editing Section */}
+          <div className="border-t border-gray-200 pt-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-medium text-gray-800">Email Address</h3>
+              {!isEditingEmail ? (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-sky-600 hover:text-sky-500"
+                  onClick={() => setIsEditingEmail(true)}
+                >
+                  Edit
+                </Button>
+              ) : (
+                <div className="space-x-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-gray-600 hover:text-gray-500"
+                    onClick={() => {
+                      setIsEditingEmail(false)
+                      setEmail(user.email) // Reset to original email
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-green-600 hover:text-green-500"
+                    onClick={() => setIsEditingEmail(false)}
+                  >
+                    Save
+                  </Button>
+                </div>
+              )}
+            </div>
+            
+            {isEditingEmail ? (
+              <Input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800"
+              />
+            ) : (
+              <p className="text-gray-700">{email}</p>
+            )}
+          </div>
+
+          {/* Password Editing Section */}
+          <div className="border-t border-gray-200 pt-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="font-medium text-gray-800">Password</h3>
+              {!isEditingPassword ? (
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="text-sky-600 hover:text-sky-500"
+                  onClick={() => setIsEditingPassword(true)}
+                >
+                  Change Password
+                </Button>
+              ) : (
+                <div className="space-x-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-gray-600 hover:text-gray-500"
+                    onClick={() => {
+                      setIsEditingPassword(false)
+                      setPassword("") // Clear password field
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-green-600 hover:text-green-500"
+                    onClick={() => setIsEditingPassword(false)}
+                  >
+                    Save
+                  </Button>
+                </div>
+              )}
+            </div>
+            
+            {isEditingPassword && (
+              <div className="space-y-2">
+                <Input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  className="bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800"
+                />
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="showPassword"
+                    checked={showPassword}
+                    onCheckedChange={(checked) => setShowPassword(!!checked)}
+                  />
+                  <label
+                    htmlFor="showPassword"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-700"
+                  >
+                    Show password
+                  </label>
+                </div>
+                {password && (
+                  <p className="text-xs text-gray-500">
+                    Password strength: {password.length < 6 ? "Weak" : password.length < 10 ? "Moderate" : "Strong"}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Branch Access Section */}
           <div className="border-t border-gray-200 pt-4">
             <h3 className="font-medium text-gray-800 mb-3">Branch Access</h3>
@@ -133,17 +269,19 @@ function BranchAccessPanel({ user }: { user: typeof users[0] }) {
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={() => setIsOpen(false)}
+            onClick={() => {
+              setIsOpen(false)
+              setIsEditingEmail(false)
+              setIsEditingPassword(false)
+              setPassword("")
+            }}
             className="text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
           >
             Cancel
           </Button>
           <Button 
             className="bg-red-600 hover:bg-red-700 text-white"
-            onClick={() => {
-              console.log("Saved branches for user", user.id, ":", selectedBranches)
-              setIsOpen(false)
-            }}
+            onClick={handleSaveChanges}
           >
             Save Changes
           </Button>
