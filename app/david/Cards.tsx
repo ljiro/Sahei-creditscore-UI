@@ -7,12 +7,10 @@ interface CardsProps {
 
 const Cards: React.FC<CardsProps> = ({ cardHeading, cardContent }) => {
   return (
-    <div className="col s12 m4 l4">
-      <div className="card">
-        <div className="card-content">
-          <span className="card-title">{cardHeading}</span>
-          <h4>{cardContent}</h4>
-        </div>
+    <div className="w-full sm:w-1/2 md:w-1/3 lg:w-1/3 p-2">
+      <div className="bg-card text-card-foreground rounded-lg shadow-sm p-4">
+        <span className="text-sm font-medium text-muted-foreground">{cardHeading}</span>
+        <h4 className="text-2xl font-semibold mt-1">{cardContent}</h4>
       </div>
     </div>
   );
