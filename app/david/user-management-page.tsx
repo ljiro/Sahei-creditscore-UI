@@ -63,6 +63,8 @@ function BranchAccessPanel({ user }: { user: typeof users[0] }) {
   const [showPassword, setShowPassword] = useState(false)
   const [isEditingEmail, setIsEditingEmail] = useState(false)
   const [isEditingPassword, setIsEditingPassword] = useState(false)
+  const [role, setRole] = useState(user.role)
+  const [isEditingRole, setIsEditingRole] = useState(false)
 
   const handleBranchToggle = (branchId: string) => {
     setSelectedBranches(prev =>
@@ -76,12 +78,14 @@ function BranchAccessPanel({ user }: { user: typeof users[0] }) {
     console.log("Saved changes for user", user.id, {
       email,
       passwordChanged: !!password,
+      role,
       selectedBranches
     })
     setIsOpen(false)
     setPassword("") // Clear password field after save
     setIsEditingEmail(false)
     setIsEditingPassword(false)
+    setIsEditingRole(false)
   }
 
   return (
@@ -111,8 +115,67 @@ function BranchAccessPanel({ user }: { user: typeof users[0] }) {
               <p className="text-gray-800 font-medium">{user.name}</p>
             </div>
             <div>
-              <Label className="text-gray-500">Role</Label>
-              <p className="text-gray-800 font-medium">{user.role}</p>
+              <div className="flex items-center justify-between">
+                <Label className="text-gray-500">Role</Label>
+                {!isEditingRole ? (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-sky-600 hover:text-sky-500 h-6 px-2"
+                    onClick={() => setIsEditingRole(true)}
+                  >
+                    Edit
+                  </Button>
+                ) : (
+                  <div className="space-x-1">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-gray-600 hover:text-gray-500 h-6 px-2"
+                      onClick={() => {
+                        setIsEditingRole(false)
+                        setRole(user.role) // Reset to original role
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="text-green-600 hover:text-green-500 h-6 px-2"
+                      onClick={() => setIsEditingRole(false)}
+                    >
+                      Save
+                    </Button>
+                  </div>
+                )}
+              </div>
+              {isEditingRole ? (
+                <Select value={role} onValueChange={setRole}>
+                  <SelectTrigger className="w-full bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800">
+                    <SelectValue placeholder="Select a role" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white text-gray-800 border-gray-200">
+                    <SelectItem value="Cashier" className="hover:bg-gray-100 hover:text-gray-900">
+                      Cashier (Access to Post Payment)
+                    </SelectItem>
+                    <SelectItem value="Loan Officer" className="hover:bg-gray-100 hover:text-gray-900">
+                      Loan Officer
+                    </SelectItem>
+                    <SelectItem value="Credit Committee" className="hover:bg-gray-100 hover:text-gray-900">
+                      Credit Committee
+                    </SelectItem>
+                    <SelectItem value="Branch Manager" className="hover:bg-gray-100 hover:text-gray-900">
+                      Branch Manager
+                    </SelectItem>
+                    <SelectItem value="System Administrator" className="hover:bg-gray-100 hover:text-gray-900">
+                      System Administrator
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <p className="text-gray-800 font-medium">{role}</p>
+              )}
             </div>
             <div>
               <Label className="text-gray-500">Status</Label>
@@ -273,6 +336,7 @@ function BranchAccessPanel({ user }: { user: typeof users[0] }) {
               setIsOpen(false)
               setIsEditingEmail(false)
               setIsEditingPassword(false)
+              setIsEditingRole(false)
               setPassword("")
             }}
             className="text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
