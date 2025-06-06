@@ -22,7 +22,7 @@ import AdminLoginPage from "./david/login-page.tsx"
 import UserManagementPage from "./david/user-management-page.tsx"
 import LoanProductConfigPage from "./david/loan-product-config-page.tsx" // You'll need to create this
 import AdminDashboardPage from "./elena/dashboard-initial-page.tsx" // You'll need to create this
-import DashboardPage from "./dashboard-page";
+import DashboardPage from "./david/dashboard-page.tsx";
 
 import { usePathname } from 'next/navigation'
 
@@ -46,6 +46,6 @@ export default function Page() {
       return <AdminLoginPage />
     // Add other routes as needed
     default:
-      return <UserManagementPage />
+      return <DashboardPage />
   }
 }
