@@ -1,10 +1,12 @@
 "use client"
 
 import React, { useEffect, useState } from "react";
-import Cards from "./Cards";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Chart, registerables } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import { Calendar } from "@/components/ui/calendar";
+import { Button } from "@/components/ui/button";
+import { Shield, UserCog, Users2, ListChecks, Cog, LogOut } from "lucide-react";
 
 Chart.register(...registerables, ChartDataLabels);
 
@@ -23,36 +25,33 @@ const DashboardPage = () => {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [date, setDate] = useState<Date | undefined>(new Date());
 
-  const salesData = {
-    labels: ['February', 'January', 'March', 'April', 'May', 'June'],
+  // Chart data states
+  const [salesData, setSalesData] = useState({
+    labels: [] as string[],
     datasets: [{
       label: '# of loan applications',
-      data: [120, 190, 130, 150, 120, 150],
+      data: [] as number[],
       borderWidth: 2,
       borderColor: 'hsl(var(--chart-1))',
       backgroundColor: 'hsl(var(--chart-1))',
     }]
-  };
+  });
 
-  const loansData = {
-    labels: ['Personal', 'end-to-end', 'Business'],
+  const [loansData, setLoansData] = useState({
+    labels: [] as string[],
     datasets: [{
       label: '# of accepted loans',
-      data: [0, 0, 0],
+      data: [] as number[],
       borderWidth: 2,
-      backgroundColor: [
-        'hsl(var(--chart-1))',
-        'hsl(var(--chart-2))',
-        'hsl(var(--chart-3))',
-      ],
+      backgroundColor: [] as string[],
     }]
-  };
+  });
 
-  const factorsData = {
-    labels: ['Age', 'Dependents', 'Marital Status', 'Education', 'Gender', 'Income', 'Occupation', 'Assets'],
+  const [factorsData, setFactorsData] = useState({
+    labels: ['Credit Score', 'Income', 'Employment', 'Debt Ratio', 'Loan Amount', 'Collateral'],
     datasets: [{
-      label: '# of accepted loans',
-      data: [11, 10, 9, 7, 10, 21, 20, 12],
+      label: 'Approval Impact Factors',
+      data: [35, 25, 20, 10, 7, 3],
       backgroundColor: [
         'hsl(var(--chart-1))',
         'hsl(var(--chart-2))',
@@ -60,20 +59,57 @@ const DashboardPage = () => {
         'hsl(var(--chart-4))',
         'hsl(var(--chart-5))',
         'hsl(var(--chart-1))',
-        'hsl(var(--chart-2))',
-        'hsl(var(--chart-3))',
       ],
     }]
+  });
+
+  // Generate realistic sample loan data
+  const generateSampleLoans = (count = 200): Loan[] => {
+    const statuses = ["Approved", "Disapproved", "Pending"];
+    const types = ["Personal", "Business", "Auto", "Mortgage", "Education"];
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    
+    // Weighted probabilities for more realistic data
+    const statusWeights = [0.6, 0.25, 0.15]; // 60% approved, 25% declined, 15% pending
+    const typeWeights = [0.4, 0.3, 0.15, 0.1, 0.05]; // Personal loans most common
+    
+    return Array.from({ length: count }, (_, i) => {
+      // Weighted random selection
+      const randomStatus = getWeightedRandom(statuses, statusWeights);
+      const randomType = getWeightedRandom(types, typeWeights);
+      
+      // Random date in the past 6 months
+      const monthOffset = Math.floor(Math.random() * 6);
+      const day = Math.floor(Math.random() * 28) + 1;
+      const date = new Date();
+      date.setMonth(date.getMonth() - monthOffset);
+      date.setDate(day);
+      
+      return {
+        loan_status: randomStatus,
+        loan_type: randomType,
+        createdAt: date.toISOString()
+      };
+    });
+  };
+
+  // Helper function for weighted random selection
+  const getWeightedRandom = (items: string[], weights: number[]) => {
+    let random = Math.random() * weights.reduce((a, b) => a + b, 0);
+    return items.find((_, i) => (random -= weights[i]) < 0) || items[0];
   };
 
   const getLoans = async () => {
     try {
-      // Replace with your actual API call
-      // const res = await LoanDataService.getAll();
-      // const data = res.data;
-      const data: Loan[] = []; // Mock data - replace with actual API call
+      // Simulate API call with generated data
+      const data = generateSampleLoans();
       
       setLoans(data);
+      
+      // Update status cards
       const approvedCount = data.filter(item => item.loan_status === "Approved").length;
       const declinedCount = data.filter(item => item.loan_status === "Disapproved").length;
       const pendingCount = data.filter(item => item.loan_status === "Pending").length;
@@ -84,48 +120,93 @@ const DashboardPage = () => {
         ["Pending", pendingCount]
       ]);
       
+      // Update charts
       countByType(data);
       countByMonth(data);
     } catch (e) {
-      console.log(e);
+      console.error("Error loading loan data:", e);
     }
   };
 
   const countByMonth = (loanData: Loan[]) => {
-    const currentMonth = new Date().getMonth();
-    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-    const data: Record<string, number> = {};
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
     
-    for (let i = currentMonth - 5; i <= currentMonth; i++) {
-      data[monthNames[i]] = 0;
+    // Get current month and go back 5 months
+    const currentDate = new Date();
+    const monthsToShow = 6;
+    const monthCounts: Record<string, number> = {};
+    
+    // Initialize recent months with 0
+    for (let i = monthsToShow - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(currentDate.getMonth() - i);
+      monthCounts[monthNames[date.getMonth()]] = 0;
     }
     
+    // Count loans per month
     loanData.forEach(loan => {
-      const month = new Date(loan.createdAt).getMonth();
-      data[monthNames[month]] += 1;
+      const month = monthNames[new Date(loan.createdAt).getMonth()];
+      if (monthCounts.hasOwnProperty(month)) {
+        monthCounts[month]++;
+      }
     });
-
-    const entries = Object.entries(data);
-    entries.sort((a, b) => monthNames.indexOf(a[0]) - monthNames.indexOf(b[0]));
-    const keys = entries.map(entry => entry[0]);
-    const values = entries.map(entry => entry[1]);
-
-    salesData.labels = keys;
-    salesData.datasets[0].data = values;
+    
+    // Convert to arrays for chart
+    const labels = Object.keys(monthCounts);
+    const data = Object.values(monthCounts);
+    
+    setSalesData({
+      labels,
+      datasets: [{
+        label: '# of loan applications',
+        data,
+        borderWidth: 2,
+        borderColor: 'hsl(var(--chart-1))',
+        backgroundColor: 'hsl(var(--chart-1))',
+      }]
+    });
   };
 
   const countByType = (loanData: Loan[]) => {
-    const data = [0, 0, 0];
-    loanData.forEach(loan => {
-      if (loan.loan_type == "Personal") {
-        data[0] += 1;
-      } else if (loan.loan_type == "Business") {
-        data[1] += 1;
-      } else if (loan.loan_type == "end-to-end") {
-        data[2] += 1;
-      }
+    const types = ["Personal", "Business", "Auto", "Mortgage", "Education"];
+    const colors = [
+      'hsl(var(--chart-1))',
+      'hsl(var(--chart-2))',
+      'hsl(var(--chart-3))',
+      'hsl(var(--chart-4))',
+      'hsl(var(--chart-5))',
+    ];
+    
+    const typeCounts: Record<string, number> = {};
+    
+    // Initialize all types with 0
+    types.forEach(type => {
+      typeCounts[type] = 0;
     });
-    loansData.datasets[0].data = data;
+    
+    // Count approved loans by type
+    loanData
+      .filter(loan => loan.loan_status === "Approved")
+      .forEach(loan => {
+        typeCounts[loan.loan_type]++;
+      });
+    
+    // Convert to arrays for chart
+    const labels = types;
+    const data = types.map(type => typeCounts[type]);
+    
+    setLoansData({
+      labels,
+      datasets: [{
+        label: '# of accepted loans',
+        data,
+        borderWidth: 2,
+        backgroundColor: colors,
+      }]
+    });
   };
 
   useEffect(() => {
@@ -136,9 +217,14 @@ const DashboardPage = () => {
     if (loans.length > 0) {
       initCharts();
     }
-  }, [loans]);
+  }, [loans, salesData, loansData, factorsData]);
 
   const initCharts = () => {
+    // Destroy existing charts to prevent memory leaks
+    Chart.getChart("loansApproved")?.destroy();
+    Chart.getChart("monthlySales")?.destroy();
+    Chart.getChart("factors")?.destroy();
+
     const loansApproved = document.getElementById('loansApproved') as HTMLCanvasElement;
     const monthlySales = document.getElementById('monthlySales') as HTMLCanvasElement;
     const factors = document.getElementById('factors') as HTMLCanvasElement;
@@ -153,7 +239,29 @@ const DashboardPage = () => {
           plugins: {
             legend: {
               position: 'top',
+              labels: {
+                color: 'hsl(var(--foreground))',
+              }
             },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: 'hsl(var(--muted-foreground))',
+              },
+              grid: {
+                color: 'hsl(var(--muted))',
+              }
+            },
+            x: {
+              ticks: {
+                color: 'hsl(var(--foreground))',
+              },
+              grid: {
+                color: 'hsl(var(--muted))',
+              }
+            }
           }
         }
       });
@@ -169,7 +277,29 @@ const DashboardPage = () => {
           plugins: {
             legend: {
               position: 'top',
+              labels: {
+                color: 'hsl(var(--foreground))',
+              }
             },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                color: 'hsl(var(--muted-foreground))',
+              },
+              grid: {
+                color: 'hsl(var(--muted))',
+              }
+            },
+            x: {
+              ticks: {
+                color: 'hsl(var(--foreground))',
+              },
+              grid: {
+                color: 'hsl(var(--muted))',
+              }
+            }
           }
         }
       });
@@ -194,7 +324,10 @@ const DashboardPage = () => {
               }
             },
             legend: {
-              position: 'right'
+              position: 'right',
+              labels: {
+                color: 'hsl(var(--foreground))',
+              }
             },
           }
         }
@@ -203,45 +336,118 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      {/* Top Cards Row */}
-      <div className="flex flex-wrap -mx-2 mb-6">
-        {cards.map((card, index) => (
-          <Cards key={index} cardHeading={card[0]} cardContent={card[1]} />
-        ))}
-      </div>
+    <div className="flex min-h-screen w-full bg-white">
+      {/* Sidebar */}
+      <aside className="hidden w-72 flex-col border-r bg-white border-r sm:flex">
+        <div className="border-b border-gray-200 p-5">
+          <div className="flex items-center gap-2">
+            <Shield className="h-8 w-8 text-red-500" />
+            <h2 className="text-2xl font-semibold text-gray-800">Admin Panel</h2>
+          </div>
+        </div>
+        <nav className="flex flex-col gap-1 p-3 text-sm font-medium">
+          <Button
+            variant="ghost"
+            className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 data-[active=true]:bg-red-600 data-[active=true]:text-white"
+            data-active="true"
+          >
+            <UserCog className="mr-3 h-5 w-5" /> Dashboard
+          </Button>
+          <Button
+            variant="ghost"
+            className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+          >
+            <Users2 className="mr-3 h-5 w-5" /> User Management
+          </Button>
+          <Button variant="ghost" className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+            <ListChecks className="mr-3 h-5 w-5" /> Loan Products
+          </Button>
+          <Button variant="ghost" className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+            <Cog className="mr-3 h-5 w-5" /> System Configuration
+          </Button>
+        </nav>
+        <div className="mt-auto p-3 border-t border-gray-200">
+          <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+            <LogOut className="mr-3 h-5 w-5" /> Logout
+          </Button>
+        </div>
+      </aside>
 
-      {/* Charts Row */}
-      <div className="flex flex-wrap -mx-2 mb-6">
-        <div className="w-full lg:w-2/3 px-2 mb-4 lg:mb-0">
-          <div className="bg-card text-card-foreground rounded-lg shadow-sm p-4 h-96">
-            <canvas id="monthlySales"></canvas>
-          </div>
-        </div>
-        <div className="w-full lg:w-1/3 px-2">
-          <div className="bg-card text-card-foreground rounded-lg shadow-sm p-4 h-96">
-            <canvas id="loansApproved"></canvas>
-          </div>
-        </div>
-      </div>
+      {/* Main Content */}
+      <div className="flex flex-1 flex-col">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-6">
+          <h1 className="text-xl font-semibold text-gray-800">Dashboard</h1>
+        </header>
 
-      {/* Bottom Row */}
-      <div className="flex flex-wrap -mx-2">
-        <div className="w-full lg:w-5/12 px-2 mb-4 lg:mb-0">
-          <div className="bg-card text-card-foreground rounded-lg shadow-sm p-4 h-96">
-            <canvas id="factors"></canvas>
+        <main className="flex-1 p-6">
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            {cards.map((card, index) => (
+              <Card key={index} className="bg-gray-50 border-gray-200">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-gray-500">{card[0]}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-gray-800">{card[1]}</div>
+                  <p className="text-xs text-gray-500 mt-1">Last updated: Just now</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
-        </div>
-        <div className="w-full lg:w-7/12 px-2">
-          <div className="bg-card text-card-foreground rounded-lg shadow-sm p-4 h-96 flex justify-center items-center">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              className="rounded-md border border-border"
-            />
+
+          {/* Charts Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div className="lg:col-span-2">
+              <Card className="bg-gray-50 border-gray-200 h-96">
+                <CardHeader>
+                  <CardTitle className="text-gray-800">Monthly Applications</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <canvas id="monthlySales"></canvas>
+                </CardContent>
+              </Card>
+            </div>
+            <div>
+              <Card className="bg-gray-50 border-gray-200 h-96">
+                <CardHeader>
+                  <CardTitle className="text-gray-800">Loan Types</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <canvas id="loansApproved"></canvas>
+                </CardContent>
+              </Card>
+            </div>
           </div>
-        </div>
+
+          {/* Bottom Row */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div>
+              <Card className="bg-gray-50 border-gray-200 h-96">
+                <CardHeader>
+                  <CardTitle className="text-gray-800">Approval Factors</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <canvas id="factors"></canvas>
+                </CardContent>
+              </Card>
+            </div>
+            <div className="lg:col-span-2">
+              <Card className="bg-gray-50 border-gray-200 h-96">
+                <CardHeader>
+                  <CardTitle className="text-gray-800">Calendar</CardTitle>
+                </CardHeader>
+                <CardContent className="flex justify-center items-center">
+                  <Calendar
+                    mode="single"
+                    selected={date}
+                    onSelect={setDate}
+                    className="rounded-md border border-gray-200"
+                  />
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </main>
       </div>
     </div>
   );
