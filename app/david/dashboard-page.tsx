@@ -25,15 +25,47 @@ const DashboardPage = () => {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [date, setDate] = useState<Date | undefined>(new Date());
 
-  // Chart data states
+  // Vibrant color palette
+  const chartColors = {
+    red: 'rgba(255, 99, 132, 0.7)',
+    orange: 'rgba(255, 159, 64, 0.7)',
+    yellow: 'rgba(255, 205, 86, 0.7)',
+    green: 'rgba(75, 192, 192, 0.7)',
+    blue: 'rgba(54, 162, 235, 0.7)',
+    purple: 'rgba(153, 102, 255, 0.7)',
+    pink: 'rgba(255, 105, 180, 0.7)',
+    teal: 'rgba(0, 128, 128, 0.7)',
+    lime: 'rgba(50, 205, 50, 0.7)',
+    navy: 'rgba(0, 0, 128, 0.7)'
+  };
+
+  const borderColors = {
+    red: 'rgba(255, 99, 132, 1)',
+    orange: 'rgba(255, 159, 64, 1)',
+    yellow: 'rgba(255, 205, 86, 1)',
+    green: 'rgba(75, 192, 192, 1)',
+    blue: 'rgba(54, 162, 235, 1)',
+    purple: 'rgba(153, 102, 255, 1)',
+    pink: 'rgba(255, 105, 180, 1)',
+    teal: 'rgba(0, 128, 128, 1)',
+    lime: 'rgba(50, 205, 50, 1)',
+    navy: 'rgba(0, 0, 128, 1)'
+  };
+
+  // Chart data states with vibrant colors
   const [salesData, setSalesData] = useState({
     labels: [] as string[],
     datasets: [{
       label: '# of loan applications',
       data: [] as number[],
-      borderWidth: 2,
-      borderColor: 'hsl(var(--chart-1))',
-      backgroundColor: 'hsl(var(--chart-1))',
+      borderWidth: 3,
+      borderColor: borderColors.blue,
+      backgroundColor: chartColors.blue,
+      tension: 0.3,
+      pointBackgroundColor: borderColors.blue,
+      pointBorderColor: '#fff',
+      pointHoverRadius: 6,
+      pointHoverBorderWidth: 2
     }]
   });
 
@@ -43,7 +75,22 @@ const DashboardPage = () => {
       label: '# of accepted loans',
       data: [] as number[],
       borderWidth: 2,
-      backgroundColor: [] as string[],
+      backgroundColor: [
+        chartColors.red,
+        chartColors.green,
+        chartColors.blue,
+        chartColors.orange,
+        chartColors.purple
+      ],
+      borderColor: [
+        borderColors.red,
+        borderColors.green,
+        borderColors.blue,
+        borderColors.orange,
+        borderColors.purple
+      ],
+      borderRadius: 6,
+      borderSkipped: false
     }]
   });
 
@@ -53,13 +100,23 @@ const DashboardPage = () => {
       label: 'Approval Impact Factors',
       data: [35, 25, 20, 10, 7, 3],
       backgroundColor: [
-        'hsl(var(--chart-1))',
-        'hsl(var(--chart-2))',
-        'hsl(var(--chart-3))',
-        'hsl(var(--chart-4))',
-        'hsl(var(--chart-5))',
-        'hsl(var(--chart-1))',
+        chartColors.red,
+        chartColors.orange,
+        chartColors.yellow,
+        chartColors.green,
+        chartColors.blue,
+        chartColors.purple
       ],
+      borderColor: [
+        borderColors.red,
+        borderColors.orange,
+        borderColors.yellow,
+        borderColors.green,
+        borderColors.blue,
+        borderColors.purple
+      ],
+      borderWidth: 2,
+      hoverOffset: 20
     }]
   });
 
@@ -161,11 +218,8 @@ const DashboardPage = () => {
     setSalesData({
       labels,
       datasets: [{
-        label: '# of loan applications',
-        data,
-        borderWidth: 2,
-        borderColor: 'hsl(var(--chart-1))',
-        backgroundColor: 'hsl(var(--chart-1))',
+        ...salesData.datasets[0],
+        data
       }]
     });
   };
@@ -173,11 +227,11 @@ const DashboardPage = () => {
   const countByType = (loanData: Loan[]) => {
     const types = ["Personal", "Business", "Auto", "Mortgage", "Education"];
     const colors = [
-      'hsl(var(--chart-1))',
-      'hsl(var(--chart-2))',
-      'hsl(var(--chart-3))',
-      'hsl(var(--chart-4))',
-      'hsl(var(--chart-5))',
+      chartColors.red,
+      chartColors.green,
+      chartColors.blue,
+      chartColors.orange,
+      chartColors.purple
     ];
     
     const typeCounts: Record<string, number> = {};
@@ -201,10 +255,10 @@ const DashboardPage = () => {
     setLoansData({
       labels,
       datasets: [{
-        label: '# of accepted loans',
+        ...loansData.datasets[0],
         data,
-        borderWidth: 2,
         backgroundColor: colors,
+        borderColor: colors.map(color => color.replace('0.7', '1'))
       }]
     });
   };
@@ -241,8 +295,22 @@ const DashboardPage = () => {
               position: 'top',
               labels: {
                 color: 'hsl(var(--foreground))',
+                font: {
+                  size: 12,
+                  weight: 'bold'
+                }
               }
             },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleFont: {
+                size: 14,
+                weight: 'bold'
+              },
+              bodyFont: {
+                size: 12
+              }
+            }
           },
           scales: {
             y: {
@@ -251,7 +319,7 @@ const DashboardPage = () => {
                 color: 'hsl(var(--muted-foreground))',
               },
               grid: {
-                color: 'hsl(var(--muted))',
+                color: 'rgba(0, 0, 0, 0.1)',
               }
             },
             x: {
@@ -259,7 +327,7 @@ const DashboardPage = () => {
                 color: 'hsl(var(--foreground))',
               },
               grid: {
-                color: 'hsl(var(--muted))',
+                display: false
               }
             }
           }
@@ -279,8 +347,22 @@ const DashboardPage = () => {
               position: 'top',
               labels: {
                 color: 'hsl(var(--foreground))',
+                font: {
+                  size: 12,
+                  weight: 'bold'
+                }
               }
             },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleFont: {
+                size: 14,
+                weight: 'bold'
+              },
+              bodyFont: {
+                size: 12
+              }
+            }
           },
           scales: {
             y: {
@@ -289,7 +371,7 @@ const DashboardPage = () => {
                 color: 'hsl(var(--muted-foreground))',
               },
               grid: {
-                color: 'hsl(var(--muted))',
+                color: 'rgba(0, 0, 0, 0.1)',
               }
             },
             x: {
@@ -297,7 +379,7 @@ const DashboardPage = () => {
                 color: 'hsl(var(--foreground))',
               },
               grid: {
-                color: 'hsl(var(--muted))',
+                color: 'rgba(0, 0, 0, 0.1)',
               }
             }
           }
@@ -313,22 +395,40 @@ const DashboardPage = () => {
         options: {
           maintainAspectRatio: false,
           responsive: true,
+          cutout: '65%',
           plugins: {
             datalabels: {
-              color: 'hsl(var(--card-foreground))',
+              color: '#fff',
               font: {
-                weight: 'bold'
+                weight: 'bold',
+                size: 12
               },
               formatter: (value) => {
-                return value > 0 ? value : '';
+                return value > 0 ? `${value}%` : '';
               }
             },
             legend: {
               position: 'right',
               labels: {
                 color: 'hsl(var(--foreground))',
+                font: {
+                  size: 12,
+                  weight: 'bold'
+                },
+                padding: 20,
+                boxWidth: 15
               }
             },
+            tooltip: {
+              backgroundColor: 'rgba(0, 0, 0, 0.8)',
+              titleFont: {
+                size: 14,
+                weight: 'bold'
+              },
+              bodyFont: {
+                size: 12
+              }
+            }
           }
         }
       });
@@ -383,7 +483,7 @@ const DashboardPage = () => {
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             {cards.map((card, index) => (
-              <Card key={index} className="bg-gray-50 border-gray-200">
+              <Card key={index} className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 shadow-sm">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-gray-500">{card[0]}</CardTitle>
                 </CardHeader>
@@ -398,7 +498,7 @@ const DashboardPage = () => {
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-2">
-              <Card className="bg-gray-50 border-gray-200 h-96">
+              <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 shadow-sm h-96">
                 <CardHeader>
                   <CardTitle className="text-gray-800">Monthly Applications</CardTitle>
                 </CardHeader>
@@ -408,7 +508,7 @@ const DashboardPage = () => {
               </Card>
             </div>
             <div>
-              <Card className="bg-gray-50 border-gray-200 h-96">
+              <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 shadow-sm h-96">
                 <CardHeader>
                   <CardTitle className="text-gray-800">Loan Types</CardTitle>
                 </CardHeader>
@@ -422,7 +522,7 @@ const DashboardPage = () => {
           {/* Bottom Row */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div>
-              <Card className="bg-gray-50 border-gray-200 h-96">
+              <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 shadow-sm h-96">
                 <CardHeader>
                   <CardTitle className="text-gray-800">Approval Factors</CardTitle>
                 </CardHeader>
@@ -432,7 +532,7 @@ const DashboardPage = () => {
               </Card>
             </div>
             <div className="lg:col-span-2">
-              <Card className="bg-gray-50 border-gray-200 h-96">
+              <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 shadow-sm h-96">
                 <CardHeader>
                   <CardTitle className="text-gray-800">Calendar</CardTitle>
                 </CardHeader>
@@ -441,7 +541,7 @@ const DashboardPage = () => {
                     mode="single"
                     selected={date}
                     onSelect={setDate}
-                    className="rounded-md border border-gray-200"
+                    className="rounded-md border border-gray-200 bg-white"
                   />
                 </CardContent>
               </Card>
