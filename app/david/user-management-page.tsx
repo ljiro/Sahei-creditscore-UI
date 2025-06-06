@@ -17,6 +17,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import { Checkbox } from "@/components/ui/checkbox"
 import { ChevronDown, Cog, Edit2, ListChecks, LogOut, Shield, Trash2, UserCog, UserPlus2, Users2 } from "lucide-react"
 
 const users = [
@@ -45,6 +46,112 @@ const users = [
     lastLogin: "2025-06-04 10:30 AM",
   },
 ]
+
+const bankBranches = [
+  { id: "branch1", name: "Main Branch" },
+  { id: "branch2", name: "North Branch" },
+  { id: "branch3", name: "South Branch" },
+  { id: "branch4", name: "East Branch" },
+  { id: "branch5", name: "West Branch" },
+]
+
+function BranchAccessPanel({ user }: { user: typeof users[0] }) {
+  const [selectedBranches, setSelectedBranches] = useState<string[]>([])
+  const [isOpen, setIsOpen] = useState(false)
+
+  const handleBranchToggle = (branchId: string) => {
+    setSelectedBranches(prev =>
+      prev.includes(branchId)
+        ? prev.filter(id => id !== branchId)
+        : [...prev, branchId]
+    )
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="text-sky-400 hover:text-sky-300 h-8 w-8">
+          <Edit2 size={16} />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[625px] bg-white">
+        <DialogHeader>
+          <DialogTitle className="text-xl text-gray-800">Branch Access Management</DialogTitle>
+          <DialogDescription className="text-gray-500">
+            Configure which branches this user can access
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div className="grid gap-4 py-4">
+          {/* User Information Section */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="text-gray-500">User ID</Label>
+              <p className="text-gray-800 font-medium">{user.id}</p>
+            </div>
+            <div>
+              <Label className="text-gray-500">Name</Label>
+              <p className="text-gray-800 font-medium">{user.name}</p>
+            </div>
+            <div>
+              <Label className="text-gray-500">Role</Label>
+              <p className="text-gray-800 font-medium">{user.role}</p>
+            </div>
+            <div>
+              <Label className="text-gray-500">Status</Label>
+              <p className={`font-medium ${
+                user.status === "Active" ? "text-green-600" : "text-yellow-600"
+              }`}>
+                {user.status}
+              </p>
+            </div>
+          </div>
+
+          {/* Branch Access Section */}
+          <div className="border-t border-gray-200 pt-4">
+            <h3 className="font-medium text-gray-800 mb-3">Branch Access</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {bankBranches.map(branch => (
+                <div key={branch.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`branch-${branch.id}`}
+                    checked={selectedBranches.includes(branch.id)}
+                    onCheckedChange={() => handleBranchToggle(branch.id)}
+                  />
+                  <label
+                    htmlFor={`branch-${branch.id}`}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-700"
+                  >
+                    {branch.name}
+                  </label>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setIsOpen(false)}
+            className="text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
+          >
+            Cancel
+          </Button>
+          <Button 
+            className="bg-red-600 hover:bg-red-700 text-white"
+            onClick={() => {
+              console.log("Saved branches for user", user.id, ":", selectedBranches)
+              setIsOpen(false)
+            }}
+          >
+            Save Changes
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 export default function UserManagementPage() {
   const [isCreateUserOpen, setIsCreateUserOpen] = useState(false)
@@ -249,9 +356,7 @@ export default function UserManagementPage() {
                       </TableCell>
                       <TableCell className="text-gray-700">{user.lastLogin}</TableCell>
                       <TableCell className="space-x-1">
-                        <Button variant="ghost" size="icon" className="text-sky-400 hover:text-sky-300 h-8 w-8">
-                          <Edit2 size={16} />
-                        </Button>
+                        <BranchAccessPanel user={user} />
                         <Button variant="ghost" size="icon" className="text-red-500 hover:text-red-400 h-8 w-8">
                           <Trash2 size={16} />
                         </Button>
