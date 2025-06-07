@@ -23,7 +23,7 @@ import UserManagementPage from "./david/user-management-page.tsx"
 import LoanProductConfigPage from "./david/loan-product-config-page.tsx" // You'll need to create this
 import AdminDashboardPage from "./elena/dashboard-initial-page.tsx" // You'll need to create this
 import DashboardPage from "./david/dashboard-page.tsx";
-
+import LoanPage from "./david/loans-page.tsx";
 import { usePathname } from 'next/navigation'
 
 export default function Page() {
