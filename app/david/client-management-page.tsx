@@ -16,7 +16,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { ChevronDown, Cog, Edit2, ListChecks, LogOut, Shield, Trash2, UserCog, UserPlus2, Users2, User, FileText, Book, Search, ArrowUpDown } from "lucide-react"
+import { ChevronDown, Cog, Edit2, ListChecks, LogOut, Shield, Trash2, UserCog, UserPlus2, Users2, User, FileText, Book, Search, ArrowUpDown, X, Info, BadgeInfo, Calendar, Phone, Home, GraduationCap, HeartPulse, Briefcase, Wallet, CreditCard, BarChart2 } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 
 const clients = [
   {
@@ -121,143 +122,275 @@ const clients = [
 function ClientDetailsPanel({ client, onClose }: { client: typeof clients[0], onClose: () => void }) {
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[900px] bg-white">
+      <DialogContent className="sm:max-w-[900px] bg-white rounded-lg">
         <DialogHeader>
-          <DialogTitle className="text-xl text-gray-800">Client Details - {client.id}</DialogTitle>
-          <DialogDescription className="text-gray-500">
-            Comprehensive view of client information and loan history
-          </DialogDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <DialogTitle className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <User className="h-6 w-6" />
+                {client.name}
+                <Badge variant="outline" className="ml-2 border-gray-300 text-gray-600">
+                  {client.id}
+                </Badge>
+              </DialogTitle>
+              <DialogDescription className="text-gray-500">
+                Comprehensive client profile and financial history
+              </DialogDescription>
+            </div>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
         </DialogHeader>
         
-        <div className="grid gap-6 py-4">
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <Label className="text-gray-500">Client ID</Label>
-              <p className="text-gray-800 font-medium">{client.id}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Full Name</Label>
-              <p className="text-gray-800 font-medium">{client.name}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Gender</Label>
-              <p className="text-gray-800 font-medium">{client.gender}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Birthday</Label>
-              <p className="text-gray-800 font-medium">{client.birthday}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Contact Number</Label>
-              <p className="text-gray-800 font-medium">{client.contact}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Address</Label>
-              <p className="text-gray-800 font-medium">{client.address}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Education</Label>
-              <p className="text-gray-800 font-medium">{client.education}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Marital Status</Label>
-              <p className="text-gray-800 font-medium">{client.maritalStatus}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Number of Dependents</Label>
-              <p className="text-gray-800 font-medium">{client.dependents}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Industry</Label>
-              <p className="text-gray-800 font-medium">{client.industry}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Monthly Income</Label>
-              <p className="text-gray-800 font-medium">₱{client.monthlyIncome.toLocaleString()}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Savings Account Balance</Label>
-              <p className="text-gray-800 font-medium">₱{client.savingsBalance.toLocaleString()}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Monthly Expenses</Label>
-              <p className="text-gray-800 font-medium">₱{client.monthlyExpenses.toLocaleString()}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Credit Score</Label>
-              <p className={`font-medium ${
-                client.creditScore >= 85 ? "text-green-600" : 
-                client.creditScore >= 70 ? "text-yellow-600" : "text-red-600"
-              }`}>
-                {client.creditScore}
-              </p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Date Joined</Label>
-              <p className="text-gray-800 font-medium">{client.joinedDate}</p>
-            </div>
+        <div className="grid gap-8 py-4">
+          {/* Client Overview Card */}
+          <Card className="border-gray-200 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <Info className="h-5 w-5 text-blue-500" />
+                Client Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-blue-50">
+                    <BadgeInfo className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Gender</p>
+                    <p className="font-medium text-gray-800">{client.gender}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-purple-50">
+                    <Calendar className="h-5 w-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Age</p>
+                    <p className="font-medium text-gray-800">
+                      {new Date().getFullYear() - new Date(client.birthday).getFullYear()} years
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-green-50">
+                    <Phone className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Contact</p>
+                    <p className="font-medium text-gray-800">{client.contact}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-orange-50">
+                    <Home className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Address</p>
+                    <p className="font-medium text-gray-800 line-clamp-1">{client.address}</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Personal Details and Financial Information */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Personal Details Card */}
+            <Card className="border-gray-200 shadow-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <User className="h-5 w-5 text-indigo-500" />
+                  Personal Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm text-gray-500">Education</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <GraduationCap className="h-4 w-4 text-gray-400" />
+                      <p className="text-gray-800">{client.education}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Marital Status</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <HeartPulse className="h-4 w-4 text-gray-400" />
+                      <p className="text-gray-800">{client.maritalStatus}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Dependents</Label>
+                    <p className="text-gray-800">{client.dependents}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Industry</Label>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Briefcase className="h-4 w-4 text-gray-400" />
+                      <p className="text-gray-800">{client.industry}</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Financial Information Card */}
+            <Card className="border-gray-200 shadow-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <Wallet className="h-5 w-5 text-emerald-500" />
+                  Financial Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm text-gray-500">Monthly Income</Label>
+                    <p className="text-gray-800 font-medium">₱{client.monthlyIncome.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Monthly Expenses</Label>
+                    <p className="text-gray-800 font-medium">₱{client.monthlyExpenses.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Savings Balance</Label>
+                    <p className="text-gray-800 font-medium">₱{client.savingsBalance.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Credit Score</Label>
+                    <div className="flex items-center gap-2">
+                      <BarChart2 className={`h-4 w-4 ${
+                        client.creditScore >= 85 ? "text-green-500" : 
+                        client.creditScore >= 70 ? "text-yellow-500" : "text-red-500"
+                      }`} />
+                      <span className={`font-medium ${
+                        client.creditScore >= 85 ? "text-green-600" : 
+                        client.creditScore >= 70 ? "text-yellow-600" : "text-red-600"
+                      }`}>
+                        {client.creditScore}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Client Loans Section */}
-          <div className="border-t border-gray-200 pt-4">
-            <h3 className="font-medium text-gray-800 mb-3">Client Loans ({client.loans.length})</h3>
-            {client.loans.length > 0 ? (
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-100 hover:bg-gray-100">
-                      <TableHead className="text-gray-700">Loan ID</TableHead>
-                      <TableHead className="text-gray-700">Type</TableHead>
-                      <TableHead className="text-gray-700">Purpose</TableHead>
-                      <TableHead className="text-gray-700">Amount</TableHead>
-                      <TableHead className="text-gray-700">Application Date</TableHead>
-                      <TableHead className="text-gray-700">Duration</TableHead>
-                      <TableHead className="text-gray-700">Validated By</TableHead>
-                      <TableHead className="text-gray-700">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {client.loans.map((loan) => (
-                      <TableRow key={loan.id} className="border-gray-200 hover:bg-gray-50">
-                        <TableCell className="text-gray-700">{loan.id}</TableCell>
-                        <TableCell className="text-gray-700">{loan.type}</TableCell>
-                        <TableCell className="text-gray-700">{loan.purpose}</TableCell>
-                        <TableCell className="text-gray-700">₱{loan.amount.toLocaleString()}</TableCell>
-                        <TableCell className="text-gray-700">{loan.applicationDate}</TableCell>
-                        <TableCell className="text-gray-700">{loan.duration}</TableCell>
-                        <TableCell className="text-gray-700">{loan.validatedBy}</TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 text-xs rounded-full ${
-                            loan.status === "Approved" ? "bg-green-700 text-green-100" : "bg-red-700 text-red-100"
-                          }`}>
-                            {loan.status}
-                          </span>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+          <Card className="border-gray-200 shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-amber-500" />
+                  Loan History ({client.loans.length})
+                </CardTitle>
+                <Button variant="outline" size="sm" className="border-gray-200 text-gray-700">
+                  New Loan Application
+                </Button>
               </div>
-            ) : (
-              <p className="text-gray-500">This client has no loan applications.</p>
-            )}
-          </div>
+            </CardHeader>
+            <CardContent>
+              {client.loans.length > 0 ? (
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-gray-50">
+                      <TableRow className="hover:bg-gray-50">
+                        <TableHead className="text-gray-600 font-medium">Loan ID</TableHead>
+                        <TableHead className="text-gray-600 font-medium">Type</TableHead>
+                        <TableHead className="text-gray-600 font-medium">Purpose</TableHead>
+                        <TableHead className="text-gray-600 font-medium">Amount</TableHead>
+                        <TableHead className="text-gray-600 font-medium">Date</TableHead>
+                        <TableHead className="text-gray-600 font-medium">Status</TableHead>
+                        <TableHead className="text-gray-600 font-medium">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {client.loans.map((loan) => (
+                        <TableRow key={loan.id} className="border-gray-200 hover:bg-gray-50">
+                          <TableCell className="font-medium text-gray-800">{loan.id}</TableCell>
+                          <TableCell className="text-gray-700">{loan.type}</TableCell>
+                          <TableCell className="text-gray-700">{loan.purpose}</TableCell>
+                          <TableCell className="text-gray-700 font-medium">₱{loan.amount.toLocaleString()}</TableCell>
+                          <TableCell className="text-gray-500">{loan.applicationDate}</TableCell>
+                          <TableCell>
+                            <Badge 
+                              variant={loan.status === "Approved" ? "default" : "destructive"}
+                              className="flex items-center gap-1"
+                            >
+                              {loan.status === "Approved" ? (
+                                <>
+                                  <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                                    <circle cx="4" cy="4" r="3" />
+                                  </svg>
+                                  {loan.status}
+                                </>
+                              ) : (
+                                <>
+                                  <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                                    <circle cx="4" cy="4" r="3" />
+                                  </svg>
+                                  {loan.status}
+                                </>
+                              )}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-500 hover:text-blue-600">
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <FileText className="h-10 w-10 text-gray-300 mb-3" />
+                  <h4 className="text-gray-500 font-medium">No loan applications</h4>
+                  <p className="text-gray-400 text-sm mt-1">This client hasn't applied for any loans yet</p>
+                  <Button variant="outline" className="mt-4 border-gray-200">Create New Loan</Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
-          >
-            Close
-          </Button>
-          <Button 
-            className="bg-red-600 hover:bg-red-700 text-white"
-            onClick={() => console.log("Edit client")}
-          >
-            Edit Client
-          </Button>
+        <DialogFooter className="border-t border-gray-200 pt-4">
+          <div className="flex justify-between w-full">
+            <Button
+              variant="outline"
+              onClick={() => console.log("Delete client")}
+              className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Client
+            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={onClose}
+                className="text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
+              >
+                Close
+              </Button>
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => console.log("Edit client")}
+              >
+                <Edit2 className="h-4 w-4 mr-2" />
+                Edit Client
+              </Button>
+            </div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -290,12 +423,12 @@ export default function ClientManagementPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-white">
+    <div className="flex min-h-screen w-full bg-gray-50">
       {/* Sidebar */}
-      <aside className="hidden w-72 flex-col border-r bg-white border-r sm:flex">
+      <aside className="hidden w-72 flex-col border-r bg-white border-r-gray-200 sm:flex">
         <div className="border-b border-gray-200 p-5">
           <div className="flex items-center gap-2">
-            <Shield className="h-8 w-8 text-red-500" />
+            <Shield className="h-8 w-8 text-blue-500" />
             <h2 className="text-2xl font-semibold text-gray-800">Admin Panel</h2>
           </div>
         </div>
@@ -313,9 +446,8 @@ export default function ClientManagementPage() {
             <Users2 className="mr-3 h-5 w-5" /> User Management
           </Button>
           <Button 
-            variant="ghost" 
-            className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            data-active="true"
+            variant="secondary" 
+            className="justify-start text-gray-900 bg-gray-100 hover:bg-gray-200"
           >
             <User className="mr-3 h-5 w-5" /> Clients
           </Button>
@@ -355,7 +487,7 @@ export default function ClientManagementPage() {
               <Input
                 type="search"
                 placeholder="Search clients..."
-                className="w-64 rounded-lg bg-gray-100 border-gray-200 pl-8 focus:ring-red-500"
+                className="w-64 rounded-lg bg-gray-50 border-gray-200 pl-8 focus:ring-blue-500 focus:border-blue-500"
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
               />
@@ -370,11 +502,11 @@ export default function ClientManagementPage() {
             </Button>
             <Dialog>
               <DialogTrigger asChild>
-                <Button className="bg-red-600 hover:bg-red-700 text-white">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                   <UserPlus2 className="mr-2 h-4 w-4" /> New Client
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-white text-gray-800 border-gray-200 sm:max-w-[625px]">
+              <DialogContent className="bg-white text-gray-800 border-gray-200 sm:max-w-[625px] rounded-lg">
                 <DialogHeader>
                   <DialogTitle className="text-xl text-gray-800">Register New Client</DialogTitle>
                   <DialogDescription className="text-gray-500">
@@ -388,7 +520,7 @@ export default function ClientManagementPage() {
                     </Label>
                     <Input
                       id="fullName"
-                      className="col-span-3 bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800"
+                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
                       placeholder="Enter client's full name"
                     />
                   </div>
@@ -398,7 +530,7 @@ export default function ClientManagementPage() {
                     </Label>
                     <select 
                       id="gender" 
-                      className="col-span-3 bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800 rounded-md p-2"
+                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 rounded-md p-2"
                     >
                       <option value="">Select gender</option>
                       <option value="Male">Male</option>
@@ -413,7 +545,7 @@ export default function ClientManagementPage() {
                     <Input
                       id="birthday"
                       type="date"
-                      className="col-span-3 bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800"
+                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
@@ -422,7 +554,7 @@ export default function ClientManagementPage() {
                     </Label>
                     <Input
                       id="contact"
-                      className="col-span-3 bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800"
+                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
                       placeholder="Enter contact number"
                     />
                   </div>
@@ -432,7 +564,7 @@ export default function ClientManagementPage() {
                     </Label>
                     <Input
                       id="address"
-                      className="col-span-3 bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800"
+                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
                       placeholder="Enter complete address"
                     />
                   </div>
@@ -442,7 +574,7 @@ export default function ClientManagementPage() {
                     </Label>
                     <Input
                       id="education"
-                      className="col-span-3 bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800"
+                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
                       placeholder="Enter education level"
                     />
                   </div>
@@ -452,7 +584,7 @@ export default function ClientManagementPage() {
                     </Label>
                     <select 
                       id="maritalStatus" 
-                      className="col-span-3 bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800 rounded-md p-2"
+                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 rounded-md p-2"
                     >
                       <option value="">Select status</option>
                       <option value="Single">Single</option>
@@ -469,7 +601,7 @@ export default function ClientManagementPage() {
                   >
                     Cancel
                   </Button>
-                  <Button className="bg-red-600 hover:bg-red-700 text-white">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                     Register Client
                   </Button>
                 </DialogFooter>
@@ -493,52 +625,92 @@ export default function ClientManagementPage() {
           {selectedClient ? (
             <ClientDetailsPanel client={selectedClient} onClose={() => setSelectedClient(null)} />
           ) : (
-            <Card className="shadow-lg bg-gray-50 border-gray-200">
+            <Card className="shadow-sm border-gray-200">
               <CardHeader>
-                <CardTitle className="text-xl text-gray-800">Client List ({clients.length})</CardTitle>
-                <CardDescription className="text-gray-500">
-                  Manage and review all client information
-                </CardDescription>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle className="text-xl text-gray-800">Client List</CardTitle>
+                    <CardDescription className="text-gray-500">
+                      {clients.length} registered clients
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="border-gray-200 text-gray-700">
+                      Export
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-gray-200 hover:bg-gray-100">
-                      <TableHead className="text-gray-700">CLIENT ID</TableHead>
-                      <TableHead className="text-gray-700">NAME</TableHead>
-                      <TableHead className="text-gray-700">GENDER</TableHead>
-                      <TableHead className="text-gray-700">CONTACT</TableHead>
-                      <TableHead className="text-gray-700">LOANS</TableHead>
-                      <TableHead className="text-gray-700">CREDIT SCORE</TableHead>
-                      <TableHead className="text-gray-700">ACTIONS</TableHead>
+                    <TableRow className="border-gray-200 hover:bg-gray-50">
+                      <TableHead className="text-gray-600 font-medium">CLIENT ID</TableHead>
+                      <TableHead className="text-gray-600 font-medium">NAME</TableHead>
+                      <TableHead className="text-gray-600 font-medium">GENDER</TableHead>
+                      <TableHead className="text-gray-600 font-medium">CONTACT</TableHead>
+                      <TableHead className="text-gray-600 font-medium">LOANS</TableHead>
+                      <TableHead className="text-gray-600 font-medium">CREDIT SCORE</TableHead>
+                      <TableHead className="text-gray-600 font-medium">ACTIONS</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {sortedClients.map((client) => (
                       <TableRow 
                         key={client.id} 
-                        className="border-gray-200 hover:bg-gray-100 cursor-pointer"
+                        className="border-gray-200 hover:bg-gray-50 cursor-pointer"
                         onClick={() => setSelectedClient(client)}
                       >
                         <TableCell className="font-medium text-gray-800">{client.id}</TableCell>
-                        <TableCell className="text-gray-700">{client.name}</TableCell>
-                        <TableCell className="text-gray-700">{client.gender}</TableCell>
+                        <TableCell className="text-gray-700">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="bg-blue-100 text-blue-800">
+                                {client.name.split(" ").map(n => n[0]).join("")}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>{client.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-gray-700">
+                          <Badge variant="outline" className="border-gray-200 text-gray-600">
+                            {client.gender}
+                          </Badge>
+                        </TableCell>
                         <TableCell className="text-gray-700">{client.contact}</TableCell>
-                        <TableCell className="text-gray-700">{client.loans.length}</TableCell>
-                        <TableCell>
-                          <span
-                            className={`px-2 py-1 text-xs rounded-full ${
-                              client.creditScore >= 85 ? "bg-green-700 text-green-100" : 
-                              client.creditScore >= 70 ? "bg-yellow-700 text-yellow-100" : "bg-red-700 text-red-100"
-                            }`}
-                          >
-                            {client.creditScore}
-                          </span>
+                        <TableCell className="text-gray-700">
+                          <Badge variant={client.loans.length > 0 ? "default" : "outline"}>
+                            {client.loans.length} {client.loans.length === 1 ? "loan" : "loans"}
+                          </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="icon" className="text-sky-400 hover:text-sky-300 h-8 w-8">
-                            <Edit2 size={16} />
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <div className={`h-2 w-2 rounded-full ${
+                              client.creditScore >= 85 ? "bg-green-500" : 
+                              client.creditScore >= 70 ? "bg-yellow-500" : "bg-red-500"
+                            }`} />
+                            <span className={`font-medium ${
+                              client.creditScore >= 85 ? "text-green-600" : 
+                              client.creditScore >= 70 ? "text-yellow-600" : "text-red-600"
+                            }`}>
+                              {client.creditScore}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-blue-500 hover:text-blue-600"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedClient(client)
+                              }}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
