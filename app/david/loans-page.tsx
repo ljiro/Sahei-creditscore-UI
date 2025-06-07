@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog,
   DialogContent,
@@ -17,8 +16,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Checkbox } from "@/components/ui/checkbox"
-import { ChevronDown, Cog, Edit2, ListChecks, LogOut, Shield, Trash2, UserCog, UserPlus2, Users2, User, FileText, Book, Search, ArrowUpDown } from "lucide-react"
+import { ChevronDown, Cog, Edit2, ListChecks, LogOut, Shield, Trash2, UserCog, UserPlus2, Users2, User, FileText, Book, Search, ArrowUpDown, X, Info, Calendar, Phone, Home, CreditCard, BarChart2, DollarSign, Clock, CheckCircle, AlertCircle } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const loans = [
   {
@@ -33,6 +33,8 @@ const loans = [
     interestRate: "12%",
     remainingBalance: 42000,
     nextPayment: "2025-06-15",
+    validatedBy: "Maria Santos",
+    creditScore: 85
   },
   {
     id: "LN002",
@@ -46,6 +48,8 @@ const loans = [
     interestRate: "10%",
     remainingBalance: 150000,
     nextPayment: "N/A",
+    validatedBy: "Juan Dela Cruz",
+    creditScore: 92
   },
   {
     id: "LN003",
@@ -59,111 +63,281 @@ const loans = [
     interestRate: "15%",
     remainingBalance: 25000,
     nextPayment: "2025-06-25",
-  },
+    validatedBy: "Ana Lopez",
+    creditScore: 78
+  }
 ]
 
 function LoanDetailsPanel({ loan, onClose }: { loan: typeof loans[0], onClose: () => void }) {
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] bg-white">
+      <DialogContent className="sm:max-w-[900px] bg-white rounded-lg">
         <DialogHeader>
-          <DialogTitle className="text-xl text-gray-800">Loan Details - {loan.id}</DialogTitle>
-          <DialogDescription className="text-gray-500">
-            Comprehensive view of loan application and status
-          </DialogDescription>
+          <div className="flex justify-between items-center">
+            <div>
+              <DialogTitle className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <CreditCard className="h-6 w-6" />
+                {loan.id} - {loan.clientName}
+                <Badge variant="outline" className="ml-2 border-gray-300 text-gray-600">
+                  {loan.type}
+                </Badge>
+              </DialogTitle>
+              <DialogDescription className="text-gray-500">
+                Comprehensive loan details and payment history
+              </DialogDescription>
+            </div>
+        
+          </div>
         </DialogHeader>
         
-        <div className="grid gap-6 py-4">
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <Label className="text-gray-500">Client Name</Label>
-              <p className="text-gray-800 font-medium">{loan.clientName}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Loan Type</Label>
-              <p className="text-gray-800 font-medium">{loan.type}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Purpose</Label>
-              <p className="text-gray-800 font-medium">{loan.purpose}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Application Date</Label>
-              <p className="text-gray-800 font-medium">{loan.applicationDate}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Loan Amount</Label>
-              <p className="text-gray-800 font-medium">₱{loan.amount.toLocaleString()}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Interest Rate</Label>
-              <p className="text-gray-800 font-medium">{loan.interestRate}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Duration</Label>
-              <p className="text-gray-800 font-medium">{loan.duration}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Remaining Balance</Label>
-              <p className="text-gray-800 font-medium">₱{loan.remainingBalance.toLocaleString()}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Next Payment Due</Label>
-              <p className="text-gray-800 font-medium">{loan.nextPayment}</p>
-            </div>
-            <div>
-              <Label className="text-gray-500">Status</Label>
-              <p className={`font-medium ${
-                loan.status === "Approved" ? "text-green-600" : 
-                loan.status === "Pending" ? "text-yellow-600" : "text-blue-600"
-              }`}>
-                {loan.status}
-              </p>
-            </div>
+        <div className="grid gap-8 py-4">
+          {/* Loan Overview Card */}
+          <Card className="border-gray-200 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <Info className="h-5 w-5 text-blue-500" />
+                Loan Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-blue-50">
+                    <DollarSign className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Loan Amount</p>
+                    <p className="font-medium text-gray-800">₱{loan.amount.toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-purple-50">
+                    <Clock className="h-5 w-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Duration</p>
+                    <p className="font-medium text-gray-800">{loan.duration}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-green-50">
+                    <BarChart2 className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Interest Rate</p>
+                    <p className="font-medium text-gray-800">{loan.interestRate}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-orange-50">
+                    <Calendar className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Next Payment</p>
+                    <p className="font-medium text-gray-800">{loan.nextPayment}</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Loan Details and Client Information */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Loan Details Card */}
+            <Card className="border-gray-200 shadow-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-indigo-500" />
+                  Loan Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm text-gray-500">Client Name</Label>
+                    <p className="text-gray-800 font-medium">{loan.clientName}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Application Date</Label>
+                    <p className="text-gray-800 font-medium">{loan.applicationDate}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Purpose</Label>
+                    <p className="text-gray-800 font-medium">{loan.purpose}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Remaining Balance</Label>
+                    <p className="text-gray-800 font-medium">₱{loan.remainingBalance.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Validated By</Label>
+                    <p className="text-gray-800 font-medium">{loan.validatedBy}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Client Credit Score</Label>
+                    <div className="flex items-center gap-2">
+                      <BarChart2 className={`h-4 w-4 ${
+                        loan.creditScore >= 85 ? "text-green-500" : 
+                        loan.creditScore >= 70 ? "text-yellow-500" : "text-red-500"
+                      }`} />
+                      <span className={`font-medium ${
+                        loan.creditScore >= 85 ? "text-green-600" : 
+                        loan.creditScore >= 70 ? "text-yellow-600" : "text-red-600"
+                      }`}>
+                        {loan.creditScore}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Status Card */}
+            <Card className="border-gray-200 shadow-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  {loan.status === "Approved" ? (
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  ) : loan.status === "Pending" ? (
+                    <Clock className="h-5 w-5 text-yellow-500" />
+                  ) : (
+                    <AlertCircle className="h-5 w-5 text-red-500" />
+                  )}
+                  Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm text-gray-500">Current Status</Label>
+                    <Badge 
+                      variant={
+                        loan.status === "Approved" ? "default" : 
+                        loan.status === "Pending" ? "secondary" : "destructive"
+                      }
+                      className="flex items-center gap-1"
+                    >
+                      {loan.status === "Approved" ? (
+                        <>
+                          <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3" />
+                          </svg>
+                          {loan.status}
+                        </>
+                      ) : loan.status === "Pending" ? (
+                        <>
+                          <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3" />
+                          </svg>
+                          {loan.status}
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3" />
+                          </svg>
+                          {loan.status}
+                        </>
+                      )}
+                    </Badge>
+                  </div>
+                  {loan.status === "Pending" && (
+                    <div className="space-y-2">
+                      <Label className="text-sm text-gray-500">Actions</Label>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50">
+                          Approve
+                        </Button>
+                        <Button variant="outline" size="sm" className="border-red-200 text-red-700 hover:bg-red-50">
+                          Reject
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {loan.status === "Approved" && (
+                    <div className="space-y-2">
+                      <Label className="text-sm text-gray-500">Next Steps</Label>
+                      <Button variant="outline" size="sm" className="border-blue-200 text-blue-700 hover:bg-blue-50">
+                        Generate Contract
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
           {/* Payment History Section */}
-          <div className="border-t border-gray-200 pt-4">
-            <h3 className="font-medium text-gray-800 mb-3">Payment History</h3>
-            <div className="border border-gray-200 rounded-lg overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-gray-100 hover:bg-gray-100">
-                    <TableHead className="text-gray-700">Date</TableHead>
-                    <TableHead className="text-gray-700">Amount</TableHead>
-                    <TableHead className="text-gray-700">Principal</TableHead>
-                    <TableHead className="text-gray-700">Interest</TableHead>
-                    <TableHead className="text-gray-700">Remaining Balance</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow className="border-gray-200 hover:bg-gray-50">
-                    <TableCell className="text-gray-700">2025-05-15</TableCell>
-                    <TableCell className="text-gray-700">₱5,000</TableCell>
-                    <TableCell className="text-gray-700">₱4,167</TableCell>
-                    <TableCell className="text-gray-700">₱833</TableCell>
-                    <TableCell className="text-gray-700">₱45,833</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </div>
-          </div>
+          <Card className="border-gray-200 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-amber-500" />
+                Payment History
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-gray-50">
+                    <TableRow className="hover:bg-gray-50">
+                      <TableHead className="text-gray-600 font-medium">Date</TableHead>
+                      <TableHead className="text-gray-600 font-medium">Amount</TableHead>
+                      <TableHead className="text-gray-600 font-medium">Principal</TableHead>
+                      <TableHead className="text-gray-600 font-medium">Interest</TableHead>
+                      <TableHead className="text-gray-600 font-medium">Remaining Balance</TableHead>
+                      <TableHead className="text-gray-600 font-medium">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow className="border-gray-200 hover:bg-gray-50">
+                      <TableCell className="text-gray-700">2025-05-15</TableCell>
+                      <TableCell className="text-gray-700 font-medium">₱5,000</TableCell>
+                      <TableCell className="text-gray-700">₱4,167</TableCell>
+                      <TableCell className="text-gray-700">₱833</TableCell>
+                      <TableCell className="text-gray-700">₱45,833</TableCell>
+                      <TableCell>
+                        <Badge variant="default" className="flex items-center gap-1">
+                          <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3" />
+                          </svg>
+                          Paid
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={onClose}
-            className="text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
-          >
-            Close
-          </Button>
-          <Button 
-            className="bg-red-600 hover:bg-red-700 text-white"
-            onClick={() => console.log("Loan action taken")}
-          >
-            Process Payment
-          </Button>
+        <DialogFooter className="border-t border-gray-200 pt-4">
+          <div className="flex justify-between w-full">
+            <Button
+              variant="outline"
+              onClick={() => console.log("Delete loan")}
+              className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Loan
+            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={onClose}
+                className="text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
+              >
+                Close
+              </Button>
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => console.log("Process payment")}
+              >
+                <DollarSign className="h-4 w-4 mr-2" />
+                Process Payment
+              </Button>
+            </div>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -196,12 +370,12 @@ export default function LoanManagementPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full bg-white">
+    <div className="flex min-h-screen w-full bg-gray-50">
       {/* Sidebar */}
-      <aside className="hidden w-72 flex-col border-r bg-white border-r sm:flex">
+      <aside className="hidden w-72 flex-col border-r bg-white border-r-gray-200 sm:flex">
         <div className="border-b border-gray-200 p-5">
           <div className="flex items-center gap-2">
-            <Shield className="h-8 w-8 text-red-500" />
+            <Shield className="h-8 w-8 text-blue-500" />
             <h2 className="text-2xl font-semibold text-gray-800">Admin Panel</h2>
           </div>
         </div>
@@ -225,9 +399,8 @@ export default function LoanManagementPage() {
             <User className="mr-3 h-5 w-5" /> Clients
           </Button>
           <Button 
-            variant="ghost" 
-            className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            data-active="true"
+            variant="secondary" 
+            className="justify-start text-gray-900 bg-gray-100 hover:bg-gray-200"
           >
             <Book className="mr-3 h-5 w-5" /> Loans
           </Button>
@@ -261,7 +434,7 @@ export default function LoanManagementPage() {
               <Input
                 type="search"
                 placeholder="Search loans..."
-                className="w-64 rounded-lg bg-gray-100 border-gray-200 pl-8 focus:ring-red-500"
+                className="w-64 rounded-lg bg-gray-50 border-gray-200 pl-8 focus:ring-blue-500 focus:border-blue-500"
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
               />
@@ -276,11 +449,11 @@ export default function LoanManagementPage() {
             </Button>
             <Dialog>
               <DialogTrigger asChild>
-                <Button className="bg-red-600 hover:bg-red-700 text-white">
+                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                   <Book className="mr-2 h-4 w-4" /> New Loan
                 </Button>
               </DialogTrigger>
-              <DialogContent className="bg-white text-gray-800 border-gray-200 sm:max-w-[625px]">
+              <DialogContent className="bg-white text-gray-800 border-gray-200 sm:max-w-[625px] rounded-lg">
                 <DialogHeader>
                   <DialogTitle className="text-xl text-gray-800">Create New Loan Application</DialogTitle>
                   <DialogDescription className="text-gray-500">
@@ -293,7 +466,7 @@ export default function LoanManagementPage() {
                       Client
                     </Label>
                     <Select>
-                      <SelectTrigger className="col-span-3 bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800">
+                      <SelectTrigger className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800">
                         <SelectValue placeholder="Select client" />
                       </SelectTrigger>
                       <SelectContent className="bg-white text-gray-800 border-gray-200">
@@ -314,7 +487,7 @@ export default function LoanManagementPage() {
                       Loan Type
                     </Label>
                     <Select>
-                      <SelectTrigger className="col-span-3 bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800">
+                      <SelectTrigger className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800">
                         <SelectValue placeholder="Select loan type" />
                       </SelectTrigger>
                       <SelectContent className="bg-white text-gray-800 border-gray-200">
@@ -337,7 +510,7 @@ export default function LoanManagementPage() {
                     <Input
                       id="loanAmount"
                       type="number"
-                      className="col-span-3 bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800"
+                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
                       placeholder="Enter loan amount"
                     />
                   </div>
@@ -347,7 +520,7 @@ export default function LoanManagementPage() {
                     </Label>
                     <Input
                       id="loanPurpose"
-                      className="col-span-3 bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800"
+                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
                       placeholder="Enter loan purpose"
                     />
                   </div>
@@ -356,7 +529,7 @@ export default function LoanManagementPage() {
                       Duration
                     </Label>
                     <Select>
-                      <SelectTrigger className="col-span-3 bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800">
+                      <SelectTrigger className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800">
                         <SelectValue placeholder="Select duration" />
                       </SelectTrigger>
                       <SelectContent className="bg-white text-gray-800 border-gray-200">
@@ -380,7 +553,7 @@ export default function LoanManagementPage() {
                   >
                     Cancel
                   </Button>
-                  <Button className="bg-red-600 hover:bg-red-700 text-white">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                     Create Loan
                   </Button>
                 </DialogFooter>
@@ -404,56 +577,106 @@ export default function LoanManagementPage() {
           {selectedLoan ? (
             <LoanDetailsPanel loan={selectedLoan} onClose={() => setSelectedLoan(null)} />
           ) : (
-            <Card className="shadow-lg bg-gray-50 border-gray-200">
+            <Card className="shadow-sm border-gray-200">
               <CardHeader>
-                <CardTitle className="text-xl text-gray-800">Active Loans ({loans.length})</CardTitle>
-                <CardDescription className="text-gray-500">
-                  Manage and review all loan applications and statuses
-                </CardDescription>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle className="text-xl text-gray-800">Active Loans</CardTitle>
+                    <CardDescription className="text-gray-500">
+                      {loans.length} total loans
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" className="border-gray-200 text-gray-700">
+                      Export
+                    </Button>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-gray-200 hover:bg-gray-100">
-                      <TableHead className="text-gray-700">LOAN ID</TableHead>
-                      <TableHead className="text-gray-700">CLIENT NAME</TableHead>
-                      <TableHead className="text-gray-700">TYPE</TableHead>
-                      <TableHead className="text-gray-700">PURPOSE</TableHead>
-                      <TableHead className="text-gray-700">AMOUNT</TableHead>
-                      <TableHead className="text-gray-700">APPLICATION DATE</TableHead>
-                      <TableHead className="text-gray-700">DURATION</TableHead>
-                      <TableHead className="text-gray-700">STATUS</TableHead>
-                      <TableHead className="text-gray-700">ACTIONS</TableHead>
+                    <TableRow className="border-gray-200 hover:bg-gray-50">
+                      <TableHead className="text-gray-600 font-medium">LOAN ID</TableHead>
+                      <TableHead className="text-gray-600 font-medium">CLIENT</TableHead>
+                      <TableHead className="text-gray-600 font-medium">TYPE</TableHead>
+                      <TableHead className="text-gray-600 font-medium">AMOUNT</TableHead>
+                      <TableHead className="text-gray-600 font-medium">DATE</TableHead>
+                      <TableHead className="text-gray-600 font-medium">STATUS</TableHead>
+                      <TableHead className="text-gray-600 font-medium">ACTIONS</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {sortedLoans.map((loan) => (
                       <TableRow 
                         key={loan.id} 
-                        className="border-gray-200 hover:bg-gray-100 cursor-pointer"
+                        className="border-gray-200 hover:bg-gray-50 cursor-pointer"
                         onClick={() => setSelectedLoan(loan)}
                       >
                         <TableCell className="font-medium text-gray-800">{loan.id}</TableCell>
-                        <TableCell className="text-gray-700">{loan.clientName}</TableCell>
-                        <TableCell className="text-gray-700">{loan.type}</TableCell>
-                        <TableCell className="text-gray-700">{loan.purpose}</TableCell>
-                        <TableCell className="text-gray-700">₱{loan.amount.toLocaleString()}</TableCell>
-                        <TableCell className="text-gray-700">{loan.applicationDate}</TableCell>
-                        <TableCell className="text-gray-700">{loan.duration}</TableCell>
+                        <TableCell className="text-gray-700">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="bg-blue-100 text-blue-800">
+                                {loan.clientName.split(" ").map(n => n[0]).join("")}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span>{loan.clientName}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-gray-700">
+                          <Badge variant="outline" className="border-gray-200 text-gray-600">
+                            {loan.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-gray-700 font-medium">₱{loan.amount.toLocaleString()}</TableCell>
+                        <TableCell className="text-gray-500">{loan.applicationDate}</TableCell>
                         <TableCell>
-                          <span
-                            className={`px-2 py-1 text-xs rounded-full ${
-                              loan.status === "Approved" ? "bg-green-700 text-green-100" : 
-                              loan.status === "Pending" ? "bg-yellow-700 text-yellow-100" : "bg-blue-700 text-blue-100"
-                            }`}
+                          <Badge 
+                            variant={
+                              loan.status === "Approved" ? "default" : 
+                              loan.status === "Pending" ? "secondary" : "destructive"
+                            }
+                            className="flex items-center gap-1"
                           >
-                            {loan.status}
-                          </span>
+                            {loan.status === "Approved" ? (
+                              <>
+                                <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                                  <circle cx="4" cy="4" r="3" />
+                                </svg>
+                                {loan.status}
+                              </>
+                            ) : loan.status === "Pending" ? (
+                              <>
+                                <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                                  <circle cx="4" cy="4" r="3" />
+                                </svg>
+                                {loan.status}
+                              </>
+                            ) : (
+                              <>
+                                <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                                  <circle cx="4" cy="4" r="3" />
+                                </svg>
+                                {loan.status}
+                              </>
+                            )}
+                          </Badge>
                         </TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="icon" className="text-sky-400 hover:text-sky-300 h-8 w-8">
-                            <Edit2 size={16} />
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 text-blue-500 hover:text-blue-600"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setSelectedLoan(loan)
+                              }}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
