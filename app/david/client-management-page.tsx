@@ -137,14 +137,7 @@ function ClientDetailsPanel({ client, onClose }: { client: typeof clients[0], on
                 Comprehensive client profile and financial history
               </DialogDescription>
             </div>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={onClose}
-              className="text-gray-400 hover:text-gray-600"
-            >
-              <X className="h-5 w-5" />
-            </Button>
+         
           </div>
         </DialogHeader>
         
