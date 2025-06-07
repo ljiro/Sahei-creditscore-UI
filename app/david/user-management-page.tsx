@@ -18,7 +18,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ChevronDown, Cog, Edit2, ListChecks, LogOut, Shield, Trash2, UserCog, UserPlus2, Users2 } from "lucide-react"
+import { ChevronDown, Cog, Edit2, ListChecks, LogOut, Shield, Trash2, UserCog, UserPlus2, Users2 , User, FileText} from "lucide-react"
+
 
 const users = [
   {
@@ -387,39 +388,51 @@ export default function UserManagementPage() {
     <div className="flex min-h-screen w-full bg-white">
       {/* Sidebar */}
       <aside className="hidden w-72 flex-col border-r bg-white border-r sm:flex">
-        <div className="border-b border-gray-200 p-5">
-          <div className="flex items-center gap-2">
-            <Shield className="h-8 w-8 text-red-500" />
-            <h2 className="text-2xl font-semibold text-gray-800">Admin Panel</h2>
-          </div>
-        </div>
-        <nav className="flex flex-col gap-1 p-3 text-sm font-medium">
-          <Button
-            variant="ghost"
-            className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 data-[active=true]:bg-red-600 data-[active=true]:text-white"
-          >
-            <UserCog className="mr-3 h-5 w-5" /> Dashboard
-          </Button>
-          <Button
-            variant="ghost"
-            className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 data-[active=true]:bg-red-600 data-[active=true]:text-white"
-            data-active="true"
-          >
-            <Users2 className="mr-3 h-5 w-5" /> User Management
-          </Button>
-          <Button variant="ghost" className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
-            <ListChecks className="mr-3 h-5 w-5" /> Loan Products
-          </Button>
-          <Button variant="ghost" className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
-            <Cog className="mr-3 h-5 w-5" /> System Configuration
-          </Button>
-        </nav>
-        <div className="mt-auto p-3 border-t border-gray-200">
-          <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
-            <LogOut className="mr-3 h-5 w-5" /> Logout
-          </Button>
-        </div>
-      </aside>
+  <div className="border-b border-gray-200 p-5">
+    <div className="flex items-center gap-2">
+      <Shield className="h-8 w-8 text-red-500" />
+      <h2 className="text-2xl font-semibold text-gray-800">Admin Panel</h2>
+    </div>
+  </div>
+  <nav className="flex flex-col gap-1 p-3 text-sm font-medium">
+    <Button
+      variant="ghost"
+      className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 data-[active=true]:bg-red-600 data-[active=true]:text-white"
+      data-active="true"
+    >
+      <UserCog className="mr-3 h-5 w-5" /> Dashboard
+    </Button>
+    <Button
+      variant="ghost"
+      className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+    >
+      <Users2 className="mr-3 h-5 w-5" /> User Management
+    </Button>
+    <Button 
+      variant="ghost" 
+      className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+    >
+      <User className="mr-3 h-5 w-5" /> Clients
+    </Button>
+    <Button 
+      variant="ghost" 
+      className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+    >
+      <FileText className="mr-3 h-5 w-5" /> Reports
+    </Button>
+    <Button variant="ghost" className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+      <ListChecks className="mr-3 h-5 w-5" /> Loan Products
+    </Button>
+    <Button variant="ghost" className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+      <Cog className="mr-3 h-5 w-5" /> System Configuration
+    </Button>
+  </nav>
+  <div className="mt-auto p-3 border-t border-gray-200">
+    <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+      <LogOut className="mr-3 h-5 w-5" /> Logout
+    </Button>
+  </div>
+</aside>
 
       {/* Main Content */}
       <div className="flex flex-1 flex-col">
