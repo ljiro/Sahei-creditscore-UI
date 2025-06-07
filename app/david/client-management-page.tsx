@@ -25,12 +25,37 @@ const clients = [
     gender: "Male",
     birthday: "1985-05-15",
     contact: "09123456789",
-    loans: 2,
-    creditScore: 85,
     address: "123 Main St, Manila",
-    email: "juan.delacruz@example.com",
-    employment: "Software Engineer",
-    income: 75000,
+    education: "Bachelor's Degree",
+    maritalStatus: "Married",
+    dependents: 2,
+    industry: "Information Technology",
+    monthlyIncome: 75000,
+    savingsBalance: 150000,
+    monthlyExpenses: 35000,
+    loans: [
+      {
+        id: "LN001",
+        type: "Personal Loan",
+        purpose: "Home Renovation",
+        amount: 50000,
+        applicationDate: "2025-05-15",
+        duration: "12 months",
+        validatedBy: "Maria Santos",
+        status: "Approved"
+      },
+      {
+        id: "LN004",
+        type: "Emergency Loan",
+        purpose: "Medical Expenses",
+        amount: 30000,
+        applicationDate: "2025-06-10",
+        duration: "6 months",
+        validatedBy: "Carlos Reyes",
+        status: "Approved"
+      }
+    ],
+    creditScore: 85,
     joinedDate: "2023-01-10"
   },
   {
@@ -39,12 +64,27 @@ const clients = [
     gender: "Female",
     birthday: "1990-08-22",
     contact: "09234567890",
-    loans: 1,
-    creditScore: 92,
     address: "456 Oak Ave, Quezon City",
-    email: "maria.santos@example.com",
-    employment: "Business Owner",
-    income: 120000,
+    education: "Master's Degree",
+    maritalStatus: "Single",
+    dependents: 0,
+    industry: "Business Owner",
+    monthlyIncome: 120000,
+    savingsBalance: 350000,
+    monthlyExpenses: 45000,
+    loans: [
+      {
+        id: "LN002",
+        type: "Business Loan",
+        purpose: "Capital Expansion",
+        amount: 150000,
+        applicationDate: "2025-05-20",
+        duration: "24 months",
+        validatedBy: "Juan Dela Cruz",
+        status: "Approved"
+      }
+    ],
+    creditScore: 92,
     joinedDate: "2022-11-05"
   },
   {
@@ -53,43 +93,48 @@ const clients = [
     gender: "Male",
     birthday: "1978-03-30",
     contact: "09345678901",
-    loans: 3,
-    creditScore: 78,
     address: "789 Pine Rd, Makati",
-    email: "pedro.reyes@example.com",
-    employment: "Teacher",
-    income: 50000,
+    education: "High School Graduate",
+    maritalStatus: "Divorced",
+    dependents: 1,
+    industry: "Education",
+    monthlyIncome: 50000,
+    savingsBalance: 80000,
+    monthlyExpenses: 30000,
+    loans: [
+      {
+        id: "LN003",
+        type: "Emergency Loan",
+        purpose: "Medical Expenses",
+        amount: 30000,
+        applicationDate: "2025-05-25",
+        duration: "6 months",
+        validatedBy: "Ana Lopez",
+        status: "Disapproved"
+      }
+    ],
+    creditScore: 78,
     joinedDate: "2023-03-15"
-  },
-  {
-    id: "CL004",
-    name: "Ana Lopez",
-    gender: "Female",
-    birthday: "1995-11-12",
-    contact: "09456789012",
-    loans: 0,
-    creditScore: 65,
-    address: "321 Elm St, Pasig",
-    email: "ana.lopez@example.com",
-    employment: "Nurse",
-    income: 60000,
-    joinedDate: "2023-05-20"
   }
 ]
 
 function ClientDetailsPanel({ client, onClose }: { client: typeof clients[0], onClose: () => void }) {
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[800px] bg-white">
+      <DialogContent className="sm:max-w-[900px] bg-white">
         <DialogHeader>
           <DialogTitle className="text-xl text-gray-800">Client Details - {client.id}</DialogTitle>
           <DialogDescription className="text-gray-500">
-            Comprehensive view of client information
+            Comprehensive view of client information and loan history
           </DialogDescription>
         </DialogHeader>
         
         <div className="grid gap-6 py-4">
           <div className="grid grid-cols-2 gap-6">
+            <div>
+              <Label className="text-gray-500">Client ID</Label>
+              <p className="text-gray-800 font-medium">{client.id}</p>
+            </div>
             <div>
               <Label className="text-gray-500">Full Name</Label>
               <p className="text-gray-800 font-medium">{client.name}</p>
@@ -107,20 +152,36 @@ function ClientDetailsPanel({ client, onClose }: { client: typeof clients[0], on
               <p className="text-gray-800 font-medium">{client.contact}</p>
             </div>
             <div>
-              <Label className="text-gray-500">Email Address</Label>
-              <p className="text-gray-800 font-medium">{client.email}</p>
-            </div>
-            <div>
               <Label className="text-gray-500">Address</Label>
               <p className="text-gray-800 font-medium">{client.address}</p>
             </div>
             <div>
-              <Label className="text-gray-500">Employment</Label>
-              <p className="text-gray-800 font-medium">{client.employment}</p>
+              <Label className="text-gray-500">Education</Label>
+              <p className="text-gray-800 font-medium">{client.education}</p>
+            </div>
+            <div>
+              <Label className="text-gray-500">Marital Status</Label>
+              <p className="text-gray-800 font-medium">{client.maritalStatus}</p>
+            </div>
+            <div>
+              <Label className="text-gray-500">Number of Dependents</Label>
+              <p className="text-gray-800 font-medium">{client.dependents}</p>
+            </div>
+            <div>
+              <Label className="text-gray-500">Industry</Label>
+              <p className="text-gray-800 font-medium">{client.industry}</p>
             </div>
             <div>
               <Label className="text-gray-500">Monthly Income</Label>
-              <p className="text-gray-800 font-medium">₱{client.income.toLocaleString()}</p>
+              <p className="text-gray-800 font-medium">₱{client.monthlyIncome.toLocaleString()}</p>
+            </div>
+            <div>
+              <Label className="text-gray-500">Savings Account Balance</Label>
+              <p className="text-gray-800 font-medium">₱{client.savingsBalance.toLocaleString()}</p>
+            </div>
+            <div>
+              <Label className="text-gray-500">Monthly Expenses</Label>
+              <p className="text-gray-800 font-medium">₱{client.monthlyExpenses.toLocaleString()}</p>
             </div>
             <div>
               <Label className="text-gray-500">Credit Score</Label>
@@ -132,10 +193,6 @@ function ClientDetailsPanel({ client, onClose }: { client: typeof clients[0], on
               </p>
             </div>
             <div>
-              <Label className="text-gray-500">Active Loans</Label>
-              <p className="text-gray-800 font-medium">{client.loans}</p>
-            </div>
-            <div>
               <Label className="text-gray-500">Date Joined</Label>
               <p className="text-gray-800 font-medium">{client.joinedDate}</p>
             </div>
@@ -143,49 +200,46 @@ function ClientDetailsPanel({ client, onClose }: { client: typeof clients[0], on
 
           {/* Client Loans Section */}
           <div className="border-t border-gray-200 pt-4">
-            <h3 className="font-medium text-gray-800 mb-3">Client Loans</h3>
-            {client.loans > 0 ? (
+            <h3 className="font-medium text-gray-800 mb-3">Client Loans ({client.loans.length})</h3>
+            {client.loans.length > 0 ? (
               <div className="border border-gray-200 rounded-lg overflow-hidden">
                 <Table>
                   <TableHeader>
                     <TableRow className="bg-gray-100 hover:bg-gray-100">
                       <TableHead className="text-gray-700">Loan ID</TableHead>
                       <TableHead className="text-gray-700">Type</TableHead>
+                      <TableHead className="text-gray-700">Purpose</TableHead>
                       <TableHead className="text-gray-700">Amount</TableHead>
-                      <TableHead className="text-gray-700">Date Issued</TableHead>
+                      <TableHead className="text-gray-700">Application Date</TableHead>
+                      <TableHead className="text-gray-700">Duration</TableHead>
+                      <TableHead className="text-gray-700">Validated By</TableHead>
                       <TableHead className="text-gray-700">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    <TableRow className="border-gray-200 hover:bg-gray-50">
-                      <TableCell className="text-gray-700">LN-2023-001</TableCell>
-                      <TableCell className="text-gray-700">Personal Loan</TableCell>
-                      <TableCell className="text-gray-700">₱50,000</TableCell>
-                      <TableCell className="text-gray-700">2023-02-15</TableCell>
-                      <TableCell className="text-gray-700">
-                        <span className="px-2 py-1 text-xs rounded-full bg-green-700 text-green-100">
-                          Active
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                    {client.loans > 1 && (
-                      <TableRow className="border-gray-200 hover:bg-gray-50">
-                        <TableCell className="text-gray-700">LN-2023-002</TableCell>
-                        <TableCell className="text-gray-700">Business Loan</TableCell>
-                        <TableCell className="text-gray-700">₱100,000</TableCell>
-                        <TableCell className="text-gray-700">2023-04-20</TableCell>
-                        <TableCell className="text-gray-700">
-                          <span className="px-2 py-1 text-xs rounded-full bg-blue-700 text-blue-100">
-                            Paid
+                    {client.loans.map((loan) => (
+                      <TableRow key={loan.id} className="border-gray-200 hover:bg-gray-50">
+                        <TableCell className="text-gray-700">{loan.id}</TableCell>
+                        <TableCell className="text-gray-700">{loan.type}</TableCell>
+                        <TableCell className="text-gray-700">{loan.purpose}</TableCell>
+                        <TableCell className="text-gray-700">₱{loan.amount.toLocaleString()}</TableCell>
+                        <TableCell className="text-gray-700">{loan.applicationDate}</TableCell>
+                        <TableCell className="text-gray-700">{loan.duration}</TableCell>
+                        <TableCell className="text-gray-700">{loan.validatedBy}</TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 text-xs rounded-full ${
+                            loan.status === "Approved" ? "bg-green-700 text-green-100" : "bg-red-700 text-red-100"
+                          }`}>
+                            {loan.status}
                           </span>
                         </TableCell>
                       </TableRow>
-                    )}
+                    ))}
                   </TableBody>
                 </Table>
               </div>
             ) : (
-              <p className="text-gray-500">This client has no active loans.</p>
+              <p className="text-gray-500">This client has no loan applications.</p>
             )}
           </div>
         </div>
@@ -373,17 +427,6 @@ export default function ClientManagementPage() {
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="email" className="text-right col-span-1 text-gray-700">
-                      Email
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      className="col-span-3 bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800"
-                      placeholder="Enter email address"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="address" className="text-right col-span-1 text-gray-700">
                       Address
                     </Label>
@@ -392,6 +435,31 @@ export default function ClientManagementPage() {
                       className="col-span-3 bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800"
                       placeholder="Enter complete address"
                     />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="education" className="text-right col-span-1 text-gray-700">
+                      Education
+                    </Label>
+                    <Input
+                      id="education"
+                      className="col-span-3 bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800"
+                      placeholder="Enter education level"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="maritalStatus" className="text-right col-span-1 text-gray-700">
+                      Marital Status
+                    </Label>
+                    <select 
+                      id="maritalStatus" 
+                      className="col-span-3 bg-gray-100 border-gray-200 focus:ring-red-500 text-gray-800 rounded-md p-2"
+                    >
+                      <option value="">Select status</option>
+                      <option value="Single">Single</option>
+                      <option value="Married">Married</option>
+                      <option value="Divorced">Divorced</option>
+                      <option value="Widowed">Widowed</option>
+                    </select>
                   </div>
                 </div>
                 <DialogFooter>
@@ -439,7 +507,6 @@ export default function ClientManagementPage() {
                       <TableHead className="text-gray-700">CLIENT ID</TableHead>
                       <TableHead className="text-gray-700">NAME</TableHead>
                       <TableHead className="text-gray-700">GENDER</TableHead>
-                      <TableHead className="text-gray-700">BIRTHDAY</TableHead>
                       <TableHead className="text-gray-700">CONTACT</TableHead>
                       <TableHead className="text-gray-700">LOANS</TableHead>
                       <TableHead className="text-gray-700">CREDIT SCORE</TableHead>
@@ -456,9 +523,8 @@ export default function ClientManagementPage() {
                         <TableCell className="font-medium text-gray-800">{client.id}</TableCell>
                         <TableCell className="text-gray-700">{client.name}</TableCell>
                         <TableCell className="text-gray-700">{client.gender}</TableCell>
-                        <TableCell className="text-gray-700">{client.birthday}</TableCell>
                         <TableCell className="text-gray-700">{client.contact}</TableCell>
-                        <TableCell className="text-gray-700">{client.loans}</TableCell>
+                        <TableCell className="text-gray-700">{client.loans.length}</TableCell>
                         <TableCell>
                           <span
                             className={`px-2 py-1 text-xs rounded-full ${
