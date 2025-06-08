@@ -25,6 +25,7 @@ import AdminDashboardPage from "./elena/dashboard-initial-page.tsx" // You'll ne
 import DashboardPage from "./david/dashboard-page.tsx";
 import LoanPage from "./david/loans-page.tsx";
 import ClientManagement from "./david/client-management-page.tsx"
+import ReportPage from "./david/reports-page.tsx";
 import { usePathname } from 'next/navigation'
 
 export default function Page() {
@@ -47,6 +48,6 @@ export default function Page() {
       return <AdminLoginPage />
     // Add other routes as needed
     default:
-      return <LoanPage/>
+      return <ReportPage/>
   }
 }
