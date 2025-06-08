@@ -34,7 +34,9 @@ const loans = [
     remainingBalance: 42000,
     nextPayment: "2025-06-15",
     validatedBy: "Maria Santos",
-    creditScore: 85
+    creditScore: 85,
+    coApplicantNumber: 2,
+    guarantorNumber: 1
   },
   {
     id: "LN002",
@@ -49,7 +51,9 @@ const loans = [
     remainingBalance: 150000,
     nextPayment: "N/A",
     validatedBy: "Juan Dela Cruz",
-    creditScore: 92
+    creditScore: 92,
+    coApplicantNumber: 0,
+    guarantorNumber: 2
   },
   {
     id: "LN003",
@@ -64,7 +68,9 @@ const loans = [
     remainingBalance: 25000,
     nextPayment: "2025-06-25",
     validatedBy: "Ana Lopez",
-    creditScore: 78
+    creditScore: 78,
+    coApplicantNumber: 1,
+    guarantorNumber: 1
   }
 ]
 
@@ -86,7 +92,6 @@ function LoanDetailsPanel({ loan, onClose }: { loan: typeof loans[0], onClose: (
                 Comprehensive loan details and payment history
               </DialogDescription>
             </div>
-        
           </div>
         </DialogHeader>
         
@@ -168,6 +173,14 @@ function LoanDetailsPanel({ loan, onClose }: { loan: typeof loans[0], onClose: (
                   <div>
                     <Label className="text-sm text-gray-500">Remaining Balance</Label>
                     <p className="text-gray-800 font-medium">₱{loan.remainingBalance.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Co-Applicants</Label>
+                    <p className="text-gray-800 font-medium">{loan.coApplicantNumber}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Guarantors</Label>
+                    <p className="text-gray-800 font-medium">{loan.guarantorNumber}</p>
                   </div>
                   <div>
                     <Label className="text-sm text-gray-500">Validated By</Label>
@@ -348,6 +361,8 @@ export default function LoanManagementPage() {
   const [searchText, setSearchText] = useState("")
   const [selectedLoan, setSelectedLoan] = useState<typeof loans[0] | null>(null)
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "none">("none")
+  const [coApplicantNumber, setCoApplicantNumber] = useState<number>(0)
+  const [guarantorNumber, setGuarantorNumber] = useState<number>(0)
 
   const filteredLoans = loans.filter(loan => {
     return loan.id.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -482,6 +497,39 @@ export default function LoanManagementPage() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {/* Co-Applicant Number Field */}
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="coApplicantNumber" className="text-right col-span-1 text-gray-700">
+                      Co-Applicants
+                    </Label>
+                    <Input
+                      id="coApplicantNumber"
+                      type="number"
+                      min="0"
+                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
+                      placeholder="Enter number of co-applicants"
+                      value={coApplicantNumber}
+                      onChange={(e) => setCoApplicantNumber(Number(e.target.value))}
+                    />
+                  </div>
+
+                  {/* Guarantor Number Field */}
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="guarantorNumber" className="text-right col-span-1 text-gray-700">
+                      Guarantors
+                    </Label>
+                    <Input
+                      id="guarantorNumber"
+                      type="number"
+                      min="0"
+                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
+                      placeholder="Enter number of guarantors"
+                      value={guarantorNumber}
+                      onChange={(e) => setGuarantorNumber(Number(e.target.value))}
+                    />
+                  </div>
+
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label htmlFor="loanType" className="text-right col-span-1 text-gray-700">
                       Loan Type
