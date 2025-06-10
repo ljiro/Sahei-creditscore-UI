@@ -19,35 +19,37 @@ import ReportsPage from "./ms-reyes/reports-page.tsx"
 import ApprovalQueuePage from "./ms-reyes/approval-queue-page.tsx"
 
 import AdminLoginPage from "./david/login-page.tsx"
-import UserManagementPage from "./david/user-management-page.tsx"
+import UserManagementPage from "./david/users/page"
 import LoanProductConfigPage from "./david/loan-product-config-page.tsx" // You'll need to create this
 import AdminDashboardPage from "./elena/dashboard-initial-page.tsx" // You'll need to create this
-import DashboardPage from "./david/dashboard-page.tsx";
-import LoanPage from "./david/loans-page.tsx";
-import ClientManagement from "./david/client-management-page.tsx"
-import ReportPage from "./david/reports-page.tsx";
+import DashboardPage from "./david/dashboard/page";
+import LoanPage from "./david/loans/page";
+import ClientManagement from "./david/clients/page"
+import ReportPage from "./david/reports/page";
 import { usePathname } from 'next/navigation'
+import LoanReportsPage from "./david/reports/page"
 
 export default function Page() {
   const pathname = usePathname()
+  console.log("path" , pathname);
 
   switch(pathname) {
     case '/david':
     case '/david/dashboard':
-      return <AdminDashboardPage />
-    case '/david/user-management':
-      return <UserManagementPage />
-    case '/david/loan-products':
-      return <LoanProductConfigPage />
+      return <DashboardPage />
+    case '/david/clients':
+      return <ClientManagement />
 
-      /*
-    case '/david/system-config':
-      return <SystemConfigPage />
-      */
+    case '/david/users':
+      return <UserManagementPage />
+      
+    case '/david/loans':
+      return <LoanPage />
+    case '/david/reports':
+      return <ReportPage />
     case '/david/login':
       return <AdminLoginPage />
-    // Add other routes as needed
     default:
-      return <ClientManagement />
+      return <DashboardPage />
   }
 }

@@ -13,6 +13,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { Download } from "lucide-react"
 
+
+
 function ClientReportDialog({ 
   client, 
   onClose 
