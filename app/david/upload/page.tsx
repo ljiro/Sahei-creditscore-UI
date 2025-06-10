@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { FileText, UploadCloud, X, CheckCircle2, AlertCircle } from "lucide-react"
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Shield, BarChart2, Users2, User, Book, LogOut } from "lucide-react"
+import { ChevronDown, Shield, BarChart2, Users2, User, Book, LogOut } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default function UploadPage() {
