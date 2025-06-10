@@ -20,7 +20,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { ChevronDown, Cog, Edit2, ListChecks, LogOut, Shield, Trash2, UserCog, UserPlus2, Users2, User, FileText, Book, Search, ArrowUpDown, X, Info, BadgeInfo, Calendar, Phone, Home, GraduationCap, HeartPulse, Briefcase, Wallet, CreditCard, BarChart2 } from "lucide-react"
+import { UploadCloud, ChevronDown, Cog, Edit2, ListChecks, LogOut, Shield, Trash2, UserCog, UserPlus2, Users2, User, FileText, Book, Search, ArrowUpDown, X, Info, BadgeInfo, Calendar, Phone, Home, GraduationCap, HeartPulse, Briefcase, Wallet, CreditCard, BarChart2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 
@@ -427,61 +427,69 @@ export default function ClientManagementPage() {
   return (
     <div className="flex min-h-screen w-full bg-gray-50">
       {/* Sidebar */}
-  <aside className="hidden w-72 flex-col border-r bg-white border-r-gray-200 sm:flex">
-  <div className="border-b border-gray-200 p-5">
-    <div className="flex items-center gap-2">
-      <Shield className="h-8 w-8 text-blue-500" />
-      <h2 className="text-2xl font-semibold text-gray-800">Admin Panel</h2>
-    </div>
-  </div>
-  <nav className="flex flex-col gap-1 p-3 text-sm font-medium">
-    <Link href="/david/dashboard" passHref legacyBehavior>
-      <Button
-        variant={pathname === '/david/dashboard' ? "secondary" : "ghost"}
-        className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-      >
-        <BarChart2 className="mr-3 h-5 w-5" /> Dashboard
-      </Button>
-    </Link>
-    <Link href="/david/users" passHref legacyBehavior>
-      <Button 
-        variant={pathname === '/david/users' ? "secondary" : "ghost"} 
-        className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-      >
-        <Users2 className="mr-3 h-5 w-5" /> Users
-      </Button>
-    </Link>
-    <Link href="/david/clients" passHref legacyBehavior>
-      <Button 
-        variant={pathname === '/david/clients' ? "secondary" : "ghost"} 
-        className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-      >
-        <User className="mr-3 h-5 w-5" /> Clients
-      </Button>
-    </Link>
-    <Link href="/david/loans" passHref legacyBehavior>
-      <Button 
-        variant={pathname === '/david/loans' ? "secondary" : "ghost"} 
-        className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-      >
-        <Book className="mr-3 h-5 w-5" /> Loans
-      </Button>
-    </Link>
-    <Link href="/david/reports" passHref legacyBehavior>
-      <Button 
-        variant={pathname === '/david/reports' ? "secondary" : "ghost"} 
-        className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-      >
-        <FileText className="mr-3 h-5 w-5" /> Reports
-      </Button>
-    </Link>
-  </nav>
-  <div className="mt-auto p-3 border-t border-gray-200">
-    <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
-      <LogOut className="mr-3 h-5 w-5" /> Logout
-    </Button>
-  </div>
-</aside>
+ <aside className="hidden w-72 flex-col border-r bg-white border-r-gray-200 sm:flex">
+        <div className="border-b border-gray-200 p-5">
+          <div className="flex items-center gap-2">
+            <Shield className="h-8 w-8 text-blue-500" />
+            <h2 className="text-2xl font-semibold text-gray-800">Admin Panel</h2>
+          </div>
+        </div>
+        <nav className="flex flex-col gap-1 p-3 text-sm font-medium">
+          <Link href="/david/dashboard" passHref legacyBehavior>
+            <Button
+              variant={pathname === '/david/dashboard' ? "secondary" : "ghost"}
+              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <BarChart2 className="mr-3 h-5 w-5" /> Dashboard
+            </Button>
+          </Link>
+          <Link href="/david/users" passHref legacyBehavior>
+            <Button 
+              variant={pathname === '/david/users' ? "secondary" : "ghost"} 
+              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <Users2 className="mr-3 h-5 w-5" /> Users
+            </Button>
+          </Link>
+          <Link href="/david/clients" passHref legacyBehavior>
+            <Button 
+              variant={pathname === '/david/clients' ? "secondary" : "ghost"} 
+              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <User className="mr-3 h-5 w-5" /> Clients
+            </Button>
+          </Link>
+          <Link href="/david/loans" passHref legacyBehavior>
+            <Button 
+              variant={pathname === '/david/loans' ? "secondary" : "ghost"} 
+              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <Book className="mr-3 h-5 w-5" /> Loans
+            </Button>
+          </Link>
+          <Link href="/david/reports" passHref legacyBehavior>
+            <Button 
+              variant={pathname === '/david/reports' ? "secondary" : "ghost"} 
+              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <FileText className="mr-3 h-5 w-5" /> Reports
+            </Button>
+          </Link>
+          <Link href="/david/upload" passHref legacyBehavior>
+            <Button 
+              variant={pathname === '/david/upload' ? "secondary" : "ghost"} 
+              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+            >
+              <UploadCloud className="mr-3 h-5 w-5" /> Upload
+            </Button>
+          </Link>
+        </nav>
+        <div className="mt-auto p-3 border-t border-gray-200">
+          <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+            <LogOut className="mr-3 h-5 w-5" /> Logout
+          </Button>
+        </div>
+      </aside>
       {/* Main Content */}
       <div className="flex flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-6">
