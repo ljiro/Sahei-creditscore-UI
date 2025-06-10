@@ -6,8 +6,9 @@ import { Chart, registerables } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
-import { Shield, UserCog, Users2, ListChecks, Cog, LogOut, User, FileText } from "lucide-react";
-
+import { Shield, UserCog, Users2, ListChecks, Cog, LogOut, User, FileText, Book } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ChevronDown } from "lucide-react";
 
 Chart.register(...registerables, ChartDataLabels);
 
@@ -437,65 +438,83 @@ const DashboardPage = () => {
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-white">
+    <div className="flex min-h-screen w-full bg-gray-50">
       {/* Sidebar */}
-      <aside className="hidden w-72 flex-col border-r bg-white border-r sm:flex">
-  <div className="border-b border-gray-200 p-5">
-    <div className="flex items-center gap-2">
-      <Shield className="h-8 w-8 text-red-500" />
-      <h2 className="text-2xl font-semibold text-gray-800">Admin Panel</h2>
-    </div>
-  </div>
-  <nav className="flex flex-col gap-1 p-3 text-sm font-medium">
-    <Button
-      variant="ghost"
-      className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900 data-[active=true]:bg-red-600 data-[active=true]:text-white"
-      data-active="true"
-    >
-      <UserCog className="mr-3 h-5 w-5" /> Dashboard
-    </Button>
-    <Button
-      variant="ghost"
-      className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-    >
-      <Users2 className="mr-3 h-5 w-5" /> User Management
-    </Button>
-    <Button 
-      variant="ghost" 
-      className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-    >
-      <User className="mr-3 h-5 w-5" /> Clients
-    </Button>
-    <Button 
-      variant="ghost" 
-      className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-    >
-      <FileText className="mr-3 h-5 w-5" /> Reports
-    </Button>
-    <Button variant="ghost" className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
-      <ListChecks className="mr-3 h-5 w-5" /> Loan Products
-    </Button>
-    <Button variant="ghost" className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
-      <Cog className="mr-3 h-5 w-5" /> System Configuration
-    </Button>
-  </nav>
-  <div className="mt-auto p-3 border-t border-gray-200">
-    <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
-      <LogOut className="mr-3 h-5 w-5" /> Logout
-    </Button>
-  </div>
-</aside>
+      <aside className="hidden w-72 flex-col border-r bg-white border-r-gray-200 sm:flex">
+        <div className="border-b border-gray-200 p-5">
+          <div className="flex items-center gap-2">
+            <Shield className="h-8 w-8 text-blue-500" />
+            <h2 className="text-2xl font-semibold text-gray-800">Admin Panel</h2>
+          </div>
+        </div>
+        <nav className="flex flex-col gap-1 p-3 text-sm font-medium">
+          <Button
+            variant="secondary"
+            className="justify-start text-gray-900 bg-gray-100 hover:bg-gray-200"
+          >
+            <UserCog className="mr-3 h-5 w-5" /> Dashboard
+          </Button>
+          <Button
+            variant="ghost"
+            className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+          >
+            <Users2 className="mr-3 h-5 w-5" /> User Management
+          </Button>
+          <Button 
+            variant="ghost" 
+            className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+          >
+            <User className="mr-3 h-5 w-5" /> Clients
+          </Button>
+          <Button 
+            variant="ghost" 
+            className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+          >
+            <Book className="mr-3 h-5 w-5" /> Loans
+          </Button>
+          <Button 
+            variant="ghost" 
+            className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+          >
+            <FileText className="mr-3 h-5 w-5" /> Reports
+          </Button>
+          <Button variant="ghost" className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+            <ListChecks className="mr-3 h-5 w-5" /> Loan Products
+          </Button>
+          <Button variant="ghost" className="justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+            <Cog className="mr-3 h-5 w-5" /> System Configuration
+          </Button>
+        </nav>
+        <div className="mt-auto p-3 border-t border-gray-200">
+          <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
+            <LogOut className="mr-3 h-5 w-5" /> Logout
+          </Button>
+        </div>
+      </aside>
+
       {/* Main Content */}
       <div className="flex flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-6">
-          <h1 className="text-xl font-semibold text-gray-800">Dashboard</h1>
+          <h1 className="text-xl font-semibold text-gray-800">Dashboard Overview</h1>
+          <div className="ml-auto flex items-center gap-3">
+            <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
+              <Avatar className="h-9 w-9">
+                <AvatarFallback className="text-gray-900">DL</AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="text-sm font-medium text-gray-800">David Lee</p>
+                <p className="text-xs text-gray-500">IT Administrator</p>
+              </div>
+              <ChevronDown className="h-4 w-4 text-gray-400 cursor-pointer" />
+            </div>
+          </div>
         </header>
 
         <main className="flex-1 p-6">
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             {cards.map((card, index) => (
-              <Card key={index} className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 shadow-sm">
+              <Card key={index} className="bg-white border-gray-200 shadow-sm">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-sm font-medium text-gray-500">{card[0]}</CardTitle>
                 </CardHeader>
@@ -510,7 +529,7 @@ const DashboardPage = () => {
           {/* Charts Row */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
             <div className="lg:col-span-2">
-              <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 shadow-sm h-96">
+              <Card className="bg-white border-gray-200 shadow-sm h-96">
                 <CardHeader>
                   <CardTitle className="text-gray-800">Monthly Applications</CardTitle>
                 </CardHeader>
@@ -520,7 +539,7 @@ const DashboardPage = () => {
               </Card>
             </div>
             <div>
-              <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 shadow-sm h-96">
+              <Card className="bg-white border-gray-200 shadow-sm h-96">
                 <CardHeader>
                   <CardTitle className="text-gray-800">Loan Types</CardTitle>
                 </CardHeader>
@@ -534,7 +553,7 @@ const DashboardPage = () => {
           {/* Bottom Row */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div>
-              <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 shadow-sm h-96">
+              <Card className="bg-white border-gray-200 shadow-sm h-96">
                 <CardHeader>
                   <CardTitle className="text-gray-800">Approval Factors</CardTitle>
                 </CardHeader>
@@ -544,7 +563,7 @@ const DashboardPage = () => {
               </Card>
             </div>
             <div className="lg:col-span-2">
-              <Card className="bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200 shadow-sm h-96">
+              <Card className="bg-white border-gray-200 shadow-sm h-96">
                 <CardHeader>
                   <CardTitle className="text-gray-800">Calendar</CardTitle>
                 </CardHeader>
