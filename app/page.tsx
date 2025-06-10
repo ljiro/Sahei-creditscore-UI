@@ -48,6 +48,6 @@ export default function Page() {
       return <AdminLoginPage />
     // Add other routes as needed
     default:
-      return <ReportPage/>
+      return <ClientManagement />
   }
 }

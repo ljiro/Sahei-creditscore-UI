@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import ClientReportDialog from "./ClientReportDialog.tsx"
 import {
   Dialog,
   DialogContent,
@@ -394,6 +395,7 @@ export default function ClientManagementPage() {
   const [searchText, setSearchText] = useState("")
   const [selectedClient, setSelectedClient] = useState<typeof clients[0] | null>(null)
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "none">("none")
+  const [reportClient, setReportClient] = useState<typeof clients[0] | null>(null)
 
   const filteredClients = clients.filter(client => {
     return client.id.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -650,62 +652,73 @@ export default function ClientManagementPage() {
                   <TableBody>
                     {sortedClients.map((client) => (
                       <TableRow 
-                        key={client.id} 
-                        className="border-gray-200 hover:bg-gray-50 cursor-pointer"
-                        onClick={() => setSelectedClient(client)}
-                      >
-                        <TableCell className="font-medium text-gray-800">{client.id}</TableCell>
-                        <TableCell className="text-gray-700">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback className="bg-blue-100 text-blue-800">
-                                {client.name.split(" ").map(n => n[0]).join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span>{client.name}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-gray-700">
-                          <Badge variant="outline" className="border-gray-200 text-gray-600">
-                            {client.gender}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-gray-700">{client.contact}</TableCell>
-                        <TableCell className="text-gray-700">
-                          <Badge variant={client.loans.length > 0 ? "default" : "outline"}>
-                            {client.loans.length} {client.loans.length === 1 ? "loan" : "loans"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <div className={`h-2 w-2 rounded-full ${
-                              client.creditScore >= 85 ? "bg-green-500" : 
-                              client.creditScore >= 70 ? "bg-yellow-500" : "bg-red-500"
-                            }`} />
-                            <span className={`font-medium ${
-                              client.creditScore >= 85 ? "text-green-600" : 
-                              client.creditScore >= 70 ? "text-yellow-600" : "text-red-600"
-                            }`}>
-                              {client.creditScore}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8 text-blue-500 hover:text-blue-600"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setSelectedClient(client)
-                              }}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+  key={client.id} 
+  className="border-gray-200 hover:bg-gray-50 cursor-pointer"
+  onClick={() => setSelectedClient(client)}
+>
+  <TableCell className="font-medium text-gray-800">{client.id}</TableCell>
+  <TableCell className="text-gray-700">
+    <div className="flex items-center gap-3">
+      <Avatar className="h-8 w-8">
+        <AvatarFallback className="bg-blue-100 text-blue-800">
+          {client.name.split(" ").map(n => n[0]).join("")}
+        </AvatarFallback>
+      </Avatar>
+      <span>{client.name}</span>
+    </div>
+  </TableCell>
+  <TableCell className="text-gray-700">
+    <Badge variant="outline" className="border-gray-200 text-gray-600">
+      {client.gender}
+    </Badge>
+  </TableCell>
+  <TableCell className="text-gray-700">{client.contact}</TableCell>
+  <TableCell className="text-gray-700">
+    <Badge variant={client.loans.length > 0 ? "default" : "outline"}>
+      {client.loans.length} {client.loans.length === 1 ? "loan" : "loans"}
+    </Badge>
+  </TableCell>
+  <TableCell>
+    <div className="flex items-center gap-2">
+      <div className={`h-2 w-2 rounded-full ${
+        client.creditScore >= 85 ? "bg-green-500" : 
+        client.creditScore >= 70 ? "bg-yellow-500" : "bg-red-500"
+      }`} />
+      <span className={`font-medium ${
+        client.creditScore >= 85 ? "text-green-600" : 
+        client.creditScore >= 70 ? "text-yellow-600" : "text-red-600"
+      }`}>
+        {client.creditScore}
+      </span>
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className="h-6 w-6 text-gray-500 hover:text-blue-600"
+        onClick={(e) => {
+          e.stopPropagation()
+          setReportClient(client)
+        }}
+      >
+        <FileText className="h-3 w-3" />
+      </Button>
+    </div>
+  </TableCell>
+  <TableCell>
+    <div className="flex gap-1">
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className="h-8 w-8 text-blue-500 hover:text-blue-600"
+        onClick={(e) => {
+          e.stopPropagation()
+          setSelectedClient(client)
+        }}
+      >
+        <Edit2 className="h-4 w-4" />
+      </Button>
+    </div>
+  </TableCell>
+</TableRow>
                     ))}
                   </TableBody>
                 </Table>
