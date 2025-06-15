@@ -4,7 +4,6 @@ import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Chart, registerables } from "chart.js";
 import ChartDataLabels from "chartjs-plugin-datalabels";
-import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Shield, UserCog, Users2, ListChecks, Cog, LogOut, User, FileText, Book } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -12,6 +11,13 @@ import { ChevronDown } from "lucide-react";
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { BarChart2, UploadCloud } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DateRange } from "react-day-picker";
+import { addDays, format } from "date-fns";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 Chart.register(...registerables, ChartDataLabels);
 
@@ -22,7 +28,6 @@ interface Loan {
 }
 
 const DashboardPage = () => {
-
   const pathname = usePathname()
   const [cards, setCards] = useState([
     ["Approved", 0],
@@ -30,7 +35,13 @@ const DashboardPage = () => {
     ["Pending", 0],
   ]);
   const [loans, setLoans] = useState<Loan[]>([]);
-  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [branches, setBranches] = useState<string[]>([]);
+  const [selectedBranch, setSelectedBranch] = useState<string>("all");
+  
+  const [dateRange, setDateRange] = useState<DateRange | undefined>({
+    from: addDays(new Date(), -30),
+    to: new Date(),
+  });
 
   // Vibrant color palette
   const chartColors = {
@@ -183,6 +194,9 @@ const DashboardPage = () => {
         ["Declined", declinedCount],
         ["Pending", pendingCount]
       ]);
+      
+      // Simulate branch data
+      setBranches(["Main Branch", "Downtown", "Westside", "Eastside", "North Branch"]);
       
       // Update charts
       countByType(data);
@@ -445,7 +459,7 @@ const DashboardPage = () => {
   return (
     <div className="flex min-h-screen w-full bg-gray-50">
       {/* Sidebar */}
-   <aside className="hidden w-72 flex-col border-r bg-white border-r-gray-200 sm:flex">
+      <aside className="hidden w-72 flex-col border-r bg-white border-r-gray-200 sm:flex">
         <div className="border-b border-gray-200 p-5">
           <div className="flex items-center gap-2">
             <Shield className="h-8 w-8 text-blue-500" />
@@ -528,6 +542,62 @@ const DashboardPage = () => {
         </header>
 
         <main className="flex-1 p-6">
+          {/* Filters */}
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
+            <div className="w-full md:w-64">
+              <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select branch" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Branches</SelectItem>
+                  {branches.map((branch) => (
+                    <SelectItem key={branch} value={branch}>{branch}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="w-full md:w-64">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="date"
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !dateRange && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {dateRange?.from ? (
+                      dateRange.to ? (
+                        <>
+                          {format(dateRange.from, "LLL dd, y")} -{" "}
+                          {format(dateRange.to, "LLL dd, y")}
+                        </>
+                      ) : (
+                        format(dateRange.from, "LLL dd, y")
+                      )
+                    ) : (
+                      <span>Pick a date range</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={dateRange?.from}
+                    selected={dateRange}
+                    onSelect={setDateRange}
+                    numberOfMonths={2}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             {cards.map((card, index) => (
@@ -568,7 +638,7 @@ const DashboardPage = () => {
           </div>
 
           {/* Bottom Row */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
               <Card className="bg-white border-gray-200 shadow-sm h-96">
                 <CardHeader>
@@ -579,18 +649,16 @@ const DashboardPage = () => {
                 </CardContent>
               </Card>
             </div>
-            <div className="lg:col-span-2">
+            <div>
               <Card className="bg-white border-gray-200 shadow-sm h-96">
                 <CardHeader>
-                  <CardTitle className="text-gray-800">Calendar</CardTitle>
+                  <CardTitle className="text-gray-800">Recent Activity</CardTitle>
                 </CardHeader>
-                <CardContent className="flex justify-center items-center">
-                  <Calendar
-                    mode="single"
-                    selected={date}
-                    onSelect={setDate}
-                    className="rounded-md border border-gray-200 bg-white"
-                  />
+                <CardContent className="flex justify-center items-center h-full">
+                  <div className="text-gray-500 text-center">
+                    <p>Recent loan applications and approvals</p>
+                    <p className="mt-2 text-sm">Data will appear here</p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
