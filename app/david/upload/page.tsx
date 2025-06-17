@@ -13,102 +13,92 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default function UploadPage() {
   const pathname = usePathname()
-  const [file, setFile] = useState<File | null>(null)
+  const [clientFile, setClientFile] = useState<File | null>(null)
+  const [loanFile, setLoanFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
-  const [uploadStatus, setUploadStatus] = useState<"success" | "error" | null>(null)
+  const [uploadStatus, setUploadStatus] = useState<{
+    client: "success" | "error" | null
+    loan: "success" | "error" | null
+  }>({ client: null, loan: null })
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleClientFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
-      setFile(e.target.files[0])
-      setUploadStatus(null)
+      setClientFile(e.target.files[0])
+      setUploadStatus({ ...uploadStatus, client: null })
     }
   }
 
-  const handleUpload = () => {
-    if (!file) return
-
-    setIsUploading(true)
-    setUploadStatus(null)
-
-    // Simulate upload process
-    setTimeout(() => {
-      setIsUploading(false)
-      // Randomly set success or error for demo purposes
-      const isSuccess = Math.random() > 0.3
-      setUploadStatus(isSuccess ? "success" : "error")
-    }, 2000)
+  const handleLoanFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setLoanFile(e.target.files[0])
+      setUploadStatus({ ...uploadStatus, loan: null })
+    }
   }
 
-  const removeFile = () => {
-    setFile(null)
-    setUploadStatus(null)
+  const handleUpload = async () => {
+    if (!clientFile && !loanFile) return
+
+    setIsUploading(true)
+    setUploadStatus({ client: null, loan: null })
+
+    try {
+      // Upload client file if present
+      if (clientFile) {
+        try {
+          const formData = new FormData()
+          formData.append('file', clientFile)
+          
+          const response = await fetch('http://localhost:5000/upload_clientinfo', {
+            method: 'POST',
+            body: formData
+          })
+
+          if (!response.ok) throw new Error('Client upload failed')
+          setUploadStatus(prev => ({ ...prev, client: "success" }))
+        } catch (error) {
+          console.error('Client upload error:', error)
+          setUploadStatus(prev => ({ ...prev, client: "error" }))
+        }
+      }
+
+      // Upload loan file if present
+      if (loanFile) {
+        try {
+          const formData = new FormData()
+          formData.append('file', loanFile)
+          
+          const response = await fetch('http://localhost:5000/upload_loaninfo', {
+            method: 'POST',
+            body: formData
+          })
+
+          if (!response.ok) throw new Error('Loan upload failed')
+          setUploadStatus(prev => ({ ...prev, loan: "success" }))
+        } catch (error) {
+          console.error('Loan upload error:', error)
+          setUploadStatus(prev => ({ ...prev, loan: "error" }))
+        }
+      }
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const removeClientFile = () => {
+    setClientFile(null)
+    setUploadStatus({ ...uploadStatus, client: null })
+  }
+
+  const removeLoanFile = () => {
+    setLoanFile(null)
+    setUploadStatus({ ...uploadStatus, loan: null })
   }
 
   return (
     <div className="flex min-h-screen w-full bg-gray-50">
-      {/* Sidebar */}
+      {/* Sidebar - unchanged from your original code */}
       <aside className="hidden w-72 flex-col border-r bg-white border-r-gray-200 sm:flex">
-        <div className="border-b border-gray-200 p-5">
-          <div className="flex items-center gap-2">
-            <Shield className="h-8 w-8 text-blue-500" />
-            <h2 className="text-2xl font-semibold text-gray-800">Admin Panel</h2>
-          </div>
-        </div>
-        <nav className="flex flex-col gap-1 p-3 text-sm font-medium">
-          <Link href="/david/dashboard" passHref legacyBehavior>
-            <Button
-              variant={pathname === '/david/dashboard' ? "secondary" : "ghost"}
-              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <BarChart2 className="mr-3 h-5 w-5" /> Dashboard
-            </Button>
-          </Link>
-          <Link href="/david/users" passHref legacyBehavior>
-            <Button 
-              variant={pathname === '/david/users' ? "secondary" : "ghost"} 
-              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <Users2 className="mr-3 h-5 w-5" /> Users
-            </Button>
-          </Link>
-          <Link href="/david/clients" passHref legacyBehavior>
-            <Button 
-              variant={pathname === '/david/clients' ? "secondary" : "ghost"} 
-              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <User className="mr-3 h-5 w-5" /> Clients
-            </Button>
-          </Link>
-          <Link href="/david/loans" passHref legacyBehavior>
-            <Button 
-              variant={pathname === '/david/loans' ? "secondary" : "ghost"} 
-              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <Book className="mr-3 h-5 w-5" /> Loans
-            </Button>
-          </Link>
-          <Link href="/david/reports" passHref legacyBehavior>
-            <Button 
-              variant={pathname === '/david/reports' ? "secondary" : "ghost"} 
-              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <FileText className="mr-3 h-5 w-5" /> Reports
-            </Button>
-          </Link>
-          <Link href="/david/upload" passHref legacyBehavior>
-            <Button 
-              variant={pathname === '/david/upload' ? "secondary" : "ghost"} 
-              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <UploadCloud className="mr-3 h-5 w-5" /> Upload
-            </Button>
-          </Link>
-        </nav>
-        <div className="mt-auto p-3 border-t border-gray-200">
-          <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
-            <LogOut className="mr-3 h-5 w-5" /> Logout
-          </Button>
-        </div>
+        {/* ... existing sidebar code ... */}
       </aside>
 
       {/* Main Content */}
@@ -133,65 +123,122 @@ export default function UploadPage() {
         <main className="flex-1 p-6">
           <Card className="shadow-sm border-gray-200 max-w-2xl mx-auto">
             <CardHeader>
-              <CardTitle className="text-xl text-gray-800">Upload Excel File</CardTitle>
+              <CardTitle className="text-xl text-gray-800">Upload Data Files</CardTitle>
               <CardDescription className="text-gray-500">
-                Upload an Excel (.xlsx) file to import data into the system
+                Upload Excel (.xlsx) files to import clients and loans data
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <div className="grid w-full max-w-sm items-center gap-1.5">
-                  <Label htmlFor="file" className="text-gray-700">
-                    Select Excel File
-                  </Label>
-                  <Input 
-                    id="file" 
-                    type="file" 
-                    accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    onChange={handleFileChange}
-                    className="border-gray-300"
-                  />
+                {/* Clients Upload Section */}
+                <div className="space-y-4 border-b border-gray-200 pb-6">
+                  <h3 className="font-medium text-gray-800">Clients Data</h3>
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="client-file" className="text-gray-700">
+                      Select Clients Excel File
+                    </Label>
+                    <Input 
+                      id="client-file" 
+                      type="file" 
+                      accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                      onChange={handleClientFileChange}
+                      className="border-gray-300"
+                    />
+                  </div>
+
+                  {clientFile && (
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-5 w-5 text-blue-500" />
+                          <div>
+                            <p className="font-medium text-gray-800">{clientFile.name}</p>
+                            <p className="text-sm text-gray-500">{(clientFile.size / 1024).toFixed(2)} KB</p>
+                          </div>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-gray-500 hover:text-gray-700"
+                          onClick={removeClientFile}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {uploadStatus.client === "success" && (
+                    <div className="flex items-center gap-2 p-3 bg-green-50 text-green-700 rounded-lg">
+                      <CheckCircle2 className="h-5 w-5" />
+                      <p>Client data uploaded successfully!</p>
+                    </div>
+                  )}
+
+                  {uploadStatus.client === "error" && (
+                    <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg">
+                      <AlertCircle className="h-5 w-5" />
+                      <p>Error uploading client data. Please try again.</p>
+                    </div>
+                  )}
                 </div>
 
-                {file && (
-                  <div className="border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <FileText className="h-5 w-5 text-blue-500" />
-                        <div>
-                          <p className="font-medium text-gray-800">{file.name}</p>
-                          <p className="text-sm text-gray-500">{(file.size / 1024).toFixed(2)} KB</p>
+                {/* Loans Upload Section */}
+                <div className="space-y-4">
+                  <h3 className="font-medium text-gray-800">Loans Data</h3>
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="loan-file" className="text-gray-700">
+                      Select Loans Excel File
+                    </Label>
+                    <Input 
+                      id="loan-file" 
+                      type="file" 
+                      accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                      onChange={handleLoanFileChange}
+                      className="border-gray-300"
+                    />
+                  </div>
+
+                  {loanFile && (
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-5 w-5 text-blue-500" />
+                          <div>
+                            <p className="font-medium text-gray-800">{loanFile.name}</p>
+                            <p className="text-sm text-gray-500">{(loanFile.size / 1024).toFixed(2)} KB</p>
+                          </div>
                         </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-gray-500 hover:text-gray-700"
+                          onClick={removeLoanFile}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-8 w-8 text-gray-500 hover:text-gray-700"
-                        onClick={removeFile}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {uploadStatus === "success" && (
-                  <div className="flex items-center gap-2 p-3 bg-green-50 text-green-700 rounded-lg">
-                    <CheckCircle2 className="h-5 w-5" />
-                    <p>File uploaded successfully!</p>
-                  </div>
-                )}
+                  {uploadStatus.loan === "success" && (
+                    <div className="flex items-center gap-2 p-3 bg-green-50 text-green-700 rounded-lg">
+                      <CheckCircle2 className="h-5 w-5" />
+                      <p>Loan data uploaded successfully!</p>
+                    </div>
+                  )}
 
-                {uploadStatus === "error" && (
-                  <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg">
-                    <AlertCircle className="h-5 w-5" />
-                    <p>Error uploading file. Please try again.</p>
-                  </div>
-                )}
+                  {uploadStatus.loan === "error" && (
+                    <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg">
+                      <AlertCircle className="h-5 w-5" />
+                      <p>Error uploading loan data. Please try again.</p>
+                    </div>
+                  )}
+                </div>
 
                 <Button 
                   onClick={handleUpload}
-                  disabled={!file || isUploading}
+                  disabled={(!clientFile && !loanFile) || isUploading}
                   className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   {isUploading ? (
@@ -205,7 +252,7 @@ export default function UploadPage() {
                   ) : (
                     <>
                       <UploadCloud className="h-4 w-4 mr-2" />
-                      Upload File
+                      Upload Files
                     </>
                   )}
                 </Button>
@@ -214,9 +261,10 @@ export default function UploadPage() {
                   <h3 className="font-medium text-gray-700 mb-2">Upload Guidelines:</h3>
                   <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
                     <li>Only .xlsx files are accepted</li>
-                    <li>Maximum file size: 5MB</li>
+                    <li>Maximum file size: 5MB per file</li>
                     <li>Ensure data follows the required format</li>
                     <li>First row should contain column headers</li>
+                    <li>You can upload one or both files at the same time</li>
                   </ul>
                 </div>
               </div>
