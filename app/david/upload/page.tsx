@@ -15,7 +15,8 @@ export default function UploadPage() {
   const pathname = usePathname()
   const [clientFile, setClientFile] = useState<File | null>(null)
   const [loanFile, setLoanFile] = useState<File | null>(null)
-  const [isUploading, setIsUploading] = useState(false)
+  const [isUploadingClient, setIsUploadingClient] = useState(false)
+  const [isUploadingLoan, setIsUploadingLoan] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<{
     client: "success" | "error" | null
     loan: "success" | "error" | null
@@ -35,52 +36,53 @@ export default function UploadPage() {
     }
   }
 
-  const handleUpload = async () => {
-    if (!clientFile && !loanFile) return
+  const handleClientUpload = async () => {
+    if (!clientFile) return
 
-    setIsUploading(true)
-    setUploadStatus({ client: null, loan: null })
+    setIsUploadingClient(true)
+    setUploadStatus({ ...uploadStatus, client: null })
 
     try {
-      // Upload client file if present
-      if (clientFile) {
-        try {
-          const formData = new FormData()
-          formData.append('file', clientFile)
-          
-          const response = await fetch('http://localhost:5000/upload_clientinfo', {
-            method: 'POST',
-            body: formData
-          })
+      const formData = new FormData()
+      formData.append('file', clientFile)
+      
+      const response = await fetch('http://localhost:5000/upload_clientinfo', {
+        method: 'POST',
+        body: formData
+      })
 
-          if (!response.ok) throw new Error('Client upload failed')
-          setUploadStatus(prev => ({ ...prev, client: "success" }))
-        } catch (error) {
-          console.error('Client upload error:', error)
-          setUploadStatus(prev => ({ ...prev, client: "error" }))
-        }
-      }
-
-      // Upload loan file if present
-      if (loanFile) {
-        try {
-          const formData = new FormData()
-          formData.append('file', loanFile)
-          
-          const response = await fetch('http://localhost:5000/upload_loaninfo', {
-            method: 'POST',
-            body: formData
-          })
-
-          if (!response.ok) throw new Error('Loan upload failed')
-          setUploadStatus(prev => ({ ...prev, loan: "success" }))
-        } catch (error) {
-          console.error('Loan upload error:', error)
-          setUploadStatus(prev => ({ ...prev, loan: "error" }))
-        }
-      }
+      if (!response.ok) throw new Error('Client upload failed')
+      setUploadStatus(prev => ({ ...prev, client: "success" }))
+    } catch (error) {
+      console.error('Client upload error:', error)
+      setUploadStatus(prev => ({ ...prev, client: "error" }))
     } finally {
-      setIsUploading(false)
+      setIsUploadingClient(false)
+    }
+  }
+
+  const handleLoanUpload = async () => {
+    if (!loanFile) return
+
+    setIsUploadingLoan(true)
+    setUploadStatus({ ...uploadStatus, loan: null })
+
+    try {
+      const formData = new FormData()
+      formData.append('file', loanFile)
+      
+      const response = await fetch('http://localhost:5000/upload_loaninfo', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!response.ok) throw new Error('Loan upload failed')
+      setUploadStatus(prev => ({ ...prev, loan: "success" }))
+    } catch (error) {
+      console.error('Loan upload error:', error)
+      setUploadStatus(prev => ({ ...prev, loan: "error" }))
+    } finally {
+      setIsUploadingLoan(false)
     }
   }
 
@@ -207,24 +209,46 @@ export default function UploadPage() {
                   </div>
 
                   {clientFile && (
-                    <div className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <FileText className="h-5 w-5 text-blue-500" />
-                          <div>
-                            <p className="font-medium text-gray-800">{clientFile.name}</p>
-                            <p className="text-sm text-gray-500">{(clientFile.size / 1024).toFixed(2)} KB</p>
+                    <div className="space-y-4">
+                      <div className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-5 w-5 text-blue-500" />
+                            <div>
+                              <p className="font-medium text-gray-800">{clientFile.name}</p>
+                              <p className="text-sm text-gray-500">{(clientFile.size / 1024).toFixed(2)} KB</p>
+                            </div>
                           </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-gray-500 hover:text-gray-700"
+                            onClick={removeClientFile}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-gray-500 hover:text-gray-700"
-                          onClick={removeClientFile}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
                       </div>
+                      <Button 
+                        onClick={handleClientUpload}
+                        disabled={!clientFile || isUploadingClient}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {isUploadingClient ? (
+                          <>
+                            <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Uploading Client Data...
+                          </>
+                        ) : (
+                          <>
+                            <UploadCloud className="h-4 w-4 mr-2" />
+                            Upload Client Data
+                          </>
+                        )}
+                      </Button>
                     </div>
                   )}
 
@@ -260,24 +284,46 @@ export default function UploadPage() {
                   </div>
 
                   {loanFile && (
-                    <div className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <FileText className="h-5 w-5 text-blue-500" />
-                          <div>
-                            <p className="font-medium text-gray-800">{loanFile.name}</p>
-                            <p className="text-sm text-gray-500">{(loanFile.size / 1024).toFixed(2)} KB</p>
+                    <div className="space-y-4">
+                      <div className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-5 w-5 text-blue-500" />
+                            <div>
+                              <p className="font-medium text-gray-800">{loanFile.name}</p>
+                              <p className="text-sm text-gray-500">{(loanFile.size / 1024).toFixed(2)} KB</p>
+                            </div>
                           </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-gray-500 hover:text-gray-700"
+                            onClick={removeLoanFile}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-8 w-8 text-gray-500 hover:text-gray-700"
-                          onClick={removeLoanFile}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
                       </div>
+                      <Button 
+                        onClick={handleLoanUpload}
+                        disabled={!loanFile || isUploadingLoan}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      >
+                        {isUploadingLoan ? (
+                          <>
+                            <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Uploading Loan Data...
+                          </>
+                        ) : (
+                          <>
+                            <UploadCloud className="h-4 w-4 mr-2" />
+                            Upload Loan Data
+                          </>
+                        )}
+                      </Button>
                     </div>
                   )}
 
@@ -295,27 +341,6 @@ export default function UploadPage() {
                     </div>
                   )}
                 </div>
-
-                <Button 
-                  onClick={handleUpload}
-                  disabled={(!clientFile && !loanFile) || isUploading}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  {isUploading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <UploadCloud className="h-4 w-4 mr-2" />
-                      Upload Files
-                    </>
-                  )}
-                </Button>
 
                 <div className="border-t border-gray-200 pt-4">
                   <h3 className="font-medium text-gray-700 mb-2">Upload Guidelines:</h3>
