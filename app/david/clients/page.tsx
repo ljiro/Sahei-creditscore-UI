@@ -25,7 +25,7 @@ import { Badge } from "@/components/ui/badge"
 
 
 
-const clients = [
+const members = [
   {
     id: "CL001",
     name: "Juan Dela Cruz",
@@ -87,7 +87,7 @@ const clients = [
         amount: 150000,
         applicationDate: "2025-05-20",
         duration: "24 months",
-        validatedBy: "Juan Dela Cruz",
+        alidatedBy: "Juan Dela Cruz",
         status: "Approved"
       }
     ],
@@ -125,7 +125,7 @@ const clients = [
   }
 ]
 
-function ClientDetailsPanel({ client, onClose }: { client: typeof clients[0], onClose: () => void }) {
+function ClientDetailsPanel({ client, onClose }: { client: typeof members[0], onClose: () => void }) {
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] bg-white rounded-lg">
@@ -400,17 +400,17 @@ export default function ClientManagementPage() {
 
   const pathname = usePathname()
   const [searchText, setSearchText] = useState("")
-  const [selectedClient, setSelectedClient] = useState<typeof clients[0] | null>(null)
+  const [selectedClient, setSelectedClient] = useState<typeof members[0] | null>(null)
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "none">("none")
-  const [reportClient, setReportClient] = useState<typeof clients[0] | null>(null)
+  const [reportClient, setReportClient] = useState<typeof members[0] | null>(null)
 
-  const filteredClients = clients.filter(client => {
+  const filteredmembers = members.filter(client => {
     return client.id.toLowerCase().includes(searchText.toLowerCase()) ||
            client.name.toLowerCase().includes(searchText.toLowerCase()) ||
            client.contact.toLowerCase().includes(searchText.toLowerCase())
   })
 
-  const sortedClients = [...filteredClients].sort((a, b) => {
+  const sortedmembers = [...filteredmembers].sort((a, b) => {
     if (sortOrder === "none") return 0
     if (sortOrder === "asc") return a.name.localeCompare(b.name)
     return b.name.localeCompare(a.name)
@@ -451,12 +451,12 @@ export default function ClientManagementPage() {
               <Users2 className="mr-3 h-5 w-5" /> Users
             </Button>
           </Link>
-          <Link href="/david/clients" passHref legacyBehavior>
+          <Link href="/david/members" passHref legacyBehavior>
             <Button 
-              variant={pathname === '/david/clients' ? "secondary" : "ghost"} 
+              variant={pathname === '/david/members' ? "secondary" : "ghost"} 
               className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
             >
-              <User className="mr-3 h-5 w-5" /> Clients
+              <User className="mr-3 h-5 w-5" /> Members
             </Button>
           </Link>
           <Link href="/david/loans" passHref legacyBehavior>
@@ -499,7 +499,7 @@ export default function ClientManagementPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
                 type="search"
-                placeholder="Search clients..."
+                placeholder="Search members..."
                 className="w-64 rounded-lg bg-gray-50 border-gray-200 pl-8 focus:ring-blue-500 focus:border-blue-500"
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
@@ -644,7 +644,7 @@ export default function ClientManagementPage() {
                   <div>
                     <CardTitle className="text-xl text-gray-800">Client List</CardTitle>
                     <CardDescription className="text-gray-500">
-                      {clients.length} registered clients
+                      {members.length} registered members
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
@@ -668,7 +668,7 @@ export default function ClientManagementPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortedClients.map((client) => (
+                    {sortedmembers.map((client) => (
                       <TableRow 
   key={client.id} 
   className="border-gray-200 hover:bg-gray-50 cursor-pointer"
@@ -695,6 +695,7 @@ export default function ClientManagementPage() {
     <Badge variant={client.loans.length > 0 ? "default" : "outline"}>
       {client.loans.length} {client.loans.length === 1 ? "loan" : "loans"}
     </Badge>
+    
   </TableCell>
   <TableCell>
     <div className="flex items-center gap-2">
