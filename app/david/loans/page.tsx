@@ -178,12 +178,12 @@ export default function LoanManagementPage() {
               <Users2 className="mr-3 h-5 w-5" /> Users
             </Button>
           </Link>
-          <Link href="/david/clients" passHref legacyBehavior>
+          <Link href="/david/members" passHref legacyBehavior>
             <Button 
-              variant={pathname === '/david/clients' ? "secondary" : "ghost"} 
+              variant={pathname === '/david/members' ? "secondary" : "ghost"} 
               className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
             >
-              <User className="mr-3 h-5 w-5" /> Clients
+              <User className="mr-3 h-5 w-5" /> Members
             </Button>
           </Link>
           <Link href="/david/loans" passHref legacyBehavior>

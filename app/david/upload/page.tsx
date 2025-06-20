@@ -123,12 +123,12 @@ export default function UploadPage() {
               <Users2 className="mr-3 h-5 w-5" /> Users
             </Button>
           </Link>
-          <Link href="/david/clients" passHref legacyBehavior>
+          <Link href="/david/members" passHref legacyBehavior>
             <Button 
-              variant={pathname === '/david/clients' ? "secondary" : "ghost"} 
+              variant={pathname === '/david/members' ? "secondary" : "ghost"} 
               className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
             >
-              <User className="mr-3 h-5 w-5" /> Clients
+              <User className="mr-3 h-5 w-5" /> Members
             </Button>
           </Link>
           <Link href="/david/loans" passHref legacyBehavior>
@@ -187,17 +187,17 @@ export default function UploadPage() {
             <CardHeader>
               <CardTitle className="text-xl text-gray-800">Upload Data Files</CardTitle>
               <CardDescription className="text-gray-500">
-                Upload Excel (.xlsx) files to import clients and loans data
+                Upload Excel (.xlsx) files to import members and loans data
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {/* Clients Upload Section */}
+                {/* members Upload Section */}
                 <div className="space-y-4 border-b border-gray-200 pb-6">
-                  <h3 className="font-medium text-gray-800">Clients Data</h3>
+                  <h3 className="font-medium text-gray-800">members Data</h3>
                   <div className="grid w-full items-center gap-1.5">
                     <Label htmlFor="client-file" className="text-gray-700">
-                      Select Clients Excel File
+                      Select members Excel File
                     </Label>
                     <Input 
                       id="client-file" 

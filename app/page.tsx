@@ -24,7 +24,7 @@ import LoanProductConfigPage from "./david/loan-product-config-page.tsx" // You'
 import AdminDashboardPage from "./elena/dashboard-initial-page.tsx" // You'll need to create this
 import DashboardPage from "./david/dashboard/page";
 import LoanPage from "./david/loans/page";
-import ClientManagement from "./david/clients/page"
+import ClientManagement from "./david/members/page"
 import ReportPage from "./david/reports/page";
 import { usePathname } from 'next/navigation'
 import LoanReportsPage from "./david/reports/page"
@@ -37,7 +37,7 @@ export default function Page() {
     case '/david':
     case '/david/dashboard':
       return <DashboardPage />
-    case '/david/clients':
+    case '/david/members':
       return <ClientManagement />
 
     case '/david/users':

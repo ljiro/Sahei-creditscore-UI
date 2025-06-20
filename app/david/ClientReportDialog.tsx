@@ -19,7 +19,7 @@ function ClientReportDialog({
   client, 
   onClose 
 }: { 
-  client: typeof clients[0], 
+  client: typeof members[0], 
   onClose: () => void 
 }) {
   const reportRef = useRef<HTMLDivElement>(null)
