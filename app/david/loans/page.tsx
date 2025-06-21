@@ -84,7 +84,288 @@ const loans = [
   }
 ]
 
-// ... (keep the existing LoanDetailsPanel component exactly as is)
+function LoanDetailsPanel({ loan, onClose }: { loan: typeof loans[0], onClose: () => void }) {
+  return (
+    <Dialog open={true} onOpenChange={onClose}>Add commentMore actions
+      <DialogContent className="sm:max-w-[900px] bg-white rounded-lg">
+        <DialogHeader>
+          <div className="flex justify-between items-center">
+            <div>
+              <DialogTitle className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                <CreditCard className="h-6 w-6" />
+                {loan.id} - {loan.clientName}
+                <Badge variant="outline" className="ml-2 border-gray-300 text-gray-600">
+                  {loan.type}
+                </Badge>
+              </DialogTitle>
+              <DialogDescription className="text-gray-500">
+                Comprehensive loan details and payment history
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+        
+        <div className="grid gap-8 py-4">
+          {/* Loan Overview Card */}
+          <Card className="border-gray-200 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <Info className="h-5 w-5 text-blue-500" />
+                Loan Overview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-blue-50">
+                    <DollarSign className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Loan Amount</p>
+                    <p className="font-medium text-gray-800">₱{loan.amount.toLocaleString()}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-purple-50">
+                    <Clock className="h-5 w-5 text-purple-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Duration</p>
+                    <p className="font-medium text-gray-800">{loan.duration}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-green-50">
+                    <BarChart2 className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Interest Rate</p>
+                    <p className="font-medium text-gray-800">{loan.interestRate}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-orange-50">
+                    <Calendar className="h-5 w-5 text-orange-500" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Next Payment</p>
+                    <p className="font-medium text-gray-800">{loan.nextPayment}</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Loan Details and Client Information */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Loan Details Card */}
+            <Card className="border-gray-200 shadow-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-indigo-500" />
+                  Loan Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-sm text-gray-500">Client Name</Label>
+                    <p className="text-gray-800 font-medium">{loan.clientName}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Application Date</Label>
+                    <p className="text-gray-800 font-medium">{loan.applicationDate}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Purpose</Label>
+                    <p className="text-gray-800 font-medium">{loan.purpose}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Remaining Balance</Label>
+                    <p className="text-gray-800 font-medium">₱{loan.remainingBalance.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Co-Applicants</Label>
+                    <p className="text-gray-800 font-medium">{loan.coApplicantNumber}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Guarantors</Label>
+                    <p className="text-gray-800 font-medium">{loan.guarantorNumber}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Validated By</Label>
+                    <p className="text-gray-800 font-medium">{loan.validatedBy}</p>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-gray-500">Client Credit Score</Label>
+                    <div className="flex items-center gap-2">
+                      <BarChart2 className={`h-4 w-4 ${
+                        loan.creditScore >= 85 ? "text-green-500" : 
+                        loan.creditScore >= 70 ? "text-yellow-500" : "text-red-500"
+                      }`} />
+                      <span className={`font-medium ${
+                        loan.creditScore >= 85 ? "text-green-600" : 
+                        loan.creditScore >= 70 ? "text-yellow-600" : "text-red-600"
+                      }`}>
+                        {loan.creditScore}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Status Card */}
+            <Card className="border-gray-200 shadow-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  {loan.status === "Approved" ? (
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  ) : loan.status === "Pending" ? (
+                    <Clock className="h-5 w-5 text-yellow-500" />
+                  ) : (
+                    <AlertCircle className="h-5 w-5 text-red-500" />
+                  )}
+                  Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm text-gray-500">Current Status</Label>
+                    <Badge 
+                      variant={
+                        loan.status === "Approved" ? "default" : 
+                        loan.status === "Pending" ? "secondary" : "destructive"
+                      }
+                      className="flex items-center gap-1"
+                    >
+                      {loan.status === "Approved" ? (
+                        <>
+                          <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3" />
+                          </svg>
+                          {loan.status}
+                        </>
+                      ) : loan.status === "Pending" ? (
+                        <>
+                          <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3" />
+                          </svg>
+                          {loan.status}
+                        </>
+                      ) : (
+                        <>
+                          <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3" />
+                          </svg>
+                          {loan.status}
+                        </>
+                      )}
+                    </Badge>
+                  </div>
+                  {loan.status === "Pending" && (
+                    <div className="space-y-2">
+                      <Label className="text-sm text-gray-500">Actions</Label>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50">
+                          Approve
+                        </Button>
+                        <Button variant="outline" size="sm" className="border-red-200 text-red-700 hover:bg-red-50">
+                          Reject
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                  {loan.status === "Approved" && (
+                    <div className="space-y-2">
+                      <Label className="text-sm text-gray-500">Next Steps</Label>
+                      <Button variant="outline" size="sm" className="border-blue-200 text-blue-700 hover:bg-blue-50">
+                        Generate Contract
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Payment History Section */}
+          <Card className="border-gray-200 shadow-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-amber-500" />
+                Payment History
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="border border-gray-200 rounded-lg overflow-hidden">
+                <Table>
+                  <TableHeader className="bg-gray-50">
+                    <TableRow className="hover:bg-gray-50">
+                      <TableHead className="text-gray-600 font-medium">Date</TableHead>
+                      <TableHead className="text-gray-600 font-medium">Amount</TableHead>
+                      <TableHead className="text-gray-600 font-medium">Principal</TableHead>
+                      <TableHead className="text-gray-600 font-medium">Interest</TableHead>
+                      <TableHead className="text-gray-600 font-medium">Remaining Balance</TableHead>
+                      <TableHead className="text-gray-600 font-medium">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    <TableRow className="border-gray-200 hover:bg-gray-50">
+                      <TableCell className="text-gray-700">2025-05-15</TableCell>
+                      <TableCell className="text-gray-700 font-medium">₱5,000</TableCell>
+                      <TableCell className="text-gray-700">₱4,167</TableCell>
+                      <TableCell className="text-gray-700">₱833</TableCell>
+                      <TableCell className="text-gray-700">₱45,833</TableCell>
+                      <TableCell>
+                        <Badge variant="default" className="flex items-center gap-1">
+                          <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                            <circle cx="4" cy="4" r="3" />
+                          </svg>
+                          Paid
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <DialogFooter className="border-t border-gray-200 pt-4">
+          <div className="flex justify-between w-full">
+            <Button
+              variant="outline"
+              onClick={() => console.log("Delete loan")}
+              className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Loan
+            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={onClose}
+                className="text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
+              >
+                Close
+              </Button>
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => console.log("Process payment")}
+              >
+                <DollarSign className="h-4 w-4 mr-2" />
+                Process Payment
+              </Button>
+            </div>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}// ... (keep the existing LoanDetailsPanel component exactly as is)
 
 export default function LoanManagementPage() {
   const pathname = usePathname()
