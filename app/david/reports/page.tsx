@@ -325,323 +325,317 @@ function LoanContract({ loan, onClose }: { loan: typeof loans[0], onClose: () =>
         
         {/* Credit Report Document */}
         <div 
-          ref={contractRef} 
-          className="bg-white p-8 border border-gray-200 rounded-lg shadow-none"
-          style={{ minHeight: '297mm' }}
-        >
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2">CREDIT REPORT</h1>
-            <p className="text-gray-600">Generated on {new Date().toLocaleDateString()}</p>
-          </div>
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 border-b pb-2">CURRENT LOAN APPLICATION</h2>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500">Loan ID</p>
-                  <p className="font-medium">{loan.id}</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500">Loan Type</p>
-                  <p className="font-medium">{loan.type}</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500">Loan Amount</p>
-                  <p className="font-medium">₱{loan.amount.toLocaleString()}</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500">Application Date</p>
-                  <p className="font-medium">{loan.applicationDate}</p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500">Status</p>
-                  <p className="font-medium">
-                    <Badge 
-                      variant={
-                        loan.status === "Approved" ? "default" : 
-                        loan.status === "Pending" ? "secondary" : "destructive"
-                      }
-                    >
-                      {loan.status}
-                    </Badge>
-                  </p>
-                </div>
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="text-sm text-gray-500">Validated By</p>
-                  <p className="font-medium">{loan.validatedBy}</p>
-                </div>
-              </div>
-              
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-500">Loan Purpose</p>
-                <p className="font-medium">{loan.purpose}</p>
-              </div>
-            </div>
-          </div>
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 border-b pb-2">CLIENT FINANCIAL HISTORY</h2>
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-medium mb-2">Previous Loans</h3>
-                {loan.previousLoans.length > 0 ? (
-                  <div className="border border-gray-200 rounded-lg overflow-hidden">
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loan ID</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                          <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {loan.previousLoans.map((prevLoan) => (
-                          <tr key={prevLoan.id}>
-                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{prevLoan.id}</td>
-                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{prevLoan.type}</td>
-                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">₱{prevLoan.amount.toLocaleString()}</td>
-                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{prevLoan.date}</td>
-                            <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">
-                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                prevLoan.status === "Fully Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
-                              }`}>
-                                {prevLoan.status}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <p className="text-gray-500">No previous loans recorded</p>
-                )}
-              </div>
-              
-              <div>
-                <h3 className="font-medium mb-2">Credit Assessment</h3>
-                <div className="flex items-center gap-4">
-                  <div className="w-full bg-gray-200 rounded-full h-4">
-                    <div 
-                      className={`h-4 rounded-full ${
-                        loan.creditScore >= 80 ? "bg-green-500" :
-                        loan.creditScore >= 60 ? "bg-yellow-500" : "bg-red-500"
-                      }`}
-                      style={{ width: `${loan.creditScore}%` }}
-                    ></div>
-                  </div>
-                  <span className="text-sm font-medium text-gray-700">
-                    Score: {loan.creditScore}/100 ({loan.creditScore >= 80 ? "Excellent" : loan.creditScore >= 60 ? "Good" : "Fair"})
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-
-          {/* Subject Information Section */}
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 border-b pb-2">SUBJECT INFORMATION</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-medium mb-2">PERSONAL DETAILS:</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <p className="mb-1"><span className="font-medium">CIC Subject Code:</span> {creditReportData.subjectData.cicSubjectCode}</p>
-                  <p className="mb-1"><span className="font-medium">Prefix:</span> {creditReportData.subjectData.prefix}</p>
-                  <p className="mb-1"><span className="font-medium">First Name:</span> {creditReportData.subjectData.firstName}</p>
-                  <p className="mb-1"><span className="font-medium">Middle Name:</span> {creditReportData.subjectData.middleName}</p>
-                  <p className="mb-1"><span className="font-medium">Last Name:</span> {creditReportData.subjectData.lastName}</p>
-                  <p className="mb-1"><span className="font-medium">Date of Birth:</span> {creditReportData.subjectData.dateOfBirth}</p>
-                  <p className="mb-1"><span className="font-medium">Country of Birth:</span> {creditReportData.subjectData.countryOfBirth}</p>
-                  <p className="mb-1"><span className="font-medium">Resident:</span> {creditReportData.subjectData.resident}</p>
-                  <p className="mb-1"><span className="font-medium">Dependents:</span> {creditReportData.subjectData.numberOfDependents}</p>
-                  <p className="mb-1"><span className="font-medium">Last Update:</span> {creditReportData.subjectData.lastUpdateDate}</p>
-                  <p className="mb-1"><span className="font-medium">Previous Last Name:</span> {creditReportData.subjectData.previousLastName || "N/A"}</p>
-                  <p className="mb-1"><span className="font-medium">Birthplace:</span> {creditReportData.subjectData.birthplace}</p>
-                  <p className="mb-1"><span className="font-medium">Nationality:</span> {creditReportData.subjectData.nationality}</p>
-                  <p className="mb-1"><span className="font-medium">Place of Birth:</span> {creditReportData.subjectData.placeOfBirth}</p>
-                  <p className="mb-1"><span className="font-medium">Gender:</span> {creditReportData.subjectData.gender}</p>
-                  <p className="mb-1"><span className="font-medium">Civil Status:</span> {creditReportData.subjectData.civilStatus}</p>
-                  <p className="mb-1"><span className="font-medium">Cars Owned:</span> {creditReportData.subjectData.carsOwned}</p>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="font-medium mb-2">FAMILY INFORMATION:</h3>
-                <div className="mb-4">
-                  <h4 className="font-medium">Spouse:</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <p className="mb-1"><span className="font-medium">Name:</span> {creditReportData.spouseData.name}</p>
-                    <p className="mb-1"><span className="font-medium">Middle Name:</span> {creditReportData.spouseData.middleName}</p>
-                    <p className="mb-1"><span className="font-medium">Last Name:</span> {creditReportData.spouseData.lastName}</p>
-                  </div>
-                </div>
-                
-                <div className="mb-4">
-                  <h4 className="font-medium">Mother (Maiden Name):</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <p className="mb-1"><span className="font-medium">First Name:</span> {creditReportData.motherData.firstName}</p>
-                    <p className="mb-1"><span className="font-medium">Middle Name:</span> {creditReportData.motherData.middleName}</p>
-                    <p className="mb-1"><span className="font-medium">Last Name:</span> {creditReportData.motherData.lastName}</p>
-                  </div>
-                </div>
-                
-                <div className="mb-4">
-                  <h4 className="font-medium">Father:</h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <p className="mb-1"><span className="font-medium">First Name:</span> {creditReportData.fatherData.firstName}</p>
-                    <p className="mb-1"><span className="font-medium">Middle Name:</span> {creditReportData.fatherData.middleName}</p>
-                    <p className="mb-1"><span className="font-medium">Suffix:</span> {creditReportData.fatherData.suffix || "N/A"}</p>
-                    <p className="mb-1"><span className="font-medium">Last Name:</span> {creditReportData.fatherData.lastName}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Identification Codes Section */}
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 border-b pb-2">IDENTIFICATION CODES</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="font-medium mb-2">TAX INFORMATION:</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <p className="mb-1"><span className="font-medium">TIN:</span> {creditReportData.identificationCodes.tin}</p>
-                  <p className="mb-1"><span className="font-medium">Last Update:</span> {creditReportData.identificationCodes.tinLastUpdate}</p>
-                  <p className="mb-1"><span className="font-medium">SSS Card:</span> {creditReportData.identificationCodes.sssCard}</p>
-                  <p className="mb-1"><span className="font-medium">Last Update:</span> {creditReportData.identificationCodes.sssLastUpdate}</p>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="font-medium mb-2">IDENTIFICATION DOCUMENTS:</h3>
-                {creditReportData.idDocuments.map((doc, index) => (
-                  <div key={index} className="mb-4 border-b pb-4 last:border-b-0">
-                    <div className="grid grid-cols-2 gap-2">
-                      <p className="mb-1"><span className="font-medium">Type:</span> {doc.idType}</p>
-                      <p className="mb-1"><span className="font-medium">Number:</span> {doc.idNumber}</p>
-                      <p className="mb-1"><span className="font-medium">Issue Date:</span> {doc.issueDate}</p>
-                      <p className="mb-1"><span className="font-medium">Expiry Date:</span> {doc.expiryDate}</p>
-                      <p className="mb-1"><span className="font-medium">Issuing Country:</span> {doc.issuingCountry}</p>
-                      <p className="mb-1"><span className="font-medium">Issued By:</span> {doc.issuedBy}</p>
-                      <p className="mb-1"><span className="font-medium">Last Update:</span> {doc.lastUpdateDate}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Addresses Section */}
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 border-b pb-2">ADDRESSES</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {creditReportData.addresses.map((address, index) => (
-                <div key={index} className="border rounded-lg p-4">
-                  <h3 className="font-medium mb-2">{address.addressType.toUpperCase()}</h3>
-                  <div className="grid grid-cols-2 gap-2">
-                    <p className="mb-1"><span className="font-medium">Address:</span> {address.fullAddress}</p>
-                    <p className="mb-1"><span className="font-medium">Owner/Lessee:</span> {address.ownerLessee}</p>
-                    <p className="mb-1"><span className="font-medium">Occupied Since:</span> {address.occupiedSince}</p>
-                    <p className="mb-1"><span className="font-medium">Last Update:</span> {address.lastUpdateDate}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Contact Information Section */}
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 border-b pb-2">CONTACT INFORMATION</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {creditReportData.contacts.map((contact, index) => (
-                <div key={index} className="border rounded-lg p-4">
-                  <h3 className="font-medium mb-2">{contact.contactType.toUpperCase()}</h3>
-                  <p className="mb-1"><span className="font-medium">Contact:</span> {contact.contact}</p>
-                  <p className="mb-1"><span className="font-medium">Last Update:</span> {contact.lastUpdateDate}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Employment Information Section */}
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 border-b pb-2">EMPLOYMENT INFORMATION</h2>
-            <div className="grid grid-cols-1 gap-6">
-              <div>
-                <div className="grid grid-cols-2 gap-2">
-                  <p className="mb-1"><span className="font-medium">Company Name:</span> {creditReportData.employmentData.companyName}</p>
-                  <p className="mb-1"><span className="font-medium">PSIC:</span> {creditReportData.employmentData.psic}</p>
-                  <p className="mb-1"><span className="font-medium">Gross Income:</span> {creditReportData.employmentData.grossIncome.toLocaleString()} {creditReportData.employmentData.currency}</p>
-                  <p className="mb-1"><span className="font-medium">Income Period:</span> {creditReportData.employmentData.incomePeriod}</p>
-                  <p className="mb-1"><span className="font-medium">Occupation Status:</span> {creditReportData.employmentData.occupationStatus}</p>
-                  <p className="mb-1"><span className="font-medium">Occupation:</span> {creditReportData.employmentData.occupation}</p>
-                  <p className="mb-1"><span className="font-medium">Phone Number:</span> {creditReportData.employmentData.phoneNumber}</p>
-                  <p className="mb-1"><span className="font-medium">Innovation Status:</span> {creditReportData.employmentData.innovationStatus}</p>
-                  <p className="mb-1"><span className="font-medium">Hired ID:</span> {creditReportData.employmentData.hiredId}</p>
-                  <p className="mb-1"><span className="font-medium">Date Hired:</span> {creditReportData.employmentData.dateHired}</p>
-                  <p className="mb-1"><span className="font-medium">Last Update:</span> {creditReportData.employmentData.lastUpdateDate}</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Sole Trader Information Section */}
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 border-b pb-2">SOLE TRADER INFORMATION</h2>
-            <div className="grid grid-cols-1 gap-6">
-              <div>
-                <h3 className="font-medium mb-2">BUSINESS DETAILS:</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <p className="mb-1"><span className="font-medium">Name:</span> {creditReportData.soleTraderData.name}</p>
-                </div>
-                
-                <h3 className="font-medium mb-2 mt-4">BUSINESS ADDRESSES:</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {creditReportData.soleTraderData.addresses.map((address, index) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <h4 className="font-medium mb-2">{address.addressType.toUpperCase()}</h4>
-                      <div className="grid grid-cols-2 gap-2">
-                        <p className="mb-1"><span className="font-medium">Address:</span> {address.fullAddress}</p>
-                        <p className="mb-1"><span className="font-medium">Owner/Lessee:</span> {address.ownerLessee}</p>
-                        <p className="mb-1"><span className="font-medium">Occupied Since:</span> {address.occupiedSince}</p>
-                        <p className="mb-1"><span className="font-medium">Last Update:</span> {address.lastUpdateDate}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                <h3 className="font-medium mb-2 mt-4">BUSINESS IDENTIFICATION:</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <p className="mb-1"><span className="font-medium">TIN:</span> {creditReportData.soleTraderData.identificationCodes.tin}</p>
-                  <p className="mb-1"><span className="font-medium">Last Update:</span> {creditReportData.soleTraderData.identificationCodes.lastUpdateDate}</p>
-                </div>
-                
-                <h3 className="font-medium mb-2 mt-4">BUSINESS CONTACTS:</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {creditReportData.soleTraderData.contacts.map((contact, index) => (
-                    <div key={index} className="border rounded-lg p-4">
-                      <h4 className="font-medium mb-2">{contact.contactType.toUpperCase()}</h4>
-                      <p className="mb-1"><span className="font-medium">Contact:</span> {contact.contact}</p>
-                      <p className="mb-1"><span className="font-medium">Last Update:</span> {contact.lastUpdateDate}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Current Loan Application Section */}
-          
-          
-          {/* Client Financial History Section */}
-          
-          <div className="text-xs text-gray-500 mt-8">
-            <p>This credit report is confidential and intended solely for the use of ABC Lending Corporation. 
-            Unauthorized access or distribution is prohibited.</p>
+  ref={contractRef} 
+  className="bg-white p-8 border border-gray-200 rounded-lg shadow-none"
+  style={{ minHeight: '297mm' }}
+>
+  <div className="text-center mb-8">
+    <h1 className="text-3xl font-bold mb-2">CREDIT REPORT</h1>
+    <p className="text-gray-600">Generated on {new Date().toLocaleDateString()}</p>
+  </div>
+  <div className="mb-8">
+    <h2 className="text-xl font-semibold mb-4 border-b pb-2">CURRENT LOAN APPLICATION</h2>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <p className="text-sm text-gray-500">Loan ID</p>
+          <div className="font-medium">{loan.id}</div>
+        </div>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <p className="text-sm text-gray-500">Loan Type</p>
+          <div className="font-medium">{loan.type}</div>
+        </div>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <p className="text-sm text-gray-500">Loan Amount</p>
+          <div className="font-medium">₱{loan.amount.toLocaleString()}</div>
+        </div>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <p className="text-sm text-gray-500">Application Date</p>
+          <div className="font-medium">{loan.applicationDate}</div>
+        </div>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <p className="text-sm text-gray-500">Status</p>
+          <div className="font-medium">
+            <Badge 
+              variant={
+                loan.status === "Approved" ? "default" : 
+                loan.status === "Pending" ? "secondary" : "destructive"
+              }
+            >
+              {loan.status}
+            </Badge>
           </div>
         </div>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <p className="text-sm text-gray-500">Validated By</p>
+          <div className="font-medium">{loan.validatedBy}</div>
+        </div>
+      </div>
+      
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <p className="text-sm text-gray-500">Loan Purpose</p>
+        <div className="font-medium">{loan.purpose}</div>
+      </div>
+    </div>
+  </div>
+  <div className="mb-8">
+    <h2 className="text-xl font-semibold mb-4 border-b pb-2">CLIENT FINANCIAL HISTORY</h2>
+    <div className="space-y-4">
+      <div>
+        <h3 className="font-medium mb-2">Previous Loans</h3>
+        {loan.previousLoans.length > 0 ? (
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loan ID</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {loan.previousLoans.map((prevLoan) => (
+                  <tr key={prevLoan.id}>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{prevLoan.id}</td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{prevLoan.type}</td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">₱{prevLoan.amount.toLocaleString()}</td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{prevLoan.date}</td>
+                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">
+                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        prevLoan.status === "Fully Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
+                      }`}>
+                        {prevLoan.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-gray-500">No previous loans recorded</p>
+        )}
+      </div>
+      
+      <div>
+        <h3 className="font-medium mb-2">Credit Assessment</h3>
+        <div className="flex items-center gap-4">
+          <div className="w-full bg-gray-200 rounded-full h-4">
+            <div 
+              className={`h-4 rounded-full ${
+                loan.creditScore >= 80 ? "bg-green-500" :
+                loan.creditScore >= 60 ? "bg-yellow-500" : "bg-red-500"
+              }`}
+              style={{ width: `${loan.creditScore}%` }}
+            ></div>
+          </div>
+          <span className="text-sm font-medium text-gray-700">
+            Score: {loan.creditScore}/100 ({loan.creditScore >= 80 ? "Excellent" : loan.creditScore >= 60 ? "Good" : "Fair"})
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  {/* Subject Information Section */}
+  <div className="mb-8">
+    <h2 className="text-xl font-semibold mb-4 border-b pb-2">SUBJECT INFORMATION</h2>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <h3 className="font-medium mb-2">PERSONAL DETAILS:</h3>
+        <div className="grid grid-cols-2 gap-2">
+          <p className="mb-1"><span className="font-medium">CIC Subject Code:</span> {creditReportData.subjectData.cicSubjectCode}</p>
+          <p className="mb-1"><span className="font-medium">Prefix:</span> {creditReportData.subjectData.prefix}</p>
+          <p className="mb-1"><span className="font-medium">First Name:</span> {creditReportData.subjectData.firstName}</p>
+          <p className="mb-1"><span className="font-medium">Middle Name:</span> {creditReportData.subjectData.middleName}</p>
+          <p className="mb-1"><span className="font-medium">Last Name:</span> {creditReportData.subjectData.lastName}</p>
+          <p className="mb-1"><span className="font-medium">Date of Birth:</span> {creditReportData.subjectData.dateOfBirth}</p>
+          <p className="mb-1"><span className="font-medium">Country of Birth:</span> {creditReportData.subjectData.countryOfBirth}</p>
+          <p className="mb-1"><span className="font-medium">Resident:</span> {creditReportData.subjectData.resident}</p>
+          <p className="mb-1"><span className="font-medium">Dependents:</span> {creditReportData.subjectData.numberOfDependents}</p>
+          <p className="mb-1"><span className="font-medium">Last Update:</span> {creditReportData.subjectData.lastUpdateDate}</p>
+          <p className="mb-1"><span className="font-medium">Previous Last Name:</span> {creditReportData.subjectData.previousLastName || "N/A"}</p>
+          <p className="mb-1"><span className="font-medium">Birthplace:</span> {creditReportData.subjectData.birthplace}</p>
+          <p className="mb-1"><span className="font-medium">Nationality:</span> {creditReportData.subjectData.nationality}</p>
+          <p className="mb-1"><span className="font-medium">Place of Birth:</span> {creditReportData.subjectData.placeOfBirth}</p>
+          <p className="mb-1"><span className="font-medium">Gender:</span> {creditReportData.subjectData.gender}</p>
+          <p className="mb-1"><span className="font-medium">Civil Status:</span> {creditReportData.subjectData.civilStatus}</p>
+          <p className="mb-1"><span className="font-medium">Cars Owned:</span> {creditReportData.subjectData.carsOwned}</p>
+        </div>
+      </div>
+      
+      <div>
+        <h3 className="font-medium mb-2">FAMILY INFORMATION:</h3>
+        <div className="mb-4">
+          <h4 className="font-medium">Spouse:</h4>
+          <div className="grid grid-cols-2 gap-2">
+            <p className="mb-1"><span className="font-medium">Name:</span> {creditReportData.spouseData.name}</p>
+            <p className="mb-1"><span className="font-medium">Middle Name:</span> {creditReportData.spouseData.middleName}</p>
+            <p className="mb-1"><span className="font-medium">Last Name:</span> {creditReportData.spouseData.lastName}</p>
+          </div>
+        </div>
+        
+        <div className="mb-4">
+          <h4 className="font-medium">Mother (Maiden Name):</h4>
+          <div className="grid grid-cols-2 gap-2">
+            <p className="mb-1"><span className="font-medium">First Name:</span> {creditReportData.motherData.firstName}</p>
+            <p className="mb-1"><span className="font-medium">Middle Name:</span> {creditReportData.motherData.middleName}</p>
+            <p className="mb-1"><span className="font-medium">Last Name:</span> {creditReportData.motherData.lastName}</p>
+          </div>
+        </div>
+        
+        <div className="mb-4">
+          <h4 className="font-medium">Father:</h4>
+          <div className="grid grid-cols-2 gap-2">
+            <p className="mb-1"><span className="font-medium">First Name:</span> {creditReportData.fatherData.firstName}</p>
+            <p className="mb-1"><span className="font-medium">Middle Name:</span> {creditReportData.fatherData.middleName}</p>
+            <p className="mb-1"><span className="font-medium">Suffix:</span> {creditReportData.fatherData.suffix || "N/A"}</p>
+            <p className="mb-1"><span className="font-medium">Last Name:</span> {creditReportData.fatherData.lastName}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* Identification Codes Section */}
+  <div className="mb-8">
+    <h2 className="text-xl font-semibold mb-4 border-b pb-2">IDENTIFICATION CODES</h2>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <h3 className="font-medium mb-2">TAX INFORMATION:</h3>
+        <div className="grid grid-cols-2 gap-2">
+          <p className="mb-1"><span className="font-medium">TIN:</span> {creditReportData.identificationCodes.tin}</p>
+          <p className="mb-1"><span className="font-medium">Last Update:</span> {creditReportData.identificationCodes.tinLastUpdate}</p>
+          <p className="mb-1"><span className="font-medium">SSS Card:</span> {creditReportData.identificationCodes.sssCard}</p>
+          <p className="mb-1"><span className="font-medium">Last Update:</span> {creditReportData.identificationCodes.sssLastUpdate}</p>
+        </div>
+      </div>
+      
+      <div>
+        <h3 className="font-medium mb-2">IDENTIFICATION DOCUMENTS:</h3>
+        {creditReportData.idDocuments.map((doc, index) => (
+          <div key={index} className="mb-4 border-b pb-4 last:border-b-0">
+            <div className="grid grid-cols-2 gap-2">
+              <p className="mb-1"><span className="font-medium">Type:</span> {doc.idType}</p>
+              <p className="mb-1"><span className="font-medium">Number:</span> {doc.idNumber}</p>
+              <p className="mb-1"><span className="font-medium">Issue Date:</span> {doc.issueDate}</p>
+              <p className="mb-1"><span className="font-medium">Expiry Date:</span> {doc.expiryDate}</p>
+              <p className="mb-1"><span className="font-medium">Issuing Country:</span> {doc.issuingCountry}</p>
+              <p className="mb-1"><span className="font-medium">Issued By:</span> {doc.issuedBy}</p>
+              <p className="mb-1"><span className="font-medium">Last Update:</span> {doc.lastUpdateDate}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  {/* Addresses Section */}
+  <div className="mb-8">
+    <h2 className="text-xl font-semibold mb-4 border-b pb-2">ADDRESSES</h2>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {creditReportData.addresses.map((address, index) => (
+        <div key={index} className="border rounded-lg p-4">
+          <h3 className="font-medium mb-2">{address.addressType.toUpperCase()}</h3>
+          <div className="grid grid-cols-2 gap-2">
+            <p className="mb-1"><span className="font-medium">Address:</span> {address.fullAddress}</p>
+            <p className="mb-1"><span className="font-medium">Owner/Lessee:</span> {address.ownerLessee}</p>
+            <p className="mb-1"><span className="font-medium">Occupied Since:</span> {address.occupiedSince}</p>
+            <p className="mb-1"><span className="font-medium">Last Update:</span> {address.lastUpdateDate}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  {/* Contact Information Section */}
+  <div className="mb-8">
+    <h2 className="text-xl font-semibold mb-4 border-b pb-2">CONTACT INFORMATION</h2>
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {creditReportData.contacts.map((contact, index) => (
+        <div key={index} className="border rounded-lg p-4">
+          <h3 className="font-medium mb-2">{contact.contactType.toUpperCase()}</h3>
+          <p className="mb-1"><span className="font-medium">Contact:</span> {contact.contact}</p>
+          <p className="mb-1"><span className="font-medium">Last Update:</span> {contact.lastUpdateDate}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+
+  {/* Employment Information Section */}
+  <div className="mb-8">
+    <h2 className="text-xl font-semibold mb-4 border-b pb-2">EMPLOYMENT INFORMATION</h2>
+    <div className="grid grid-cols-1 gap-6">
+      <div>
+        <div className="grid grid-cols-2 gap-2">
+          <p className="mb-1"><span className="font-medium">Company Name:</span> {creditReportData.employmentData.companyName}</p>
+          <p className="mb-1"><span className="font-medium">PSIC:</span> {creditReportData.employmentData.psic}</p>
+          <p className="mb-1"><span className="font-medium">Gross Income:</span> {creditReportData.employmentData.grossIncome.toLocaleString()} {creditReportData.employmentData.currency}</p>
+          <p className="mb-1"><span className="font-medium">Income Period:</span> {creditReportData.employmentData.incomePeriod}</p>
+          <p className="mb-1"><span className="font-medium">Occupation Status:</span> {creditReportData.employmentData.occupationStatus}</p>
+          <p className="mb-1"><span className="font-medium">Occupation:</span> {creditReportData.employmentData.occupation}</p>
+          <p className="mb-1"><span className="font-medium">Phone Number:</span> {creditReportData.employmentData.phoneNumber}</p>
+          <p className="mb-1"><span className="font-medium">Innovation Status:</span> {creditReportData.employmentData.innovationStatus}</p>
+          <p className="mb-1"><span className="font-medium">Hired ID:</span> {creditReportData.employmentData.hiredId}</p>
+          <p className="mb-1"><span className="font-medium">Date Hired:</span> {creditReportData.employmentData.dateHired}</p>
+          <p className="mb-1"><span className="font-medium">Last Update:</span> {creditReportData.employmentData.lastUpdateDate}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {/* Sole Trader Information Section */}
+  <div className="mb-8">
+    <h2 className="text-xl font-semibold mb-4 border-b pb-2">SOLE TRADER INFORMATION</h2>
+    <div className="grid grid-cols-1 gap-6">
+      <div>
+        <h3 className="font-medium mb-2">BUSINESS DETAILS:</h3>
+        <div className="grid grid-cols-2 gap-2">
+          <p className="mb-1"><span className="font-medium">Name:</span> {creditReportData.soleTraderData.name}</p>
+        </div>
+        
+        <h3 className="font-medium mb-2 mt-4">BUSINESS ADDRESSES:</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {creditReportData.soleTraderData.addresses.map((address, index) => (
+            <div key={index} className="border rounded-lg p-4">
+              <h4 className="font-medium mb-2">{address.addressType.toUpperCase()}</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <p className="mb-1"><span className="font-medium">Address:</span> {address.fullAddress}</p>
+                <p className="mb-1"><span className="font-medium">Owner/Lessee:</span> {address.ownerLessee}</p>
+                <p className="mb-1"><span className="font-medium">Occupied Since:</span> {address.occupiedSince}</p>
+                <p className="mb-1"><span className="font-medium">Last Update:</span> {address.lastUpdateDate}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <h3 className="font-medium mb-2 mt-4">BUSINESS IDENTIFICATION:</h3>
+        <div className="grid grid-cols-2 gap-2">
+          <p className="mb-1"><span className="font-medium">TIN:</span> {creditReportData.soleTraderData.identificationCodes.tin}</p>
+          <p className="mb-1"><span className="font-medium">Last Update:</span> {creditReportData.soleTraderData.identificationCodes.lastUpdateDate}</p>
+        </div>
+        
+        <h3 className="font-medium mb-2 mt-4">BUSINESS CONTACTS:</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {creditReportData.soleTraderData.contacts.map((contact, index) => (
+            <div key={index} className="border rounded-lg p-4">
+              <h4 className="font-medium mb-2">{contact.contactType.toUpperCase()}</h4>
+              <p className="mb-1"><span className="font-medium">Contact:</span> {contact.contact}</p>
+              <p className="mb-1"><span className="font-medium">Last Update:</span> {contact.lastUpdateDate}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div className="text-xs text-gray-500 mt-8">
+    <p>This credit report is confidential and intended solely for the use of ABC Lending Corporation. 
+    Unauthorized access or distribution is prohibited.</p>
+  </div>
+</div>
       </DialogContent>
     </Dialog>
   )
@@ -661,71 +655,6 @@ export default function LoanReportsPage() {
 
   return (
     <div className="flex min-h-screen w-full bg-gray-50">
-      {/* Sidebar */}
-    <aside className="hidden w-72 flex-col border-r bg-white border-r-gray-200 sm:flex">
-        <div className="border-b border-gray-200 p-5">
-          <div className="flex items-center gap-2">
-            <Shield className="h-8 w-8 text-blue-500" />
-            <h2 className="text-2xl font-semibold text-gray-800">Admin Panel</h2>
-          </div>
-        </div>
-        <nav className="flex flex-col gap-1 p-3 text-sm font-medium">
-          <Link href="/david/dashboard" passHref legacyBehavior>
-            <Button
-              variant={pathname === '/david/dashboard' ? "secondary" : "ghost"}
-              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <BarChart2 className="mr-3 h-5 w-5" /> Dashboard
-            </Button>
-          </Link>
-          <Link href="/david/users" passHref legacyBehavior>
-            <Button 
-              variant={pathname === '/david/users' ? "secondary" : "ghost"} 
-              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <Users2 className="mr-3 h-5 w-5" /> Users
-            </Button>
-          </Link>
-          <Link href="/david/members" passHref legacyBehavior>
-            <Button 
-              variant={pathname === '/david/members' ? "secondary" : "ghost"} 
-              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <User className="mr-3 h-5 w-5" /> Members
-            </Button>
-          </Link>
-          <Link href="/david/loans" passHref legacyBehavior>
-            <Button 
-              variant={pathname === '/david/loans' ? "secondary" : "ghost"} 
-              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <Book className="mr-3 h-5 w-5" /> Loans
-            </Button>
-          </Link>
-          <Link href="/david/reports" passHref legacyBehavior>
-            <Button 
-              variant={pathname === '/david/reports' ? "secondary" : "ghost"} 
-              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <FileText className="mr-3 h-5 w-5" /> Reports
-            </Button>
-          </Link>
-          <Link href="/david/upload" passHref legacyBehavior>
-            <Button 
-              variant={pathname === '/david/upload' ? "secondary" : "ghost"} 
-              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <UploadCloud className="mr-3 h-5 w-5" /> Upload
-            </Button>
-          </Link>
-        </nav>
-        <div className="mt-auto p-3 border-t border-gray-200">
-          <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
-            <LogOut className="mr-3 h-5 w-5" /> Logout
-          </Button>
-        </div>
-      </aside>
-
       {/* Main Content */}
       <div className="flex flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-6">

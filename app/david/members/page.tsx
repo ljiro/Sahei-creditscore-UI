@@ -1,29 +1,32 @@
 "use client"
 
 import { useState } from "react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import ClientReportDialog from "../ClientReportDialog.jsx"
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import {
-  Dialog,
-  DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+  DialogFooter
 } from "@/components/ui/dialog"
-import { UploadCloud, ChevronDown, Cog, Edit2, ListChecks, LogOut, Shield, Trash2, UserCog, UserPlus2, Users2, User, FileText, Book, Search, ArrowUpDown, X, Info, BadgeInfo, Calendar, Phone, Home, GraduationCap, HeartPulse, Briefcase, Wallet, CreditCard, BarChart2 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { Plus, Eye, Edit } from "lucide-react"
+import { UploadCloud, ChevronDown, Cog, Edit2, ListChecks, LogOut, Shield, Trash2, UserCog, UserPlus2, Users2, User, FileText, Book, Search, ArrowUpDown, X, Info, BadgeInfo, Calendar, Phone, Home, GraduationCap, HeartPulse, Briefcase, Wallet, CreditCard, BarChart2 } from "lucide-react"
+import { Label } from "@/components/ui/label"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Slider } from "@/components/ui/slider"
 
-
+interface Member {
+  id: string
+  name: string
+  email: string
+  phone: string
+  creditScore: number
+  totalLoans: number
+  status: "Active" | "Inactive"
+  joinDate: string
+}
 
 const members = [
   {
@@ -33,6 +36,7 @@ const members = [
     birthday: "1985-05-15",
     contact: "09123456789",
     address: "123 Main St, Manila",
+    email: "juandelacruz@example.com",
     education: "Bachelor's Degree",
     maritalStatus: "Married",
     dependents: 2,
@@ -40,6 +44,7 @@ const members = [
     monthlyIncome: 75000,
     savingsBalance: 150000,
     monthlyExpenses: 35000,
+    status: "Active",
     loans: [
       {
         id: "LN001",
@@ -68,6 +73,7 @@ const members = [
   {
     id: "CL002",
     name: "Maria Santos",
+    email: "mariasantos@example.com",
     gender: "Female",
     birthday: "1990-08-22",
     contact: "09234567890",
@@ -79,6 +85,7 @@ const members = [
     monthlyIncome: 120000,
     savingsBalance: 350000,
     monthlyExpenses: 45000,
+    status: "Active",
     loans: [
       {
         id: "LN002",
@@ -87,7 +94,7 @@ const members = [
         amount: 150000,
         applicationDate: "2025-05-20",
         duration: "24 months",
-        alidatedBy: "Juan Dela Cruz",
+        validatedBy: "Juan Dela Cruz",
         status: "Approved"
       }
     ],
@@ -97,6 +104,7 @@ const members = [
   {
     id: "CL003",
     name: "Pedro Reyes",
+    email: "pedroreyes@example.com",
     gender: "Male",
     birthday: "1978-03-30",
     contact: "09345678901",
@@ -108,24 +116,89 @@ const members = [
     monthlyIncome: 50000,
     savingsBalance: 80000,
     monthlyExpenses: 30000,
+    status: "Dormant",
     loans: [
       {
         id: "LN003",
         type: "Emergency Loan",
         purpose: "Medical Expenses",
         amount: 30000,
-        applicationDate: "2025-05-25",
+        applicationDate: "2023-05-25",
         duration: "6 months",
         validatedBy: "Ana Lopez",
-        status: "Disapproved"
+        status: "Approved"
       }
     ],
     creditScore: 78,
     joinedDate: "2023-03-15"
+  },
+  {
+    id: "CL004",
+    name: "Ana Lopez",
+    email: "analopez@example.com",
+    gender: "Female",
+    birthday: "1992-11-10",
+    contact: "09456789012",
+    address: "321 Maple St, Pasig",
+    education: "Bachelor's Degree",
+    maritalStatus: "Single",
+    dependents: 0,
+    industry: "Healthcare",
+    monthlyIncome: 60000,
+    savingsBalance: 95000,
+    monthlyExpenses: 25000,
+    status: "Suspended",
+    loans: [
+      {
+        id: "LN005",
+        type: "Personal Loan",
+        purpose: "Debt Consolidation",
+        amount: 70000,
+        applicationDate: "2025-06-01",
+        duration: "24 months",
+        validatedBy: "David Lee",
+        status: "Disapproved"
+      }
+    ],
+    creditScore: 64,
+    joinedDate: "2024-01-20"
+  },
+  {
+    id: "CL005",
+    name: "Carlos Garcia",
+    email: "carlosgarcia@example.com",
+    gender: "Male",
+    birthday: "1980-01-25",
+    contact: "09567890123",
+    address: "654 Elm St, Taguig",
+    education: "Master's Degree",
+    maritalStatus: "Married",
+    dependents: 3,
+    industry: "Finance",
+    monthlyIncome: 90000,
+    savingsBalance: 250000,
+    monthlyExpenses: 50000,
+    status: "Closed",
+    loans: [],
+    creditScore: 0,
+    joinedDate: "2022-02-18"
   }
 ]
 
 function ClientDetailsPanel({ client, onClose }: { client: typeof members[0], onClose: () => void }) {
+  const [loanDuration, setLoanDuration] = useState(12); // Default to 12 months
+
+  const formatDuration = (months: number) => {
+    if (months < 12) return `${months} month${months > 1 ? 's' : ''}`;
+    if (months % 12 === 0) {
+      const years = months / 12;
+      return `${years} year${years > 1 ? 's' : ''}`;
+    }
+    const years = Math.floor(months / 12);
+    const remainingMonths = months % 12;
+    return `${years}y ${remainingMonths}m`;
+  };
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] bg-white rounded-lg">
@@ -291,9 +364,191 @@ function ClientDetailsPanel({ client, onClose }: { client: typeof members[0], on
                   <CreditCard className="h-5 w-5 text-amber-500" />
                   Loan History ({client.loans.length})
                 </CardTitle>
+                <Dialog>
+                 <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="border-gray-200 text-gray-700">
                   New Loan Application
                 </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-white text-gray-800 border-gray-200 sm:max-w-[625px] rounded-lg">
+                <DialogHeader>
+                  <DialogTitle className="text-xl text-gray-800">Register Loan</DialogTitle>
+                  <DialogDescription className="text-gray-500">
+                    Fill out the details for the new loan
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="fullName" className="text-right col-span-1 text-gray-700">
+                      Full Name
+                    </Label>
+                    <Input
+                      id="fullName"
+                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
+                      placeholder="Enter member's full name"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="gender" className="text-right col-span-1 text-gray-700">
+                      Gender
+                    </Label>
+                    <select 
+                      id="gender" 
+                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 rounded-md p-2"
+                    >
+                      <option value="">Select gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="birthday" className="text-right col-span-1 text-gray-700">
+                      Birthday
+                    </Label>
+                    <Input
+                      id="birthday"
+                      type="date"
+                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="contact" className="text-right col-span-1 text-gray-700">
+                      Contact
+                    </Label>
+                    <Input
+                      id="contact"
+                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
+                      placeholder="Enter contact number"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="loan" className="text-right col-span-1 text-gray-700">
+                      Loan
+                    </Label>
+                      <select 
+                      id="loan" 
+                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 rounded-md p-2"
+                    >
+                      <option value="">Select Loan</option>
+                      <option value="Male">Personal</option>
+                      <option value="Female">Business</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="collateral" className="text-right col-span-1 text-gray-700">
+                      Collateral
+                    </Label>
+                      <div className="col-span-3 flex items-center gap-6">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id="secured"
+                          name="loanSecurity"
+                          value="secured"
+                          className="h-4 w-4 cursor-pointer text-blue-600 border-gray-300 focus:ring-blue-500"
+                        />
+                        <Label
+                          htmlFor="secured"
+                          className="font-normal text-gray-800 cursor-pointer"
+                        >
+                          Secured
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="radio"
+                          id="unsecured"
+                          name="loanSecurity"
+                          value="unsecured"
+                          className="h-4 w-4 cursor-pointer text-blue-600 border-gray-300 focus:ring-blue-500"
+                        />
+                        <Label
+                          htmlFor="unsecured"
+                          className="font-normal text-gray-800 cursor-pointer"
+                        >
+                          Unsecured
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="duration" className="text-right col-span-1 text-gray-700">
+                      Duration
+                    </Label>
+                    <div className="col-span-3 flex items-center gap-4">
+                      <Slider
+                        id="duration"
+                        min={1}
+                        max={60} // 5 years
+                        step={1}
+                        value={[loanDuration]}
+                        onValueChange={(value) => setLoanDuration(value[0])}
+                        className="w-[60%]"
+                      />
+                      <div className="relative w-[40%]">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={60}
+                          value={loanDuration}
+                          onChange={(e) => {
+                            const value = parseInt(e.target.value, 10);
+                            if (e.target.value === '') {
+                              setLoanDuration(1);
+                            } else if (!isNaN(value) && value >= 1 && value <= 60) {
+                              setLoanDuration(value);
+                            }
+                          }}
+                          className="w-full bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 pr-24 text-right"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
+                          {formatDuration(loanDuration)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="amount" className="text-right col-span-1 text-gray-700">
+                      Amount
+                    </Label>
+                      <Input
+                      id="amount"
+                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
+                      placeholder="Enter loan amount"
+                    />
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="paymentFrequency" className="text-right col-span-1 text-gray-700">
+                      Payment Frequency
+                    </Label>
+                      <select 
+                      id="gender" 
+                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 rounded-md p-2"
+                    >
+                      <option value="">Select Payment Frequency</option>
+                      <option value="Weekly">Weekly</option>
+                      <option value="Bi-Weekly">Bi-Weekly</option>
+                      <option value="Semi-Monthly">Semi-Monthly</option>
+                      <option value="Monthly">Monthly</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    className="text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
+                  >
+                    Cancel
+                  </Button>
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                    Register Loan
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
               </div>
             </CardHeader>
             <CardContent>
@@ -386,7 +641,7 @@ function ClientDetailsPanel({ client, onClose }: { client: typeof members[0], on
                 onClick={() => console.log("Edit client")}
               >
                 <Edit2 className="h-4 w-4 mr-2" />
-                Edit Client
+                Edit Member
               </Button>
             </div>
           </div>
@@ -396,21 +651,19 @@ function ClientDetailsPanel({ client, onClose }: { client: typeof members[0], on
   )
 }
 
-export default function ClientManagementPage() {
-
-  const pathname = usePathname()
+export default function MembersPage() {
   const [searchText, setSearchText] = useState("")
-  const [selectedClient, setSelectedClient] = useState<typeof members[0] | null>(null)
+  const [selectedMember, setSelectedMember] = useState<(typeof members)[0] | null>(null)
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "none">("none")
-  const [reportClient, setReportClient] = useState<typeof members[0] | null>(null)
+  const [reportMember, setReportMember] = useState<typeof members[0] | null>(null)
 
-  const filteredmembers = members.filter(client => {
+  const filteredMembers = members.filter(client => {
     return client.id.toLowerCase().includes(searchText.toLowerCase()) ||
-           client.name.toLowerCase().includes(searchText.toLowerCase()) ||
-           client.contact.toLowerCase().includes(searchText.toLowerCase())
+            client.name.toLowerCase().includes(searchText.toLowerCase()) ||
+            client.contact.toLowerCase().includes(searchText.toLowerCase())
   })
 
-  const sortedmembers = [...filteredmembers].sort((a, b) => {
+  const sortedmembers = [...filteredMembers].sort((a, b) => {
     if (sortOrder === "none") return 0
     if (sortOrder === "asc") return a.name.localeCompare(b.name)
     return b.name.localeCompare(a.name)
@@ -421,109 +674,61 @@ export default function ClientManagementPage() {
       if (prev === "none") return "asc"
       if (prev === "asc") return "desc"
       return "none"
-    })
+    });
   }
 
+  const statusConfig = {
+    Active: {
+      className: "bg-green-100 text-green-800 border-green-200",
+    },
+    Dormant: {
+      className: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    },
+    Suspended: {
+      className: "bg-orange-100 text-orange-800 border-orange-200",
+    },
+    Closed: {
+      className: "bg-gray-200 text-gray-800 border-gray-300",
+    }
+  };
+
+
   return (
-    <div className="flex min-h-screen w-full bg-gray-50">
-      {/* Sidebar */}
- <aside className="hidden w-72 flex-col border-r bg-white border-r-gray-200 sm:flex">
-        <div className="border-b border-gray-200 p-5">
-          <div className="flex items-center gap-2">
-            <Shield className="h-8 w-8 text-blue-500" />
-            <h2 className="text-2xl font-semibold text-gray-800">Admin Panel</h2>
+    <div className="flex flex-col w-full">
+      {/* Header */}
+      <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-800">Member Management</h1>
+          <p className="text-gray-500">Manage all Member accounts and information</p>
+        </div>
+        <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
+          <div className="h-9 w-9 rounded-full bg-gray-300 flex items-center justify-center">
+            <span className="text-sm font-medium text-gray-700">DL</span>
           </div>
+          <div>
+            <p className="text-sm font-medium text-gray-800">David Lee</p>
+            <p className="text-xs text-gray-500">IT Administrator</p>
+          </div>
+          <ChevronDown className="h-4 w-4 text-gray-500 cursor-pointer" />
         </div>
-        <nav className="flex flex-col gap-1 p-3 text-sm font-medium">
-          <Link href="/david/dashboard" passHref legacyBehavior>
-            <Button
-              variant={pathname === '/david/dashboard' ? "secondary" : "ghost"}
-              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <BarChart2 className="mr-3 h-5 w-5" /> Dashboard
-            </Button>
-          </Link>
-          <Link href="/david/users" passHref legacyBehavior>
-            <Button 
-              variant={pathname === '/david/users' ? "secondary" : "ghost"} 
-              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <Users2 className="mr-3 h-5 w-5" /> Users
-            </Button>
-          </Link>
-          <Link href="/david/members" passHref legacyBehavior>
-            <Button 
-              variant={pathname === '/david/members' ? "secondary" : "ghost"} 
-              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <User className="mr-3 h-5 w-5" /> Members
-            </Button>
-          </Link>
-          <Link href="/david/loans" passHref legacyBehavior>
-            <Button 
-              variant={pathname === '/david/loans' ? "secondary" : "ghost"} 
-              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <Book className="mr-3 h-5 w-5" /> Loans
-            </Button>
-          </Link>
-          <Link href="/david/reports" passHref legacyBehavior>
-            <Button 
-              variant={pathname === '/david/reports' ? "secondary" : "ghost"} 
-              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <FileText className="mr-3 h-5 w-5" /> Reports
-            </Button>
-          </Link>
-          <Link href="/david/upload" passHref legacyBehavior>
-            <Button 
-              variant={pathname === '/david/upload' ? "secondary" : "ghost"} 
-              className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-            >
-              <UploadCloud className="mr-3 h-5 w-5" /> Upload
-            </Button>
-          </Link>
-        </nav>
-        <div className="mt-auto p-3 border-t border-gray-200">
-          <Button variant="ghost" className="w-full justify-start text-gray-700 hover:bg-gray-100 hover:text-gray-900">
-            <LogOut className="mr-3 h-5 w-5" /> Logout
-          </Button>
-        </div>
-      </aside>
-      {/* Main Content */}
-      <div className="flex flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-6">
-          <h1 className="text-xl font-semibold text-gray-800">Client Management</h1>
-          <div className="ml-auto flex items-center gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                type="search"
-                placeholder="Search members..."
-                className="w-64 rounded-lg bg-gray-50 border-gray-200 pl-8 focus:ring-blue-500 focus:border-blue-500"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-              />
-            </div>
-            <Button 
-              variant="outline" 
-              className="border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-              onClick={toggleSortOrder}
-            >
-              <ArrowUpDown className="mr-2 h-4 w-4" />
-              {sortOrder === "none" ? "Sort" : sortOrder === "asc" ? "A-Z" : "Z-A"}
-            </Button>
-            <Dialog>
+      </header>
+
+      <main className="flex-1 p-6">
+        <Card className="shadow-sm border-gray-200">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl text-gray-800">Members ({filteredMembers.length})</CardTitle>
+                          <Dialog>
               <DialogTrigger asChild>
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  <UserPlus2 className="mr-2 h-4 w-4" /> New Client
+                  <UserPlus2 className="mr-2 h-4 w-4" /> New Member
                 </Button>
               </DialogTrigger>
               <DialogContent className="bg-white text-gray-800 border-gray-200 sm:max-w-[625px] rounded-lg">
                 <DialogHeader>
-                  <DialogTitle className="text-xl text-gray-800">Register New Client</DialogTitle>
+                  <DialogTitle className="text-xl text-gray-800">Register New Member</DialogTitle>
                   <DialogDescription className="text-gray-500">
-                    Fill out the details for the new client
+                    Fill out the details for the new Member
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -534,7 +739,7 @@ export default function ClientManagementPage() {
                     <Input
                       id="fullName"
                       className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
-                      placeholder="Enter client's full name"
+                      placeholder="Enter member's full name"
                     />
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
@@ -615,28 +820,27 @@ export default function ClientManagementPage() {
                     Cancel
                   </Button>
                   <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                    Register Client
+                    Register Member
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
-              <Avatar className="h-9 w-9">
-                <AvatarImage src="/placeholder.svg?height=36&width=36" alt="David" />
-                <AvatarFallback className="text-gray-900">DL</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="text-sm font-medium text-gray-800">David Lee</p>
-                <p className="text-xs text-gray-500">IT Administrator</p>
-              </div>
-              <ChevronDown className="h-4 w-4 text-gray-400 cursor-pointer" />
             </div>
-          </div>
-        </header>
-
-        <main className="flex-1 p-6">
-          {selectedClient ? (
-            <ClientDetailsPanel client={selectedClient} onClose={() => setSelectedClient(null)} />
+            <div className="flex items-center gap-4 mt-4">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search Members..."
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Button variant="outline">Sort A-Z</Button>
+            </div>
+          </CardHeader>
+          {/* {selectedMember ? (
+            <ClientDetailsPanel client={selectedMember} onClose={() => setSelectedMember(null)} />
           ) : (
             <Card className="shadow-sm border-gray-200">
               <CardHeader>
@@ -653,60 +857,56 @@ export default function ClientManagementPage() {
                     </Button>
                   </div>
                 </div>
-              </CardHeader>
+              </CardHeader> */}
               <CardContent>
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-gray-200 hover:bg-gray-50">
-                      <TableHead className="text-gray-600 font-medium">CLIENT ID</TableHead>
-                      <TableHead className="text-gray-600 font-medium">NAME</TableHead>
-                      <TableHead className="text-gray-600 font-medium">GENDER</TableHead>
-                      <TableHead className="text-gray-600 font-medium">CONTACT</TableHead>
-                      <TableHead className="text-gray-600 font-medium">LOANS</TableHead>
-                      <TableHead className="text-gray-600 font-medium">CREDIT SCORE</TableHead>
-                      <TableHead className="text-gray-600 font-medium">ACTIONS</TableHead>
-                    </TableRow>
+                    <TableRow className="border-gray-200">
+                      <TableHead className="text-gray-700">Member ID</TableHead>
+                      <TableHead className="text-gray-700">Name</TableHead>
+                      <TableHead className="text-gray-700">Email</TableHead>
+                      <TableHead className="text-gray-700">Phone</TableHead>
+                      <TableHead className="text-gray-700">Credit Score</TableHead>
+                      <TableHead className="text-gray-700">Total Loans</TableHead>
+                      <TableHead className="text-gray-700">Status</TableHead>
+                      <TableHead className="text-gray-700">Actions</TableHead>
+                   </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sortedmembers.map((client) => (
+                    {sortedmembers.map((member) => (
                       <TableRow 
-  key={client.id} 
+  key={member.id} 
   className="border-gray-200 hover:bg-gray-50 cursor-pointer"
-  onClick={() => setSelectedClient(client)}
+  onClick={() => setSelectedMember(member)}
 >
-  <TableCell className="font-medium text-gray-800">{client.id}</TableCell>
+  <TableCell className="font-medium text-gray-800">{member.id}</TableCell>
   <TableCell className="text-gray-700">
     <div className="flex items-center gap-3">
       <Avatar className="h-8 w-8">
         <AvatarFallback className="bg-blue-100 text-blue-800">
-          {client.name.split(" ").map(n => n[0]).join("")}
+          {member.name.split(" ").map(n => n[0]).join("")}
         </AvatarFallback>
       </Avatar>
-      <span>{client.name}</span>
+      <span>{member.name}</span>
     </div>
   </TableCell>
   <TableCell className="text-gray-700">
     <Badge variant="outline" className="border-gray-200 text-gray-600">
-      {client.gender}
+      {member.email}
     </Badge>
   </TableCell>
-  <TableCell className="text-gray-700">{client.contact}</TableCell>
-  <TableCell className="text-gray-700">
-    <Badge variant={client.loans.length > 0 ? "default" : "outline"}>
-      {client.loans.length} {client.loans.length === 1 ? "loan" : "loans"}
-    </Badge>
-  </TableCell>
+  <TableCell className="text-gray-700">{member.contact}</TableCell>
   <TableCell>
     <div className="flex items-center gap-2">
       <div className={`h-2 w-2 rounded-full ${
-        client.creditScore >= 85 ? "bg-green-500" : 
-        client.creditScore >= 70 ? "bg-yellow-500" : "bg-red-500"
+        member.creditScore >= 85 ? "bg-green-500" : 
+        member.creditScore >= 70 ? "bg-yellow-500" : "bg-red-500"
       }`} />
       <span className={`font-medium ${
-        client.creditScore >= 85 ? "text-green-600" : 
-        client.creditScore >= 70 ? "text-yellow-600" : "text-red-600"
+        member.creditScore >= 85 ? "text-green-600" : 
+        member.creditScore >= 70 ? "text-yellow-600" : "text-red-600"
       }`}>
-        {client.creditScore}
+        {member.creditScore}
       </span>
       <Button 
         variant="ghost" 
@@ -714,13 +914,26 @@ export default function ClientManagementPage() {
         className="h-6 w-6 text-gray-500 hover:text-blue-600"
         onClick={(e) => {
           e.stopPropagation()
-          setReportClient(client)
+          setReportMember(member)
         }}
       >
         <FileText className="h-3 w-3" />
       </Button>
     </div>
   </TableCell>
+   <TableCell className="text-gray-700">
+    <Badge variant={member.loans.length > 0 ? "default" : "outline"}>
+      {member.loans.length} {member.loans.length === 1 ? "loan" : "loans"}
+    </Badge>
+  </TableCell>  
+   <TableCell className="text-gray-700">
+      <Badge
+    variant="outline"
+    className={statusConfig[member.status as keyof typeof statusConfig].className}
+  >
+    {member.status}
+  </Badge>
+   </TableCell>
   <TableCell>
     <div className="flex gap-1">
       <Button 
@@ -729,7 +942,7 @@ export default function ClientManagementPage() {
         className="h-8 w-8 text-blue-500 hover:text-blue-600"
         onClick={(e) => {
           e.stopPropagation()
-          setSelectedClient(client)
+          setSelectedMember(member)
         }}
       >
         <Edit2 className="h-4 w-4" />
@@ -742,9 +955,124 @@ export default function ClientManagementPage() {
                 </Table>
               </CardContent>
             </Card>
-          )}
-        </main>
-      </div>
+         
+      </main>
+      {selectedMember && (
+        <ClientDetailsPanel client={selectedMember} onClose={() => setSelectedMember(null)} />
+      )}
     </div>
   )
 }
+
+
+ /* <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow className="border-gray-200">
+                  <TableHead className="text-gray-700">Member ID</TableHead>
+                  <TableHead className="text-gray-700">Name</TableHead>
+                  <TableHead className="text-gray-700">Email</TableHead>
+                  <TableHead className="text-gray-700">Phone</TableHead>
+                  <TableHead className="text-gray-700">Credit Score</TableHead>
+                  <TableHead className="text-gray-700">Total Loans</TableHead>
+                  <TableHead className="text-gray-700">Status</TableHead>
+                  <TableHead className="text-gray-700">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredMembers.map((Member) => (
+                  <TableRow key={Member.id} className="border-gray-200 hover:bg-gray-50">
+                    <TableCell className="font-medium text-gray-900">{Member.id}</TableCell>
+                    <TableCell className="text-gray-900">{Member.name}</TableCell>
+                    <TableCell className="text-gray-600">{Member.email}</TableCell>
+                    <TableCell className="text-gray-600">{Member.phone}</TableCell>
+                    <TableCell>
+                      <span
+                        className={`font-medium ${
+                          Member.creditScore >= 700
+                            ? "text-green-600"
+                            : Member.creditScore >= 650
+                              ? "text-yellow-600"
+                              : "text-red-600"
+                        }`}
+                      >
+                        {Member.creditScore}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-gray-900">{Member.totalLoans}</TableCell>
+                    <TableCell>
+                      <Badge variant={Member.status === "Active" ? "default" : "secondary"}>{Member.status}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Dialog>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm" onClick={() => setSelectedMember(Member)}>
+                              <Eye className="h-4 w-4 mr-1" />
+                              View Details
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-2xl">
+                            <DialogHeader>
+                              <DialogTitle>Member Details - {selectedMember?.name}</DialogTitle>
+                            </DialogHeader>
+                            {selectedMember && (
+                              <div className="space-y-6">
+                                <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                    <h3 className="font-semibold text-gray-900 mb-2">Personal Information</h3>
+                                    <div className="space-y-2 text-sm">
+                                      <p>
+                                        <span className="font-medium">Member ID:</span> {selectedMember.id}
+                                      </p>
+                                      <p>
+                                        <span className="font-medium">Name:</span> {selectedMember.name}
+                                      </p>
+                                      <p>
+                                        <span className="font-medium">Email:</span> {selectedMember.email}
+                                      </p>
+                                      <p>
+                                        <span className="font-medium">Phone:</span> {selectedMember.phone}
+                                      </p>
+                                      <p>
+                                        <span className="font-medium">Join Date:</span> {selectedMember.joinDate}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <h3 className="font-semibold text-gray-900 mb-2">Financial Information</h3>
+                                    <div className="space-y-2 text-sm">
+                                      <p>
+                                        <span className="font-medium">Credit Score:</span> {selectedMember.creditScore}
+                                      </p>
+                                      <p>
+                                        <span className="font-medium">Total Loans:</span> {selectedMember.totalLoans}
+                                      </p>
+                                      <p>
+                                        <span className="font-medium">Status:</span> {selectedMember.status}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div>
+                                  <h3 className="font-semibold text-gray-900 mb-2">Loan History</h3>
+                                  <div className="text-sm text-gray-600">
+                                    <p>Loan history details would appear here...</p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </DialogContent>
+                        </Dialog>
+                        <Button variant="outline" size="sm">
+                          <Edit className="h-4 w-4 mr-1" />
+                          Edit
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card> */
