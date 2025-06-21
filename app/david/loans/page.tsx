@@ -435,7 +435,6 @@ export default function LoanManagementPage() {
   return (
     <div className="flex min-h-screen w-full bg-gray-50">
       {/* Sidebar - keep exactly as is */}
-
       {/* Main Content */}
       <div className="flex flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-6">
