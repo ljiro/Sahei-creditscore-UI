@@ -542,29 +542,37 @@ export default function UserManagementPage() {
   return (
     <div className="flex min-h-screen w-full bg-gray-50">
       {/* Main Content */}
-      <div className="flex flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-6">
-          <h1 className="text-xl font-semibold text-gray-800">User Management</h1>
-          <div className="ml-auto flex items-center gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                type="search"
-                placeholder="Search users..."
-                className="w-64 rounded-lg bg-gray-50 border-gray-200 pl-8 focus:ring-blue-500 focus:border-blue-500"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-              />
-            </div>
-            <Button 
-              variant="outline" 
-              className="border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-              onClick={toggleSortOrder}
-            >
-              <ArrowUpDown className="mr-2 h-4 w-4" />
-              {sortOrder === "none" ? "Sort" : sortOrder === "asc" ? "A-Z" : "Z-A"}
-            </Button>
-            <Dialog open={isCreateUserOpen} onOpenChange={setIsCreateUserOpen}>
+     <div className="flex flex-col w-full">
+      {/* Header */}
+      <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-800">User Management</h1>
+          <p className="text-gray-500">Manage system users and permissions</p>
+        </div>
+        <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
+          <div className="h-9 w-9 rounded-full bg-gray-300 flex items-center justify-center">
+            <span className="text-sm font-medium text-gray-700">DL</span>
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-800">David Lee</p>
+            <p className="text-xs text-gray-500">IT Administrator</p>
+          </div>
+          <ChevronDown className="h-4 w-4 text-gray-500 cursor-pointer" />
+        </div>
+      </header>
+
+        <main className="flex-1 p-6">
+          {selectedUser ? (
+            <UserDetailsPanel user={selectedUser} onClose={() => setSelectedUser(null)} />
+          ) : (
+            <Card className="shadow-sm border-gray-200">
+              <CardHeader>
+                <div className="flex justify-between items-center">
+                    <CardTitle className="text-xl text-gray-800">System Users</CardTitle>
+                    {/* <CardDescription className="text-gray-500">
+                      {users.length} active users
+                    </CardDescription> */}
+                     <Dialog open={isCreateUserOpen} onOpenChange={setIsCreateUserOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-blue-600 hover:bg-blue-700 text-white">
                   <UserPlus2 className="mr-2 h-4 w-4" /> New User
@@ -648,39 +656,26 @@ export default function UserManagementPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-            <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
-              <Avatar className="h-9 w-9">
-                <AvatarImage src="/placeholder.svg?height=36&width=36" alt="David" />
-                <AvatarFallback className="text-gray-900">DL</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="text-sm font-medium text-gray-800">David Lee</p>
-                <p className="text-xs text-gray-500">IT Administrator</p>
-              </div>
-              <ChevronDown className="h-4 w-4 text-gray-400 cursor-pointer" />
-            </div>
-          </div>
-        </header>
-
-        <main className="flex-1 p-6">
-          {selectedUser ? (
-            <UserDetailsPanel user={selectedUser} onClose={() => setSelectedUser(null)} />
-          ) : (
-            <Card className="shadow-sm border-gray-200">
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle className="text-xl text-gray-800">System Users</CardTitle>
-                    <CardDescription className="text-gray-500">
-                      {users.length} active users
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="border-gray-200 text-gray-700">
-                      Export
-                    </Button>
-                  </div>
                 </div>
+                               <div className="flex items-center gap-4 mt-4">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search loans..."
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+               <Button 
+              variant="outline" 
+              className="border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+              onClick={toggleSortOrder}
+            >
+              <ArrowUpDown className="mr-2 h-4 w-4" />
+              {sortOrder === "none" ? "Sort" : sortOrder === "asc" ? "A-Z" : "Z-A"}
+            </Button>
+              </div>
               </CardHeader>
               <CardContent>
                 <Table>

@@ -17,6 +17,22 @@ import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Slider } from "@/components/ui/slider"
 
+const statusConfig = {
+  Active: {
+    className: "bg-green-100 text-green-800 border-green-200",
+  },
+  Dormant: {
+    className: "bg-yellow-100 text-yellow-800 border-yellow-200",
+  },
+  Suspended: {
+    className: "bg-orange-100 text-orange-800 border-orange-200",
+  },
+  Closed: {
+    className: "bg-gray-200 text-gray-800 border-gray-300",
+  }
+};
+
+
 interface Member {
   id: string
   name: string
@@ -359,197 +375,10 @@ function ClientDetailsPanel({ client, onClose }: { client: typeof members[0], on
           {/* Client Loans Section */}
           <Card className="border-gray-200 shadow-sm">
             <CardHeader className="pb-4">
-              <div className="flex justify-between items-center">
                 <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                   <CreditCard className="h-5 w-5 text-amber-500" />
                   Loan History ({client.loans.length})
                 </CardTitle>
-                <Dialog>
-                 <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="border-gray-200 text-gray-700">
-                  New Loan Application
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-white text-gray-800 border-gray-200 sm:max-w-[625px] rounded-lg">
-                <DialogHeader>
-                  <DialogTitle className="text-xl text-gray-800">Register Loan</DialogTitle>
-                  <DialogDescription className="text-gray-500">
-                    Fill out the details for the new loan
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="fullName" className="text-right col-span-1 text-gray-700">
-                      Full Name
-                    </Label>
-                    <Input
-                      id="fullName"
-                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
-                      placeholder="Enter member's full name"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="gender" className="text-right col-span-1 text-gray-700">
-                      Gender
-                    </Label>
-                    <select 
-                      id="gender" 
-                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 rounded-md p-2"
-                    >
-                      <option value="">Select gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="birthday" className="text-right col-span-1 text-gray-700">
-                      Birthday
-                    </Label>
-                    <Input
-                      id="birthday"
-                      type="date"
-                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="contact" className="text-right col-span-1 text-gray-700">
-                      Contact
-                    </Label>
-                    <Input
-                      id="contact"
-                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
-                      placeholder="Enter contact number"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="loan" className="text-right col-span-1 text-gray-700">
-                      Loan
-                    </Label>
-                      <select 
-                      id="loan" 
-                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 rounded-md p-2"
-                    >
-                      <option value="">Select Loan</option>
-                      <option value="Male">Personal</option>
-                      <option value="Female">Business</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="collateral" className="text-right col-span-1 text-gray-700">
-                      Collateral
-                    </Label>
-                      <div className="col-span-3 flex items-center gap-6">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="radio"
-                          id="secured"
-                          name="loanSecurity"
-                          value="secured"
-                          className="h-4 w-4 cursor-pointer text-blue-600 border-gray-300 focus:ring-blue-500"
-                        />
-                        <Label
-                          htmlFor="secured"
-                          className="font-normal text-gray-800 cursor-pointer"
-                        >
-                          Secured
-                        </Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="radio"
-                          id="unsecured"
-                          name="loanSecurity"
-                          value="unsecured"
-                          className="h-4 w-4 cursor-pointer text-blue-600 border-gray-300 focus:ring-blue-500"
-                        />
-                        <Label
-                          htmlFor="unsecured"
-                          className="font-normal text-gray-800 cursor-pointer"
-                        >
-                          Unsecured
-                        </Label>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="duration" className="text-right col-span-1 text-gray-700">
-                      Duration
-                    </Label>
-                    <div className="col-span-3 flex items-center gap-4">
-                      <Slider
-                        id="duration"
-                        min={1}
-                        max={60} // 5 years
-                        step={1}
-                        value={[loanDuration]}
-                        onValueChange={(value) => setLoanDuration(value[0])}
-                        className="w-[60%]"
-                      />
-                      <div className="relative w-[40%]">
-                        <Input
-                          type="number"
-                          min={1}
-                          max={60}
-                          value={loanDuration}
-                          onChange={(e) => {
-                            const value = parseInt(e.target.value, 10);
-                            if (e.target.value === '') {
-                              setLoanDuration(1);
-                            } else if (!isNaN(value) && value >= 1 && value <= 60) {
-                              setLoanDuration(value);
-                            }
-                          }}
-                          className="w-full bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 pr-24 text-right"
-                        />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
-                          {formatDuration(loanDuration)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="amount" className="text-right col-span-1 text-gray-700">
-                      Amount
-                    </Label>
-                      <Input
-                      id="amount"
-                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
-                      placeholder="Enter loan amount"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="paymentFrequency" className="text-right col-span-1 text-gray-700">
-                      Payment Frequency
-                    </Label>
-                      <select 
-                      id="gender" 
-                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 rounded-md p-2"
-                    >
-                      <option value="">Select Payment Frequency</option>
-                      <option value="Weekly">Weekly</option>
-                      <option value="Bi-Weekly">Bi-Weekly</option>
-                      <option value="Semi-Monthly">Semi-Monthly</option>
-                      <option value="Monthly">Monthly</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    className="text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    Cancel
-                  </Button>
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                    Register Loan
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-              </div>
             </CardHeader>
             <CardContent>
               {client.loans.length > 0 ? (
@@ -676,22 +505,6 @@ export default function MembersPage() {
       return "none"
     });
   }
-
-  const statusConfig = {
-    Active: {
-      className: "bg-green-100 text-green-800 border-green-200",
-    },
-    Dormant: {
-      className: "bg-yellow-100 text-yellow-800 border-yellow-200",
-    },
-    Suspended: {
-      className: "bg-orange-100 text-orange-800 border-orange-200",
-    },
-    Closed: {
-      className: "bg-gray-200 text-gray-800 border-gray-300",
-    }
-  };
-
 
   return (
     <div className="flex flex-col w-full">
@@ -836,7 +649,14 @@ export default function MembersPage() {
                   className="pl-10"
                 />
               </div>
-              <Button variant="outline">Sort A-Z</Button>
+              <Button 
+              variant="outline" 
+              className="border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+              onClick={toggleSortOrder}
+            >
+              <ArrowUpDown className="mr-2 h-4 w-4" />
+              {sortOrder === "none" ? "Sort" : sortOrder === "asc" ? "A-Z" : "Z-A"}
+            </Button>
             </div>
           </CardHeader>
           {/* {selectedMember ? (
