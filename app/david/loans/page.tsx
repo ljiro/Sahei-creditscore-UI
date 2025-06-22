@@ -1,27 +1,53 @@
 "use client"
 
 import { useState } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { 
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { ChevronDown, UploadCloud,Cog, Edit2, ListChecks, LogOut, Shield, Trash2, UserCog, UserPlus2, Users2, User, FileText, Book, Search, ArrowUpDown, X, Info, Calendar, Phone, Home, CreditCard, BarChart2, DollarSign, Clock, CheckCircle, AlertCircle } from "lucide-react"
+  DialogTrigger, } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { ChevronDown, UploadCloud,Cog, Edit2, ListChecks, LogOut, Shield, Trash2, UserCog, UserPlus2, Users2, User, FileText, Book, Search, ArrowUpDown, X, Info, Calendar, Phone, Home, CreditCard, BarChart2, DollarSign, Clock, CheckCircle, AlertCircle, Eye, FilePlus2 } from "lucide-react"
+import { Slider } from "@/components/ui/slider"
 
+
+const statusStyles = {
+  Approved: "bg-green-100 text-green-800 hover:bg-green-100 border-green-200",
+  Pending: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200",
+  Declined: "bg-red-100 text-red-800 hover:bg-red-100 border-red-200",
+};
+
+// Type that represents ONLY the keys of statusStyles
+type LoanStatus = keyof typeof statusStyles;
+
+// Define the Loan interface with required fields to prepare for dynamic data handling
+interface Loan {
+  id: string;
+  clientName: string;
+  type: string;
+  purpose: string;
+  amount: number;
+  applicationDate: string;
+  duration: string;
+  status: LoanStatus; // Use the specific type
+  interestRate: string;
+  remainingBalance: number;
+  nextPayment: string;
+  validatedBy: string;
+  creditScore: number;
+  coApplicantNumber: number;
+  guarantorNumber: number;
+}
 
 const loans = [
   {
@@ -40,6 +66,7 @@ const loans = [
     creditScore: 85,
     coApplicantNumber: 2,
     guarantorNumber: 1
+    
   },
   {
     id: "LN002",
@@ -66,7 +93,7 @@ const loans = [
     amount: 30000,
     applicationDate: "2025-05-25",
     duration: "6 months",
-    status: "Active",
+    status: "Declined",
     interestRate: "15%",
     remainingBalance: 25000,
     nextPayment: "2025-06-25",
@@ -227,35 +254,13 @@ function LoanDetailsPanel({ loan, onClose }: { loan: typeof loans[0], onClose: (
                   <div className="flex items-center justify-between">
                     <Label className="text-sm text-gray-500">Current Status</Label>
                     <Badge 
-                      variant={
-                        loan.status === "Approved" ? "default" : 
-                        loan.status === "Pending" ? "secondary" : "destructive"
-                      }
-                      className="flex items-center gap-1"
-                    >
-                      {loan.status === "Approved" ? (
-                        <>
-                          <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
-                            <circle cx="4" cy="4" r="3" />
-                          </svg>
-                          {loan.status}
-                        </>
-                      ) : loan.status === "Pending" ? (
-                        <>
-                          <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
-                            <circle cx="4" cy="4" r="3" />
-                          </svg>
-                          {loan.status}
-                        </>
-                      ) : (
-                        <>
-                          <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
-                            <circle cx="4" cy="4" r="3" />
-                          </svg>
-                          {loan.status}
-                        </>
-                      )}
-                    </Badge>
+                            className={`flex items-center gap-1 ${statusStyles[loan.status]}`}
+                          >
+                            <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                              <circle cx="4" cy="4" r="3" />
+                            </svg>
+                            {loan.status}
+                          </Badge>
                   </div>
                   {loan.status === "Pending" && (
                     <div className="space-y-2">
@@ -360,18 +365,21 @@ function LoanDetailsPanel({ loan, onClose }: { loan: typeof loans[0], onClose: (
   )
 }
 
-export default function LoanManagementPage() {
-  const pathname = usePathname()
+export default function LoansPage() {
   const [searchText, setSearchText] = useState("")
+  const [statusFilter, setStatusFilter] = useState<string>("All")
   const [selectedLoan, setSelectedLoan] = useState<typeof loans[0] | null>(null)
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "none">("none")
   const [coApplicantNumber, setCoApplicantNumber] = useState<number>(0)
   const [guarantorNumber, setGuarantorNumber] = useState<number>(0)
 
   const filteredLoans = loans.filter(loan => {
-    return loan.id.toLowerCase().includes(searchText.toLowerCase()) ||
-           loan.clientName.toLowerCase().includes(searchText.toLowerCase()) ||
-           loan.status.toLowerCase().includes(searchText.toLowerCase())
+    const matchesSearch = loan.id.toLowerCase().includes(searchText.toLowerCase()) ||
+                          loan.clientName.toLowerCase().includes(searchText.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'All' || loan.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
   })
 
   const sortedLoans = [...filteredLoans].sort((a, b) => {
@@ -388,224 +396,273 @@ export default function LoanManagementPage() {
     })
   }
 
+  const [loanDuration, setLoanDuration] = useState(12); // Default to 12 months
+
+  const formatDuration = (months: number) => {
+    if (months < 12) return `${months} month${months > 1 ? 's' : ''}`;
+    if (months % 12 === 0) {
+      const years = months / 12;
+      return `${years} year${years > 1 ? 's' : ''}`;
+    }
+    const years = Math.floor(months / 12);
+    const remainingMonths = months % 12;
+    return `${years}y ${remainingMonths}m`;
+  };
+
   return (
-    <div className="flex min-h-screen w-full bg-gray-50">
-      {/* Main Content */}
-      <div className="flex flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-6">
-          <h1 className="text-xl font-semibold text-gray-800">Loan Management</h1>
-          <div className="ml-auto flex items-center gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                type="search"
-                placeholder="Search loans..."
-                className="w-64 rounded-lg bg-gray-50 border-gray-200 pl-8 focus:ring-blue-500 focus:border-blue-500"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-              />
-            </div>
-            <Button 
-              variant="outline" 
-              className="border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-              onClick={toggleSortOrder}
-            >
-              <ArrowUpDown className="mr-2 h-4 w-4" />
-              {sortOrder === "none" ? "Sort" : sortOrder === "asc" ? "A-Z" : "Z-A"}
-            </Button>
-            <Dialog>
-              <DialogTrigger asChild>
-               
-              </DialogTrigger>
-              <DialogContent className="bg-white text-gray-800 border-gray-200 sm:max-w-[625px] rounded-lg">
-                <DialogHeader>
-                  <DialogTitle className="text-xl text-gray-800">Create New Loan Application</DialogTitle>
-                  <DialogDescription className="text-gray-500">
-                    Fill out the details for the new loan application
-                    
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="clientName" className="text-right col-span-1 text-gray-700">
-                      Client
-                    </Label>
-                    <Select>
-                      <SelectTrigger className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800">
-                        <SelectValue placeholder="Select client" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white text-gray-800 border-gray-200">
-                        <SelectItem value="juan" className="hover:bg-gray-100 hover:text-gray-900">
-                          Juan Dela Cruz
-                        </SelectItem>
-                        <SelectItem value="maria" className="hover:bg-gray-100 hover:text-gray-900">
-                          Maria Santos
-                        </SelectItem>
-                        <SelectItem value="pedro" className="hover:bg-gray-100 hover:text-gray-900">
-                          Pedro Reyes
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  {/* Co-Applicant Number Field */}
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="coApplicantNumber" className="text-right col-span-1 text-gray-700">
-                      Co-Applicants
-                    </Label>
-                    <Input
-                      id="coApplicantNumber"
-                      type="number"
-                      min="0"
-                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
-                      placeholder="Enter number of co-applicants"
-                      value={coApplicantNumber}
-                      onChange={(e) => setCoApplicantNumber(Number(e.target.value))}
-                    />
-                  </div>
-
-                  {/* Guarantor Number Field */}
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="guarantorNumber" className="text-right col-span-1 text-gray-700">
-                      Guarantors
-                    </Label>
-                    <Input
-                      id="guarantorNumber"
-                      type="number"
-                      min="0"
-                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
-                      placeholder="Enter number of guarantors"
-                      value={guarantorNumber}
-                      onChange={(e) => setGuarantorNumber(Number(e.target.value))}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="loanType" className="text-right col-span-1 text-gray-700">
-                      Loan Type
-                    </Label>
-                    <Select>
-                      <SelectTrigger className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800">
-                        <SelectValue placeholder="Select loan type" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white text-gray-800 border-gray-200">
-                        <SelectItem value="personal" className="hover:bg-gray-100 hover:text-gray-900">
-                          Personal Loan
-                        </SelectItem>
-                        <SelectItem value="business" className="hover:bg-gray-100 hover:text-gray-900">
-                          Business Loan
-                        </SelectItem>
-                        <SelectItem value="emergency" className="hover:bg-gray-100 hover:text-gray-900">
-                          Emergency Loan
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="loanAmount" className="text-right col-span-1 text-gray-700">
-                      Amount
-                    </Label>
-                    <Input
-                      id="loanAmount"
-                      type="number"
-                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
-                      placeholder="Enter loan amount"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="loanPurpose" className="text-right col-span-1 text-gray-700">
-                      Purpose
-                    </Label>
-                    <Input
-                      id="loanPurpose"
-                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
-                      placeholder="Enter loan purpose"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="loanDuration" className="text-right col-span-1 text-gray-700">
-                      Duration
-                    </Label>
-                    <Select>
-                      <SelectTrigger className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800">
-                        <SelectValue placeholder="Select duration" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-white text-gray-800 border-gray-200">
-                        <SelectItem value="6" className="hover:bg-gray-100 hover:text-gray-900">
-                          6 months
-                        </SelectItem>
-                        <SelectItem value="12" className="hover:bg-gray-100 hover:text-gray-900">
-                          12 months
-                        </SelectItem>
-                        <SelectItem value="24" className="hover:bg-gray-100 hover:text-gray-900">
-                          24 months
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    className="text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    Cancel
-                  </Button>
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                    Create Loan
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-            <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
-              <Avatar className="h-9 w-9">
-                <AvatarImage src="/placeholder.svg?height=36&width=36" alt="David" />
-                <AvatarFallback className="text-gray-900">DL</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="text-sm font-medium text-gray-800">David Lee</p>
-                <p className="text-xs text-gray-500">IT Administrator</p>
-              </div>
-              <ChevronDown className="h-4 w-4 text-gray-400 cursor-pointer" />
-            </div>
+    <div className="flex flex-col w-full">
+      {/* Header */}
+      <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-800">Loan Management</h1>
+          <p className="text-gray-500">Manage all loan applications and accounts</p>
+        </div>
+        <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
+          <div className="h-9 w-9 rounded-full bg-gray-300 flex items-center justify-center">
+            <span className="text-sm font-medium text-gray-700">DL</span>
           </div>
-        </header>
+          <div>
+            <p className="text-sm font-medium text-gray-800">David Lee</p>
+            <p className="text-xs text-gray-500">IT Administrator</p>
+          </div>
+          <ChevronDown className="h-4 w-4 text-gray-500 cursor-pointer" />
+        </div>
+      </header>
 
-        <main className="flex-1 p-6">
-          {selectedLoan ? (
+      <main className="flex-1 p-6">
+           {selectedLoan ? (
             <LoanDetailsPanel loan={selectedLoan} onClose={() => setSelectedLoan(null)} />
           ) : (
-            <Card className="shadow-sm border-gray-200">
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle className="text-xl text-gray-800">Active Loans</CardTitle>
-                    <CardDescription className="text-gray-500">
-                      {loans.length} total loans
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="border-gray-200 text-gray-700">
-                      Export
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-gray-200 hover:bg-gray-50">
-                      <TableHead className="text-gray-600 font-medium">LOAN ID</TableHead>
-                      <TableHead className="text-gray-600 font-medium">CLIENT</TableHead>
-                      <TableHead className="text-gray-600 font-medium">TYPE</TableHead>
-                      <TableHead className="text-gray-600 font-medium">AMOUNT</TableHead>
-                      <TableHead className="text-gray-600 font-medium">DATE</TableHead>
-                      <TableHead className="text-gray-600 font-medium">STATUS</TableHead>
-                      <TableHead className="text-gray-600 font-medium">ACTIONS</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sortedLoans.map((loan) => (
+        <Card className="shadow-sm border-gray-200">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+            <CardTitle className="text-xl text-gray-800">Loans ({filteredLoans.length})</CardTitle>
+               <Dialog>
+                          <DialogTrigger asChild>
+                        <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <FilePlus2 className="mr-2 h-4 w-4" /> New Loan
+                </Button>
+                      </DialogTrigger>
+                      <DialogContent className="bg-white text-gray-800 border-gray-200 sm:max-w-[625px] rounded-lg">
+                        <DialogHeader>
+                          <DialogTitle className="text-xl text-gray-800">Register Loan</DialogTitle>
+                          <DialogDescription className="text-gray-500">
+                            Fill out the details for the new loan
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="fullName" className="text-right col-span-1 text-gray-700">
+                              Full Name
+                            </Label>
+                            <Input
+                              id="fullName"
+                              className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
+                              placeholder="Enter member's full name"
+                            />
+                          </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="gender" className="text-right col-span-1 text-gray-700">
+                              Gender
+                            </Label>
+                            <select 
+                              id="gender" 
+                              className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 rounded-md p-2"
+                            >
+                              <option value="">Select gender</option>
+                              <option value="Male">Male</option>
+                              <option value="Female">Female</option>
+                              <option value="Other">Other</option>
+                            </select>
+                          </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="birthday" className="text-right col-span-1 text-gray-700">
+                              Birthday
+                            </Label>
+                            <Input
+                              id="birthday"
+                              type="date"
+                              className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
+                            />
+                          </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="contact" className="text-right col-span-1 text-gray-700">
+                              Contact
+                            </Label>
+                            <Input
+                              id="contact"
+                              className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
+                              placeholder="Enter contact number"
+                            />
+                          </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="loan" className="text-right col-span-1 text-gray-700">
+                              Loan
+                            </Label>
+                              <select 
+                              id="loan" 
+                              className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 rounded-md p-2"
+                            >
+                              <option value="">Select Loan</option>
+                              <option value="Male">Personal</option>
+                              <option value="Female">Business</option>
+                              <option value="Other">Other</option>
+                            </select>
+                          </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="collateral" className="text-right col-span-1 text-gray-700">
+                              Collateral
+                            </Label>
+                              <div className="col-span-3 flex items-center gap-6">
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="radio"
+                                  id="secured"
+                                  name="loanSecurity"
+                                  value="secured"
+                                  className="h-4 w-4 cursor-pointer text-blue-600 border-gray-300 focus:ring-blue-500"
+                                />
+                                <Label
+                                  htmlFor="secured"
+                                  className="font-normal text-gray-800 cursor-pointer"
+                                >
+                                  Secured
+                                </Label>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="radio"
+                                  id="unsecured"
+                                  name="loanSecurity"
+                                  value="unsecured"
+                                  className="h-4 w-4 cursor-pointer text-blue-600 border-gray-300 focus:ring-blue-500"
+                                />
+                                <Label
+                                  htmlFor="unsecured"
+                                  className="font-normal text-gray-800 cursor-pointer"
+                                >
+                                  Unsecured
+                                </Label>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="duration" className="text-right col-span-1 text-gray-700">
+                              Duration
+                            </Label>
+                            <div className="col-span-3 flex items-center gap-4">
+                              <Slider
+                                id="duration"
+                                min={1}
+                                max={60} // 5 years
+                                step={1}
+                                value={[loanDuration]}
+                                onValueChange={(value) => setLoanDuration(value[0])}
+                                className="w-[60%]"
+                              />
+                              <div className="relative w-[40%]">
+                                <Input
+                                  type="number"
+                                  min={1}
+                                  max={60}
+                                  value={loanDuration}
+                                  onChange={(e) => {
+                                    const value = parseInt(e.target.value, 10);
+                                    if (e.target.value === '') {
+                                      setLoanDuration(1);
+                                    } else if (!isNaN(value) && value >= 1 && value <= 60) {
+                                      setLoanDuration(value);
+                                    }
+                                  }}
+                                  className="w-full bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 pr-24 text-right"
+                                />
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
+                                  {formatDuration(loanDuration)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="amount" className="text-right col-span-1 text-gray-700">
+                              Amount
+                            </Label>
+                              <Input
+                              id="amount"
+                              className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
+                              placeholder="Enter loan amount"
+                            />
+                          </div>
+                          <div className="grid grid-cols-4 items-center gap-4">
+                            <Label htmlFor="paymentFrequency" className="text-right col-span-1 text-gray-700">
+                              Payment Frequency
+                            </Label>
+                              <select 
+                              id="gender" 
+                              className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 rounded-md p-2"
+                            >
+                              <option value="">Select Payment Frequency</option>
+                              <option value="Weekly">Weekly</option>
+                              <option value="Bi-Weekly">Bi-Weekly</option>
+                              <option value="Semi-Monthly">Semi-Monthly</option>
+                              <option value="Monthly">Monthly</option>
+                              <option value="Other">Other</option>
+                            </select>
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button
+                            variant="outline"
+                            className="text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
+                          >
+                            Cancel
+                          </Button>
+                          <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                            Register Loan
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                    </div>
+
+                        <div className="flex items-center gap-4 mt-4">
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search loans..."
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+               <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Status</SelectItem>
+                  <SelectItem value="Approved">Approved</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Declined">Declined</SelectItem>
+                </SelectContent>
+              </Select>
+              </div>
+             
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow className="border-gray-200">
+                  <TableHead className="text-gray-700">Loan ID</TableHead>
+                  <TableHead className="text-gray-700">Client Name</TableHead>
+                  <TableHead className="text-gray-700">Type</TableHead>
+                  <TableHead className="text-gray-700">Amount</TableHead>
+                  <TableHead className="text-gray-700">Status</TableHead>
+                  <TableHead className="text-gray-700">Application Date</TableHead>
+                  <TableHead className="text-gray-700">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+               {sortedLoans.map((loan) => (
                       <TableRow 
                         key={loan.id} 
                         className="border-gray-200 hover:bg-gray-50 cursor-pointer"
@@ -631,34 +688,12 @@ export default function LoanManagementPage() {
                         <TableCell className="text-gray-500">{loan.applicationDate}</TableCell>
                         <TableCell>
                           <Badge 
-                            variant={
-                              loan.status === "Approved" ? "default" : 
-                              loan.status === "Pending" ? "secondary" : "destructive"
-                            }
-                            className="flex items-center gap-1"
+                            className={`flex items-center gap-1 ${statusStyles[loan.status]}`}
                           >
-                            {loan.status === "Approved" ? (
-                              <>
-                                <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
-                                  <circle cx="4" cy="4" r="3" />
-                                </svg>
-                                {loan.status}
-                              </>
-                            ) : loan.status === "Pending" ? (
-                              <>
-                                <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
-                                  <circle cx="4" cy="4" r="3" />
-                                </svg>
-                                {loan.status}
-                              </>
-                            ) : (
-                              <>
-                                <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
-                                  <circle cx="4" cy="4" r="3" />
-                                </svg>
-                                {loan.status}
-                              </>
-                            )}
+                            <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                              <circle cx="4" cy="4" r="3" />
+                            </svg>
+                            {loan.status}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -678,13 +713,12 @@ export default function LoanManagementPage() {
                         </TableCell>
                       </TableRow>
                     ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-          )}
-        </main>
-      </div>
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+        )}
+      </main>
     </div>
   )
 }
