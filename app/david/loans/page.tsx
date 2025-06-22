@@ -106,7 +106,7 @@ const loans = [
 
 function LoanDetailsPanel({ loan, onClose }: { loan: typeof loans[0], onClose: () => void }) {
   return (
-    <Dialog open={true} onOpenChange={onClose}>
+    <Dialog open={true} onOpenChange={onClose}>Add commentMore actions
       <DialogContent className="sm:max-w-[900px] bg-white rounded-lg">
         <DialogHeader>
           <div className="flex justify-between items-center">
@@ -363,13 +363,16 @@ function LoanDetailsPanel({ loan, onClose }: { loan: typeof loans[0], onClose: (
       </DialogContent>
     </Dialog>
   )
-}
+}// ... (keep the existing LoanDetailsPanel component exactly as is)
 
 export default function LoansPage() {
   const [searchText, setSearchText] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("All")
   const [selectedLoan, setSelectedLoan] = useState<typeof loans[0] | null>(null)
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "none">("none")
+  const [selectedStatus, setSelectedStatus] = useState<string>("all")
+  const [selectedType, setSelectedType] = useState<string>("all")
+  const [sortOption, setSortOption] = useState<"none" | "date" | "amount">("none")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
   const [coApplicantNumber, setCoApplicantNumber] = useState<number>(0)
   const [guarantorNumber, setGuarantorNumber] = useState<number>(0)
 
@@ -383,9 +386,21 @@ export default function LoansPage() {
   })
 
   const sortedLoans = [...filteredLoans].sort((a, b) => {
-    if (sortOrder === "none") return 0
-    if (sortOrder === "asc") return a.clientName.localeCompare(b.clientName)
-    return b.clientName.localeCompare(a.clientName)
+    if (sortOption === "none") return 0
+    
+    if (sortOption === "date") {
+      return sortDirection === "asc" 
+        ? new Date(a.applicationDate).getTime() - new Date(b.applicationDate).getTime()
+        : new Date(b.applicationDate).getTime() - new Date(a.applicationDate).getTime()
+    }
+    
+    if (sortOption === "amount") {
+      return sortDirection === "asc" 
+        ? a.amount - b.amount
+        : b.amount - a.amount
+    }
+    
+    return 0
   })
 
   const toggleSortOrder = () => {
