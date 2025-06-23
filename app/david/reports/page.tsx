@@ -24,7 +24,11 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { BarChart2 } from "lucide-react";
 
-
+const statusStyles = {
+  Approved: "bg-green-100 text-green-800 hover:bg-green-100 border-green-200",
+  Pending: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200",
+  Declined: "bg-red-100 text-red-800 hover:bg-red-100 border-red-200",
+};
 
 // Extended loan data with previous loans
 const loans = [
@@ -644,7 +648,7 @@ export default function LoanReportsPage() {
   const pathname = usePathname()
   const [searchText, setSearchText] = useState("")
   const [selectedLoan, setSelectedLoan] = useState<typeof loans[0] | null>(null)
-  const [statusFilter, setStatusFilter] = useState<string>("Pending")
+  const [statusFilter, setStatusFilter] = useState<string>("All")
 
   const filteredLoans = loans.filter(loan => {
     const matchesSearch = loan.id.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -657,43 +661,23 @@ export default function LoanReportsPage() {
     <div className="flex min-h-screen w-full bg-gray-50">
       {/* Main Content */}
       <div className="flex flex-1 flex-col">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-6">
-          <h1 className="text-xl font-semibold text-gray-800">Loan Contract Reports</h1>
-          <div className="ml-auto flex items-center gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                type="search"
-                placeholder="Search loans..."
-                className="w-64 rounded-lg bg-gray-50 border-gray-200 pl-8 focus:ring-blue-500 focus:border-blue-500"
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-32 bg-gray-50 border-gray-200 focus:ring-blue-500">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent className="bg-white text-gray-800 border-gray-200">
-                <SelectItem value="All" className="hover:bg-gray-100">All</SelectItem>
-                <SelectItem value="Pending" className="hover:bg-gray-100">Pending</SelectItem>
-                <SelectItem value="Approved" className="hover:bg-gray-100">Approved</SelectItem>
-                <SelectItem value="Active" className="hover:bg-gray-100">Active</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
-              <Avatar className="h-9 w-9">
-                <AvatarImage src="/placeholder.svg?height=36&width=36" alt="David" />
-                <AvatarFallback className="text-gray-900">DL</AvatarFallback>
-              </Avatar>
-              <div>
-                <p className="text-sm font-medium text-gray-800">David Lee</p>
-                <p className="text-xs text-gray-500">IT Administrator</p>
-              </div>
-              <ChevronDown className="h-4 w-4 text-gray-400 cursor-pointer" />
-            </div>
+         {/* Header */}
+      <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-gray-800">Credit Reports</h1>
+          <p className="text-gray-500">Generate and view detailed credit reports</p>
+        </div>
+        <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
+          <div className="h-9 w-9 rounded-full bg-gray-300 flex items-center justify-center">
+            <span className="text-sm font-medium text-gray-700">DL</span>
           </div>
-        </header>
+          <div>
+            <p className="text-sm font-medium text-gray-800">David Lee</p>
+            <p className="text-xs text-gray-500">IT Administrator</p>
+          </div>
+          <ChevronDown className="h-4 w-4 text-gray-500 cursor-pointer" />
+        </div>
+      </header>
 
         <main className="flex-1 p-6">
           {selectedLoan ? (
@@ -702,13 +686,33 @@ export default function LoanReportsPage() {
             <Card className="shadow-sm border-gray-200">
               <CardHeader>
                 <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle className="text-xl text-gray-800">Pending Loan Approvals</CardTitle>
-                    <CardDescription className="text-gray-500">
-                      {filteredLoans.length} loans found
-                    </CardDescription>
-                  </div>
+                  <div className="flex items-center justify-between">
+              <CardTitle className="text-xl text-gray-800">Loan Reports ({filteredLoans.length})</CardTitle>
+            </div>
                 </div>
+
+                          <div className="flex items-center gap-4 mt-4">
+               <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Search Reports..."
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Status</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Approved">Approved</SelectItem>
+                  <SelectItem value="Declined">Declined</SelectItem>
+                </SelectContent>
+              </Select>
+              </div>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -762,34 +766,12 @@ export default function LoanReportsPage() {
                           <TableCell className="text-gray-500">{loan.applicationDate}</TableCell>
                           <TableCell>
                             <Badge 
-                              variant={
-                                loan.status === "Approved" ? "default" : 
-                                loan.status === "Pending" ? "secondary" : "destructive"
-                              }
-                              className="flex items-center gap-1"
+                              className={`flex items-center gap-1 ${statusStyles[loan.status]}`}
                             >
-                              {loan.status === "Approved" ? (
-                                <>
                                   <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
-                                    <circle cx="4" cy="4" r="3" />
-                                  </svg>
-                                  {loan.status}
-                                </>
-                              ) : loan.status === "Pending" ? (
-                                <>
-                                  <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
-                                    <circle cx="4" cy="4" r="3" />
-                                  </svg>
-                                  {loan.status}
-                                </>
-                              ) : (
-                                <>
-                                  <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
-                                    <circle cx="4" cy="4" r="3" />
-                                  </svg>
-                                  {loan.status}
-                                </>
-                              )}
+                              <circle cx="4" cy="4" r="3" />
+                            </svg>
+                            {loan.status}
                             </Badge>
                           </TableCell>
                           <TableCell>
