@@ -1,50 +1,99 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   DialogDescription,
-  DialogFooter
+  DialogFooter,
 } from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
-import { Plus, Eye, Edit } from "lucide-react"
-import { UploadCloud, ChevronDown, Cog, Edit2, ListChecks, LogOut, Shield, Trash2, UserCog, UserPlus2, Users2, User, FileText, Book, Search, ArrowUpDown, X, Info, BadgeInfo, Calendar, Phone, Home, GraduationCap, HeartPulse, Briefcase, Wallet, CreditCard, BarChart2 } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Slider } from "@/components/ui/slider"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { toast } from "@/components/ui/use-toast"
+import {
+  Eye,
+  Search,
+  ArrowUpDown,
+  ChevronDown,
+  Trash2,
+  User,
+  Info,
+  BadgeInfo,
+  Calendar,
+  Phone,
+  Home,
+  GraduationCap,
+  HeartPulse,
+  Briefcase,
+  Wallet,
+  CreditCard,
+  BarChart2,
+  FileText,
+  Edit2,
+  UserPlus2,
+  Save,
+} from "lucide-react"
 
 const statusConfig = {
-  Active: {
-    className: "bg-green-100 text-green-800 border-green-200",
-  },
-  Dormant: {
-    className: "bg-yellow-100 text-yellow-800 border-yellow-200",
-  },
-  Suspended: {
-    className: "bg-orange-100 text-orange-800 border-orange-200",
-  },
-  Closed: {
-    className: "bg-gray-200 text-gray-800 border-gray-300",
-  }
-};
-
+  Active: { className: "bg-green-100 text-green-800 border-green-200" },
+  Dormant: { className: "bg-yellow-100 text-yellow-800 border-yellow-200" },
+  Suspended: { className: "bg-orange-100 text-orange-800 border-orange-200" },
+  Closed: { className: "bg-gray-200 text-gray-800 border-gray-300" },
+}
 
 interface Member {
   id: string
   name: string
   email: string
-  phone: string
+  gender: string
+  birthday: string
+  contact: string
+  address: string
+  education: string
+  maritalStatus: string
+  dependents: number
+  industry: string
+  monthlyIncome: number
+  savingsBalance: number
+  monthlyExpenses: number
+  status: "Active" | "Dormant" | "Suspended" | "Closed"
+  loans: Array<{
+    id: string
+    type: string
+    purpose: string
+    amount: number
+    applicationDate: string
+    duration: string
+    validatedBy: string
+    status: string
+  }>
   creditScore: number
-  totalLoans: number
-  status: "Active" | "Inactive"
-  joinDate: string
+  joinedDate: string
 }
 
-const members = [
+const initialMembers: Member[] = [
   {
     id: "CL001",
     name: "Juan Dela Cruz",
@@ -70,21 +119,11 @@ const members = [
         applicationDate: "2025-05-15",
         duration: "12 months",
         validatedBy: "Maria Santos",
-        status: "Approved"
+        status: "Approved",
       },
-      {
-        id: "LN004",
-        type: "Emergency Loan",
-        purpose: "Medical Expenses",
-        amount: 30000,
-        applicationDate: "2025-06-10",
-        duration: "6 months",
-        validatedBy: "Carlos Reyes",
-        status: "Approved"
-      }
     ],
     creditScore: 85,
-    joinedDate: "2023-01-10"
+    joinedDate: "2023-01-10",
   },
   {
     id: "CL002",
@@ -111,113 +150,28 @@ const members = [
         applicationDate: "2025-05-20",
         duration: "24 months",
         validatedBy: "Juan Dela Cruz",
-        status: "Approved"
-      }
+        status: "Approved",
+      },
     ],
     creditScore: 92,
-    joinedDate: "2022-11-05"
+    joinedDate: "2022-11-05",
   },
-  {
-    id: "CL003",
-    name: "Pedro Reyes",
-    email: "pedroreyes@example.com",
-    gender: "Male",
-    birthday: "1978-03-30",
-    contact: "09345678901",
-    address: "789 Pine Rd, Makati",
-    education: "High School Graduate",
-    maritalStatus: "Divorced",
-    dependents: 1,
-    industry: "Education",
-    monthlyIncome: 50000,
-    savingsBalance: 80000,
-    monthlyExpenses: 30000,
-    status: "Dormant",
-    loans: [
-      {
-        id: "LN003",
-        type: "Emergency Loan",
-        purpose: "Medical Expenses",
-        amount: 30000,
-        applicationDate: "2023-05-25",
-        duration: "6 months",
-        validatedBy: "Ana Lopez",
-        status: "Approved"
-      }
-    ],
-    creditScore: 78,
-    joinedDate: "2023-03-15"
-  },
-  {
-    id: "CL004",
-    name: "Ana Lopez",
-    email: "analopez@example.com",
-    gender: "Female",
-    birthday: "1992-11-10",
-    contact: "09456789012",
-    address: "321 Maple St, Pasig",
-    education: "Bachelor's Degree",
-    maritalStatus: "Single",
-    dependents: 0,
-    industry: "Healthcare",
-    monthlyIncome: 60000,
-    savingsBalance: 95000,
-    monthlyExpenses: 25000,
-    status: "Suspended",
-    loans: [
-      {
-        id: "LN005",
-        type: "Personal Loan",
-        purpose: "Debt Consolidation",
-        amount: 70000,
-        applicationDate: "2025-06-01",
-        duration: "24 months",
-        validatedBy: "David Lee",
-        status: "Disapproved"
-      }
-    ],
-    creditScore: 64,
-    joinedDate: "2024-01-20"
-  },
-  {
-    id: "CL005",
-    name: "Carlos Garcia",
-    email: "carlosgarcia@example.com",
-    gender: "Male",
-    birthday: "1980-01-25",
-    contact: "09567890123",
-    address: "654 Elm St, Taguig",
-    education: "Master's Degree",
-    maritalStatus: "Married",
-    dependents: 3,
-    industry: "Finance",
-    monthlyIncome: 90000,
-    savingsBalance: 250000,
-    monthlyExpenses: 50000,
-    status: "Closed",
-    loans: [],
-    creditScore: 0,
-    joinedDate: "2022-02-18"
-  }
 ]
 
-function ClientDetailsPanel({ client, onClose }: { client: typeof members[0], onClose: () => void }) {
-  const [loanDuration, setLoanDuration] = useState(12); // Default to 12 months
-
-  const formatDuration = (months: number) => {
-    if (months < 12) return `${months} month${months > 1 ? 's' : ''}`;
-    if (months % 12 === 0) {
-      const years = months / 12;
-      return `${years} year${years > 1 ? 's' : ''}`;
-    }
-    const years = Math.floor(months / 12);
-    const remainingMonths = months % 12;
-    return `${years}y ${remainingMonths}m`;
-  };
-
+function ClientDetailsPanel({
+  client,
+  onClose,
+  onEdit,
+  onDelete,
+}: {
+  client: Member
+  onClose: () => void
+  onEdit: (client: Member) => void
+  onDelete: (clientId: string) => void
+}) {
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[900px] bg-white rounded-lg">
+      <DialogContent className="sm:max-w-[900px] bg-white rounded-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex justify-between items-center">
             <div>
@@ -232,10 +186,9 @@ function ClientDetailsPanel({ client, onClose }: { client: typeof members[0], on
                 Comprehensive client profile and financial history
               </DialogDescription>
             </div>
-         
           </div>
         </DialogHeader>
-        
+
         <div className="grid gap-8 py-4">
           {/* Client Overview Card */}
           <Card className="border-gray-200 shadow-sm">
@@ -291,7 +244,6 @@ function ClientDetailsPanel({ client, onClose }: { client: typeof members[0], on
 
           {/* Personal Details and Financial Information */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Personal Details Card */}
             <Card className="border-gray-200 shadow-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -330,7 +282,6 @@ function ClientDetailsPanel({ client, onClose }: { client: typeof members[0], on
               </CardContent>
             </Card>
 
-            {/* Financial Information Card */}
             <Card className="border-gray-200 shadow-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -355,14 +306,24 @@ function ClientDetailsPanel({ client, onClose }: { client: typeof members[0], on
                   <div>
                     <Label className="text-sm text-gray-500">Credit Score</Label>
                     <div className="flex items-center gap-2">
-                      <BarChart2 className={`h-4 w-4 ${
-                        client.creditScore >= 85 ? "text-green-500" : 
-                        client.creditScore >= 70 ? "text-yellow-500" : "text-red-500"
-                      }`} />
-                      <span className={`font-medium ${
-                        client.creditScore >= 85 ? "text-green-600" : 
-                        client.creditScore >= 70 ? "text-yellow-600" : "text-red-600"
-                      }`}>
+                      <BarChart2
+                        className={`h-4 w-4 ${
+                          client.creditScore >= 85
+                            ? "text-green-500"
+                            : client.creditScore >= 70
+                              ? "text-yellow-500"
+                              : "text-red-500"
+                        }`}
+                      />
+                      <span
+                        className={`font-medium ${
+                          client.creditScore >= 85
+                            ? "text-green-600"
+                            : client.creditScore >= 70
+                              ? "text-yellow-600"
+                              : "text-red-600"
+                        }`}
+                      >
                         {client.creditScore}
                       </span>
                     </div>
@@ -372,13 +333,13 @@ function ClientDetailsPanel({ client, onClose }: { client: typeof members[0], on
             </Card>
           </div>
 
-          {/* Client Loans Section */}
+          {/* Loan History */}
           <Card className="border-gray-200 shadow-sm">
             <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  <CreditCard className="h-5 w-5 text-amber-500" />
-                  Loan History ({client.loans.length})
-                </CardTitle>
+              <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-amber-500" />
+                Loan History ({client.loans.length})
+              </CardTitle>
             </CardHeader>
             <CardContent>
               {client.loans.length > 0 ? (
@@ -392,7 +353,6 @@ function ClientDetailsPanel({ client, onClose }: { client: typeof members[0], on
                         <TableHead className="text-gray-600 font-medium">Amount</TableHead>
                         <TableHead className="text-gray-600 font-medium">Date</TableHead>
                         <TableHead className="text-gray-600 font-medium">Status</TableHead>
-                        <TableHead className="text-gray-600 font-medium">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -404,31 +364,9 @@ function ClientDetailsPanel({ client, onClose }: { client: typeof members[0], on
                           <TableCell className="text-gray-700 font-medium">₱{loan.amount.toLocaleString()}</TableCell>
                           <TableCell className="text-gray-500">{loan.applicationDate}</TableCell>
                           <TableCell>
-                            <Badge 
-                              variant={loan.status === "Approved" ? "default" : "destructive"}
-                              className="flex items-center gap-1"
-                            >
-                              {loan.status === "Approved" ? (
-                                <>
-                                  <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
-                                    <circle cx="4" cy="4" r="3" />
-                                  </svg>
-                                  {loan.status}
-                                </>
-                              ) : (
-                                <>
-                                  <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
-                                    <circle cx="4" cy="4" r="3" />
-                                  </svg>
-                                  {loan.status}
-                                </>
-                              )}
+                            <Badge variant={loan.status === "Approved" ? "default" : "destructive"}>
+                              {loan.status}
                             </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-500 hover:text-blue-600">
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
                           </TableCell>
                         </TableRow>
                       ))}
@@ -440,7 +378,6 @@ function ClientDetailsPanel({ client, onClose }: { client: typeof members[0], on
                   <FileText className="h-10 w-10 text-gray-300 mb-3" />
                   <h4 className="text-gray-500 font-medium">No loan applications</h4>
                   <p className="text-gray-400 text-sm mt-1">This client hasn't applied for any loans yet</p>
-                  <Button variant="outline" className="mt-4 border-gray-200">Create New Loan</Button>
                 </div>
               )}
             </CardContent>
@@ -449,26 +386,34 @@ function ClientDetailsPanel({ client, onClose }: { client: typeof members[0], on
 
         <DialogFooter className="border-t border-gray-200 pt-4">
           <div className="flex justify-between w-full">
-            <Button
-              variant="outline"
-              onClick={() => console.log("Delete client")}
-              className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete Client
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Client
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the client "{client.name}" and all
+                    associated data.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onDelete(client.id)} className="bg-red-600 hover:bg-red-700">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={onClose}
-                className="text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
-              >
+              <Button variant="outline" onClick={onClose}>
                 Close
               </Button>
-              <Button 
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={() => console.log("Edit client")}
-              >
+              <Button onClick={() => onEdit(client)} className="bg-blue-600 hover:bg-blue-700">
                 <Edit2 className="h-4 w-4 mr-2" />
                 Edit Member
               </Button>
@@ -480,30 +425,327 @@ function ClientDetailsPanel({ client, onClose }: { client: typeof members[0], on
   )
 }
 
-export default function MembersPage() {
-  const [searchText, setSearchText] = useState("")
-  const [selectedMember, setSelectedMember] = useState<(typeof members)[0] | null>(null)
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "none">("none")
-  const [reportMember, setReportMember] = useState<typeof members[0] | null>(null)
+function ClientFormDialog({
+  client,
+  isOpen,
+  onClose,
+  onSave,
+  mode,
+}: {
+  client?: Member
+  isOpen: boolean
+  onClose: () => void
+  onSave: (client: Member) => void
+  mode: "create" | "edit"
+}) {
+  const [formData, setFormData] = useState<Partial<Member>>(
+    client || {
+      name: "",
+      email: "",
+      gender: "",
+      birthday: "",
+      contact: "",
+      address: "",
+      education: "",
+      maritalStatus: "",
+      dependents: 0,
+      industry: "",
+      monthlyIncome: 0,
+      savingsBalance: 0,
+      monthlyExpenses: 0,
+      status: "Active",
+      loans: [],
+      creditScore: 0,
+    },
+  )
 
-  const filteredMembers = members.filter(client => {
-    return client.id.toLowerCase().includes(searchText.toLowerCase()) ||
-            client.name.toLowerCase().includes(searchText.toLowerCase()) ||
-            client.contact.toLowerCase().includes(searchText.toLowerCase())
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    const newClient: Member = {
+      ...formData,
+      id: client?.id || `CL${String(Date.now()).slice(-3)}`,
+      joinedDate: client?.joinedDate || new Date().toISOString().split("T")[0],
+      loans: client?.loans || [],
+    } as Member
+
+    onSave(newClient)
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{mode === "create" ? "Register New Member" : `Edit Member - ${client?.name}`}</DialogTitle>
+          <DialogDescription>
+            {mode === "create" ? "Fill out the details for the new member" : "Update the member information"}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="name">Full Name *</Label>
+              <Input
+                id="name"
+                value={formData.name || ""}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email || ""}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="gender">Gender</Label>
+              <Select
+                value={formData.gender || ""}
+                onValueChange={(value) => setFormData({ ...formData, gender: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select gender" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Male">Male</SelectItem>
+                  <SelectItem value="Female">Female</SelectItem>
+                  <SelectItem value="Other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="birthday">Birthday</Label>
+              <Input
+                id="birthday"
+                type="date"
+                value={formData.birthday || ""}
+                onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="contact">Contact Number *</Label>
+              <Input
+                id="contact"
+                value={formData.contact || ""}
+                onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={formData.status || "Active"}
+                onValueChange={(value) => setFormData({ ...formData, status: value as any })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Active">Active</SelectItem>
+                  <SelectItem value="Dormant">Dormant</SelectItem>
+                  <SelectItem value="Suspended">Suspended</SelectItem>
+                  <SelectItem value="Closed">Closed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="address">Address</Label>
+            <Textarea
+              id="address"
+              value={formData.address || ""}
+              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+              rows={2}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="education">Education</Label>
+              <Input
+                id="education"
+                value={formData.education || ""}
+                onChange={(e) => setFormData({ ...formData, education: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="maritalStatus">Marital Status</Label>
+              <Select
+                value={formData.maritalStatus || ""}
+                onValueChange={(value) => setFormData({ ...formData, maritalStatus: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Single">Single</SelectItem>
+                  <SelectItem value="Married">Married</SelectItem>
+                  <SelectItem value="Divorced">Divorced</SelectItem>
+                  <SelectItem value="Widowed">Widowed</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="dependents">Dependents</Label>
+              <Input
+                id="dependents"
+                type="number"
+                min="0"
+                value={formData.dependents || 0}
+                onChange={(e) => setFormData({ ...formData, dependents: Number.parseInt(e.target.value) || 0 })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="industry">Industry</Label>
+              <Input
+                id="industry"
+                value={formData.industry || ""}
+                onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="monthlyIncome">Monthly Income (₱)</Label>
+              <Input
+                id="monthlyIncome"
+                type="number"
+                min="0"
+                value={formData.monthlyIncome || 0}
+                onChange={(e) => setFormData({ ...formData, monthlyIncome: Number.parseInt(e.target.value) || 0 })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="monthlyExpenses">Monthly Expenses (₱)</Label>
+              <Input
+                id="monthlyExpenses"
+                type="number"
+                min="0"
+                value={formData.monthlyExpenses || 0}
+                onChange={(e) => setFormData({ ...formData, monthlyExpenses: Number.parseInt(e.target.value) || 0 })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="savingsBalance">Savings Balance (₱)</Label>
+              <Input
+                id="savingsBalance"
+                type="number"
+                min="0"
+                value={formData.savingsBalance || 0}
+                onChange={(e) => setFormData({ ...formData, savingsBalance: Number.parseInt(e.target.value) || 0 })}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              <Save className="h-4 w-4 mr-2" />
+              {mode === "create" ? "Register Member" : "Update Member"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+export default function MembersPage() {
+  const [members, setMembers] = useState<Member[]>(initialMembers)
+  const [searchText, setSearchText] = useState("")
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null)
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "none">("none")
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [editingMember, setEditingMember] = useState<Member | null>(null)
+
+  const filteredMembers = members.filter((client) => {
+    return (
+      client.id.toLowerCase().includes(searchText.toLowerCase()) ||
+      client.name.toLowerCase().includes(searchText.toLowerCase()) ||
+      client.contact.toLowerCase().includes(searchText.toLowerCase()) ||
+      client.email.toLowerCase().includes(searchText.toLowerCase())
+    )
   })
 
-  const sortedmembers = [...filteredMembers].sort((a, b) => {
+  const sortedMembers = [...filteredMembers].sort((a, b) => {
     if (sortOrder === "none") return 0
     if (sortOrder === "asc") return a.name.localeCompare(b.name)
     return b.name.localeCompare(a.name)
   })
 
   const toggleSortOrder = () => {
-    setSortOrder(prev => {
+    setSortOrder((prev) => {
       if (prev === "none") return "asc"
       if (prev === "asc") return "desc"
       return "none"
-    });
+    })
+  }
+
+  const handleCreateMember = (newMember: Member) => {
+    // Calculate credit score based on financial data
+    const income = newMember.monthlyIncome || 0
+    const expenses = newMember.monthlyExpenses || 0
+    const savings = newMember.savingsBalance || 0
+    const creditScore = Math.min(
+      100,
+      Math.max(0, Math.floor((income - expenses) / 1000) + Math.floor(savings / 10000) + 50),
+    )
+
+    const memberWithScore = { ...newMember, creditScore }
+    setMembers((prev) => [...prev, memberWithScore])
+    setIsCreateDialogOpen(false)
+
+    toast({
+      title: "Success",
+      description: `Member ${newMember.name} has been registered successfully.`,
+    })
+  }
+
+  const handleUpdateMember = (updatedMember: Member) => {
+    setMembers((prev) => prev.map((member) => (member.id === updatedMember.id ? updatedMember : member)))
+    setEditingMember(null)
+    setSelectedMember(updatedMember)
+
+    toast({
+      title: "Success",
+      description: `Member ${updatedMember.name} has been updated successfully.`,
+    })
+  }
+
+  const handleDeleteMember = (memberId: string) => {
+    const memberToDelete = members.find((m) => m.id === memberId)
+    setMembers((prev) => prev.filter((member) => member.id !== memberId))
+    setSelectedMember(null)
+
+    toast({
+      title: "Success",
+      description: `Member ${memberToDelete?.name} has been deleted successfully.`,
+      variant: "destructive",
+    })
+  }
+
+  const handleEditMember = (member: Member) => {
+    setEditingMember(member)
+    setSelectedMember(null)
   }
 
   return (
@@ -512,7 +754,7 @@ export default function MembersPage() {
       <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-800">Member Management</h1>
-          <p className="text-gray-500">Manage all Member accounts and information</p>
+          <p className="text-gray-500">Manage all member accounts and information</p>
         </div>
         <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
           <div className="h-9 w-9 rounded-full bg-gray-300 flex items-center justify-center">
@@ -531,113 +773,10 @@ export default function MembersPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl text-gray-800">Members ({filteredMembers.length})</CardTitle>
-                          <Dialog>
-              <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  <UserPlus2 className="mr-2 h-4 w-4" /> New Member
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-white text-gray-800 border-gray-200 sm:max-w-[625px] rounded-lg">
-                <DialogHeader>
-                  <DialogTitle className="text-xl text-gray-800">Register New Member</DialogTitle>
-                  <DialogDescription className="text-gray-500">
-                    Fill out the details for the new Member
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="fullName" className="text-right col-span-1 text-gray-700">
-                      Full Name
-                    </Label>
-                    <Input
-                      id="fullName"
-                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
-                      placeholder="Enter member's full name"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="gender" className="text-right col-span-1 text-gray-700">
-                      Gender
-                    </Label>
-                    <select 
-                      id="gender" 
-                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 rounded-md p-2"
-                    >
-                      <option value="">Select gender</option>
-                      <option value="Male">Male</option>
-                      <option value="Female">Female</option>
-                      <option value="Other">Other</option>
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="birthday" className="text-right col-span-1 text-gray-700">
-                      Birthday
-                    </Label>
-                    <Input
-                      id="birthday"
-                      type="date"
-                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="contact" className="text-right col-span-1 text-gray-700">
-                      Contact
-                    </Label>
-                    <Input
-                      id="contact"
-                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
-                      placeholder="Enter contact number"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="address" className="text-right col-span-1 text-gray-700">
-                      Address
-                    </Label>
-                    <Input
-                      id="address"
-                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
-                      placeholder="Enter complete address"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="education" className="text-right col-span-1 text-gray-700">
-                      Education
-                    </Label>
-                    <Input
-                      id="education"
-                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
-                      placeholder="Enter education level"
-                    />
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="maritalStatus" className="text-right col-span-1 text-gray-700">
-                      Marital Status
-                    </Label>
-                    <select 
-                      id="maritalStatus" 
-                      className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 rounded-md p-2"
-                    >
-                      <option value="">Select status</option>
-                      <option value="Single">Single</option>
-                      <option value="Married">Married</option>
-                      <option value="Divorced">Divorced</option>
-                      <option value="Widowed">Widowed</option>
-                    </select>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    className="text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
-                  >
-                    Cancel
-                  </Button>
-                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                    Register Member
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+              <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+                <UserPlus2 className="mr-2 h-4 w-4" />
+                New Member
+              </Button>
             </div>
             <div className="flex items-center gap-4 mt-4">
               <div className="relative flex-1 max-w-sm">
@@ -649,143 +788,18 @@ export default function MembersPage() {
                   className="pl-10"
                 />
               </div>
-              <Button 
-              variant="outline" 
-              className="border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-              onClick={toggleSortOrder}
-            >
-              <ArrowUpDown className="mr-2 h-4 w-4" />
-              {sortOrder === "none" ? "Sort" : sortOrder === "asc" ? "A-Z" : "Z-A"}
-            </Button>
+              <Button
+                variant="outline"
+                className="border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                onClick={toggleSortOrder}
+              >
+                <ArrowUpDown className="mr-2 h-4 w-4" />
+                {sortOrder === "none" ? "Sort" : sortOrder === "asc" ? "A-Z" : "Z-A"}
+              </Button>
             </div>
           </CardHeader>
-          {/* {selectedMember ? (
-            <ClientDetailsPanel client={selectedMember} onClose={() => setSelectedMember(null)} />
-          ) : (
-            <Card className="shadow-sm border-gray-200">
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle className="text-xl text-gray-800">Client List</CardTitle>
-                    <CardDescription className="text-gray-500">
-                      {members.length} registered members
-                    </CardDescription>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="border-gray-200 text-gray-700">
-                      Export
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader> */}
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-gray-200">
-                      <TableHead className="text-gray-700">Member ID</TableHead>
-                      <TableHead className="text-gray-700">Name</TableHead>
-                      <TableHead className="text-gray-700">Email</TableHead>
-                      <TableHead className="text-gray-700">Phone</TableHead>
-                      <TableHead className="text-gray-700">Credit Score</TableHead>
-                      <TableHead className="text-gray-700">Total Loans</TableHead>
-                      <TableHead className="text-gray-700">Status</TableHead>
-                      <TableHead className="text-gray-700">Actions</TableHead>
-                   </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {sortedmembers.map((member) => (
-                      <TableRow 
-  key={member.id} 
-  className="border-gray-200 hover:bg-gray-50 cursor-pointer"
-  onClick={() => setSelectedMember(member)}
->
-  <TableCell className="font-medium text-gray-800">{member.id}</TableCell>
-  <TableCell className="text-gray-700">
-    <div className="flex items-center gap-3">
-      <Avatar className="h-8 w-8">
-        <AvatarFallback className="bg-blue-100 text-blue-800">
-          {member.name.split(" ").map(n => n[0]).join("")}
-        </AvatarFallback>
-      </Avatar>
-      <span>{member.name}</span>
-    </div>
-  </TableCell>
-  <TableCell className="text-gray-700">
-    <Badge variant="outline" className="border-gray-200 text-gray-600">
-      {member.email}
-    </Badge>
-  </TableCell>
-  <TableCell className="text-gray-700">{member.contact}</TableCell>
-  <TableCell>
-    <div className="flex items-center gap-2">
-      <div className={`h-2 w-2 rounded-full ${
-        member.creditScore >= 85 ? "bg-green-500" : 
-        member.creditScore >= 70 ? "bg-yellow-500" : "bg-red-500"
-      }`} />
-      <span className={`font-medium ${
-        member.creditScore >= 85 ? "text-green-600" : 
-        member.creditScore >= 70 ? "text-yellow-600" : "text-red-600"
-      }`}>
-        {member.creditScore}
-      </span>
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        className="h-6 w-6 text-gray-500 hover:text-blue-600"
-        onClick={(e) => {
-          e.stopPropagation()
-          setReportMember(member)
-        }}
-      >
-        <FileText className="h-3 w-3" />
-      </Button>
-    </div>
-  </TableCell>
-   <TableCell className="text-gray-700">
-    <Badge variant={member.loans.length > 0 ? "default" : "outline"}>
-      {member.loans.length} {member.loans.length === 1 ? "loan" : "loans"}
-    </Badge>
-  </TableCell>  
-   <TableCell className="text-gray-700">
-      <Badge
-    variant="outline"
-    className={statusConfig[member.status as keyof typeof statusConfig].className}
-  >
-    {member.status}
-  </Badge>
-   </TableCell>
-  <TableCell>
-    <div className="flex gap-1">
-      <Button 
-        variant="ghost" 
-        size="icon" 
-        className="h-8 w-8 text-blue-500 hover:text-blue-600"
-        onClick={(e) => {
-          e.stopPropagation()
-          setSelectedMember(member)
-        }}
-      >
-        <Edit2 className="h-4 w-4" />
-      </Button>
-    </div>
-  </TableCell>
-</TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-         
-      </main>
-      {selectedMember && (
-        <ClientDetailsPanel client={selectedMember} onClose={() => setSelectedMember(null)} />
-      )}
-    </div>
-  )
-}
 
-
- /* <CardContent>
+          <CardContent>
             <Table>
               <TableHeader>
                 <TableRow className="border-gray-200">
@@ -800,99 +814,112 @@ export default function MembersPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredMembers.map((Member) => (
-                  <TableRow key={Member.id} className="border-gray-200 hover:bg-gray-50">
-                    <TableCell className="font-medium text-gray-900">{Member.id}</TableCell>
-                    <TableCell className="text-gray-900">{Member.name}</TableCell>
-                    <TableCell className="text-gray-600">{Member.email}</TableCell>
-                    <TableCell className="text-gray-600">{Member.phone}</TableCell>
-                    <TableCell>
-                      <span
-                        className={`font-medium ${
-                          Member.creditScore >= 700
-                            ? "text-green-600"
-                            : Member.creditScore >= 650
-                              ? "text-yellow-600"
-                              : "text-red-600"
-                        }`}
-                      >
-                        {Member.creditScore}
-                      </span>
+                {sortedMembers.map((member) => (
+                  <TableRow
+                    key={member.id}
+                    className="border-gray-200 hover:bg-gray-50 cursor-pointer"
+                    onClick={() => setSelectedMember(member)}
+                  >
+                    <TableCell className="font-medium text-gray-800">{member.id}</TableCell>
+                    <TableCell className="text-gray-700">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="bg-blue-100 text-blue-800">
+                            {member.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{member.name}</span>
+                      </div>
                     </TableCell>
-                    <TableCell className="text-gray-900">{Member.totalLoans}</TableCell>
-                    <TableCell>
-                      <Badge variant={Member.status === "Active" ? "default" : "secondary"}>{Member.status}</Badge>
-                    </TableCell>
+                    <TableCell className="text-gray-700">{member.email}</TableCell>
+                    <TableCell className="text-gray-700">{member.contact}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => setSelectedMember(Member)}>
-                              <Eye className="h-4 w-4 mr-1" />
-                              View Details
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>Member Details - {selectedMember?.name}</DialogTitle>
-                            </DialogHeader>
-                            {selectedMember && (
-                              <div className="space-y-6">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <h3 className="font-semibold text-gray-900 mb-2">Personal Information</h3>
-                                    <div className="space-y-2 text-sm">
-                                      <p>
-                                        <span className="font-medium">Member ID:</span> {selectedMember.id}
-                                      </p>
-                                      <p>
-                                        <span className="font-medium">Name:</span> {selectedMember.name}
-                                      </p>
-                                      <p>
-                                        <span className="font-medium">Email:</span> {selectedMember.email}
-                                      </p>
-                                      <p>
-                                        <span className="font-medium">Phone:</span> {selectedMember.phone}
-                                      </p>
-                                      <p>
-                                        <span className="font-medium">Join Date:</span> {selectedMember.joinDate}
-                                      </p>
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <h3 className="font-semibold text-gray-900 mb-2">Financial Information</h3>
-                                    <div className="space-y-2 text-sm">
-                                      <p>
-                                        <span className="font-medium">Credit Score:</span> {selectedMember.creditScore}
-                                      </p>
-                                      <p>
-                                        <span className="font-medium">Total Loans:</span> {selectedMember.totalLoans}
-                                      </p>
-                                      <p>
-                                        <span className="font-medium">Status:</span> {selectedMember.status}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold text-gray-900 mb-2">Loan History</h3>
-                                  <div className="text-sm text-gray-600">
-                                    <p>Loan history details would appear here...</p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4 mr-1" />
-                          Edit
-                        </Button>
+                        <div
+                          className={`h-2 w-2 rounded-full ${
+                            member.creditScore >= 85
+                              ? "bg-green-500"
+                              : member.creditScore >= 70
+                                ? "bg-yellow-500"
+                                : "bg-red-500"
+                          }`}
+                        />
+                        <span
+                          className={`font-medium ${
+                            member.creditScore >= 85
+                              ? "text-green-600"
+                              : member.creditScore >= 70
+                                ? "text-yellow-600"
+                                : "text-red-600"
+                          }`}
+                        >
+                          {member.creditScore}
+                        </span>
                       </div>
+                    </TableCell>
+                    <TableCell className="text-gray-700">
+                      <Badge variant={member.loans.length > 0 ? "default" : "outline"}>
+                        {member.loans.length} {member.loans.length === 1 ? "loan" : "loans"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-gray-700">
+                      <Badge
+                        variant="outline"
+                        className={statusConfig[member.status as keyof typeof statusConfig].className}
+                      >
+                        {member.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-blue-500 hover:text-blue-600"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedMember(member)
+                        }}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           </CardContent>
-        </Card> */
+        </Card>
+      </main>
+
+      {/* Dialogs */}
+      {selectedMember && (
+        <ClientDetailsPanel
+          client={selectedMember}
+          onClose={() => setSelectedMember(null)}
+          onEdit={handleEditMember}
+          onDelete={handleDeleteMember}
+        />
+      )}
+
+      <ClientFormDialog
+        isOpen={isCreateDialogOpen}
+        onClose={() => setIsCreateDialogOpen(false)}
+        onSave={handleCreateMember}
+        mode="create"
+      />
+
+      {editingMember && (
+        <ClientFormDialog
+          client={editingMember}
+          isOpen={true}
+          onClose={() => setEditingMember(null)}
+          onSave={handleUpdateMember}
+          mode="edit"
+        />
+      )}
+    </div>
+  )
+}
