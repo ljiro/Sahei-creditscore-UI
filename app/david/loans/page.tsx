@@ -1,76 +1,149 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger, } from "@/components/ui/dialog"
+} from "@/components/ui/dialog"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ChevronDown, UploadCloud,Cog, Edit2, ListChecks, LogOut, Shield, Trash2, UserCog, UserPlus2, Users2, User, FileText, Book, Search, ArrowUpDown, X, Info, Calendar, Phone, Home, CreditCard, BarChart2, DollarSign, Clock, CheckCircle, AlertCircle, Eye, FilePlus2 } from "lucide-react"
+import { Textarea } from "@/components/ui/textarea"
 import { Slider } from "@/components/ui/slider"
-
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { toast } from "@/components/ui/use-toast"
+import {
+  ChevronDown,
+  Trash2,
+  Search,
+  CreditCard,
+  DollarSign,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  Edit2,
+  FilePlus2,
+  Info,
+  Calendar,
+  BarChart2,
+  Save,
+  Eye,
+  Loader2,
+} from "lucide-react"
 
 const statusStyles = {
   Approved: "bg-green-100 text-green-800 hover:bg-green-100 border-green-200",
   Pending: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200",
   Declined: "bg-red-100 text-red-800 hover:bg-red-100 border-red-200",
-};
-
-// Type that represents ONLY the keys of statusStyles
-type LoanStatus = keyof typeof statusStyles;
-
-// Define the Loan interface with required fields to prepare for dynamic data handling
-interface Loan {
-  id: string;
-  clientName: string;
-  type: string;
-  purpose: string;
-  amount: number;
-  applicationDate: string;
-  duration: string;
-  status: LoanStatus; // Use the specific type
-  interestRate: string;
-  remainingBalance: number;
-  nextPayment: string;
-  validatedBy: string;
-  creditScore: number;
-  coApplicantNumber: number;
-  guarantorNumber: number;
+  Disbursed: "bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200",
+  Paid: "bg-gray-100 text-gray-800 hover:bg-gray-100 border-gray-200",
 }
 
-const loans = [
+type LoanStatus = keyof typeof statusStyles
+
+interface Payment {
+  id: string
+  date: string
+  amount: number
+  principal: number
+  interest: number
+  remainingBalance: number
+  status: "Paid" | "Pending" | "Overdue"
+  method?: string
+}
+
+interface Loan {
+  id: string
+  clientName: string
+  clientId: string
+  type: string
+  purpose: string
+  amount: number
+  applicationDate: string
+  duration: string
+  status: LoanStatus
+  interestRate: string
+  remainingBalance: number
+  nextPayment: string
+  validatedBy: string
+  creditScore: number
+  coApplicantNumber: number
+  guarantorNumber: number
+  paymentHistory: Payment[]
+  monthlyPayment: number
+  collateralType?: string
+  paymentFrequency: string
+}
+
+const initialLoans: Loan[] = [
   {
     id: "LN001",
     clientName: "Juan Dela Cruz",
+    clientId: "CL001",
     type: "Personal Loan",
     purpose: "Home Renovation",
     amount: 50000,
     applicationDate: "2025-05-15",
     duration: "12 months",
-    status: "Approved",
+    status: "Disbursed",
     interestRate: "12%",
     remainingBalance: 42000,
     nextPayment: "2025-06-15",
     validatedBy: "Maria Santos",
     creditScore: 85,
     coApplicantNumber: 2,
-    guarantorNumber: 1
-    
+    guarantorNumber: 1,
+    monthlyPayment: 4500,
+    collateralType: "Secured",
+    paymentFrequency: "Monthly",
+    paymentHistory: [
+      {
+        id: "PAY001",
+        date: "2025-05-15",
+        amount: 4500,
+        principal: 3750,
+        interest: 750,
+        remainingBalance: 46250,
+        status: "Paid",
+        method: "Bank Transfer",
+      },
+      {
+        id: "PAY002",
+        date: "2025-06-15",
+        amount: 4500,
+        principal: 3787,
+        interest: 713,
+        remainingBalance: 42463,
+        status: "Paid",
+        method: "Cash",
+      },
+    ],
   },
   {
     id: "LN002",
     clientName: "Maria Santos",
+    clientId: "CL002",
     type: "Business Loan",
     purpose: "Capital Expansion",
     amount: 150000,
@@ -83,31 +156,179 @@ const loans = [
     validatedBy: "Juan Dela Cruz",
     creditScore: 92,
     coApplicantNumber: 0,
-    guarantorNumber: 2
+    guarantorNumber: 2,
+    monthlyPayment: 6875,
+    collateralType: "Secured",
+    paymentFrequency: "Monthly",
+    paymentHistory: [],
   },
-  {
-    id: "LN003",
-    clientName: "Pedro Reyes",
-    type: "Emergency Loan",
-    purpose: "Medical Expenses",
-    amount: 30000,
-    applicationDate: "2025-05-25",
-    duration: "6 months",
-    status: "Declined",
-    interestRate: "15%",
-    remainingBalance: 25000,
-    nextPayment: "2025-06-25",
-    validatedBy: "Ana Lopez",
-    creditScore: 78,
-    coApplicantNumber: 1,
-    guarantorNumber: 1
-  }
 ]
 
-function LoanDetailsPanel({ loan, onClose }: { loan: typeof loans[0], onClose: () => void }) {
+function PaymentDialog({
+  loan,
+  isOpen,
+  onClose,
+  onProcessPayment,
+}: {
+  loan: Loan
+  isOpen: boolean
+  onClose: () => void
+  onProcessPayment: (loanId: string, payment: Omit<Payment, "id">) => void
+}) {
+  const [paymentData, setPaymentData] = useState({
+    amount: loan.monthlyPayment,
+    date: new Date().toISOString().split("T")[0],
+    method: "Cash",
+    notes: "",
+  })
+  const [isProcessing, setIsProcessing] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsProcessing(true)
+
+    // Simulate processing delay
+    await new Promise((resolve) => setTimeout(resolve, 1500))
+
+    const interestAmount = (loan.remainingBalance * 0.12) / 12 // Monthly interest
+    const principalAmount = paymentData.amount - interestAmount
+    const newBalance = Math.max(0, loan.remainingBalance - principalAmount)
+
+    const payment: Omit<Payment, "id"> = {
+      date: paymentData.date,
+      amount: paymentData.amount,
+      principal: principalAmount,
+      interest: interestAmount,
+      remainingBalance: newBalance,
+      status: "Paid",
+      method: paymentData.method,
+    }
+
+    onProcessPayment(loan.id, payment)
+    setIsProcessing(false)
+    onClose()
+  }
+
   return (
-    <Dialog open={true} onOpenChange={onClose}>Add commentMore actions
-      <DialogContent className="sm:max-w-[900px] bg-white rounded-lg">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Process Payment - {loan.id}</DialogTitle>
+          <DialogDescription>Record a new payment for this loan</DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="amount">Payment Amount (₱) *</Label>
+              <Input
+                id="amount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={paymentData.amount}
+                onChange={(e) => setPaymentData({ ...paymentData, amount: Number.parseFloat(e.target.value) || 0 })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="date">Payment Date *</Label>
+              <Input
+                id="date"
+                type="date"
+                value={paymentData.date}
+                onChange={(e) => setPaymentData({ ...paymentData, date: e.target.value })}
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="method">Payment Method</Label>
+            <Select
+              value={paymentData.method}
+              onValueChange={(value) => setPaymentData({ ...paymentData, method: value })}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Cash">Cash</SelectItem>
+                <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                <SelectItem value="Check">Check</SelectItem>
+                <SelectItem value="Online Payment">Online Payment</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="notes">Notes (Optional)</Label>
+            <Textarea
+              id="notes"
+              value={paymentData.notes}
+              onChange={(e) => setPaymentData({ ...paymentData, notes: e.target.value })}
+              rows={2}
+            />
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h4 className="font-medium text-gray-900 mb-2">Payment Breakdown</h4>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>Principal: ₱{(paymentData.amount - (loan.remainingBalance * 0.12) / 12).toFixed(2)}</div>
+              <div>Interest: ₱{((loan.remainingBalance * 0.12) / 12).toFixed(2)}</div>
+              <div>Current Balance: ₱{loan.remainingBalance.toLocaleString()}</div>
+              <div>
+                New Balance: ₱
+                {Math.max(
+                  0,
+                  loan.remainingBalance - (paymentData.amount - (loan.remainingBalance * 0.12) / 12),
+                ).toFixed(2)}
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose} disabled={isProcessing}>
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isProcessing}>
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  Process Payment
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function LoanDetailsPanel({
+  loan,
+  onClose,
+  onEdit,
+  onDelete,
+  onProcessPayment,
+}: {
+  loan: Loan
+  onClose: () => void
+  onEdit: (loan: Loan) => void
+  onDelete: (loanId: string) => void
+  onProcessPayment: (loanId: string, payment: Omit<Payment, "id">) => void
+}) {
+  const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false)
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[900px] bg-white rounded-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex justify-between items-center">
             <div>
@@ -124,7 +345,7 @@ function LoanDetailsPanel({ loan, onClose }: { loan: typeof loans[0], onClose: (
             </div>
           </div>
         </DialogHeader>
-        
+
         <div className="grid gap-8 py-4">
           {/* Loan Overview Card */}
           <Card className="border-gray-200 shadow-sm">
@@ -176,9 +397,8 @@ function LoanDetailsPanel({ loan, onClose }: { loan: typeof loans[0], onClose: (
             </CardContent>
           </Card>
 
-          {/* Loan Details and Client Information */}
+          {/* Loan Details and Status */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Loan Details Card */}
             <Card className="border-gray-200 shadow-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -205,81 +425,69 @@ function LoanDetailsPanel({ loan, onClose }: { loan: typeof loans[0], onClose: (
                     <p className="text-gray-800 font-medium">₱{loan.remainingBalance.toLocaleString()}</p>
                   </div>
                   <div>
-                    <Label className="text-sm text-gray-500">Co-Applicants</Label>
-                    <p className="text-gray-800 font-medium">{loan.coApplicantNumber}</p>
+                    <Label className="text-sm text-gray-500">Monthly Payment</Label>
+                    <p className="text-gray-800 font-medium">₱{loan.monthlyPayment.toLocaleString()}</p>
                   </div>
                   <div>
-                    <Label className="text-sm text-gray-500">Guarantors</Label>
-                    <p className="text-gray-800 font-medium">{loan.guarantorNumber}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-500">Validated By</Label>
-                    <p className="text-gray-800 font-medium">{loan.validatedBy}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-500">Client Credit Score</Label>
-                    <div className="flex items-center gap-2">
-                      <BarChart2 className={`h-4 w-4 ${
-                        loan.creditScore >= 85 ? "text-green-500" : 
-                        loan.creditScore >= 70 ? "text-yellow-500" : "text-red-500"
-                      }`} />
-                      <span className={`font-medium ${
-                        loan.creditScore >= 85 ? "text-green-600" : 
-                        loan.creditScore >= 70 ? "text-yellow-600" : "text-red-600"
-                      }`}>
-                        {loan.creditScore}
-                      </span>
-                    </div>
+                    <Label className="text-sm text-gray-500">Payment Frequency</Label>
+                    <p className="text-gray-800 font-medium">{loan.paymentFrequency}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Status Card */}
             <Card className="border-gray-200 shadow-sm">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                  {loan.status === "Approved" ? (
+                  {loan.status === "Approved" || loan.status === "Disbursed" ? (
                     <CheckCircle className="h-5 w-5 text-green-500" />
                   ) : loan.status === "Pending" ? (
                     <Clock className="h-5 w-5 text-yellow-500" />
                   ) : (
                     <AlertCircle className="h-5 w-5 text-red-500" />
                   )}
-                  Status
+                  Status & Actions
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between">
                     <Label className="text-sm text-gray-500">Current Status</Label>
-                    <Badge 
-                            className={`flex items-center gap-1 ${statusStyles[loan.status]}`}
-                          >
-                            <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
-                              <circle cx="4" cy="4" r="3" />
-                            </svg>
-                            {loan.status}
-                          </Badge>
+                    <Badge className={`flex items-center gap-1 ${statusStyles[loan.status]}`}>
+                      <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                        <circle cx="4" cy="4" r="3" />
+                      </svg>
+                      {loan.status}
+                    </Badge>
                   </div>
                   {loan.status === "Pending" && (
                     <div className="space-y-2">
                       <Label className="text-sm text-gray-500">Actions</Label>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="border-green-200 text-green-700 hover:bg-green-50">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-green-200 text-green-700 hover:bg-green-50"
+                        >
                           Approve
                         </Button>
                         <Button variant="outline" size="sm" className="border-red-200 text-red-700 hover:bg-red-50">
-                          Reject
+                          Decline
                         </Button>
                       </div>
                     </div>
                   )}
-                  {loan.status === "Approved" && (
+                  {(loan.status === "Approved" || loan.status === "Disbursed") && (
                     <div className="space-y-2">
-                      <Label className="text-sm text-gray-500">Next Steps</Label>
-                      <Button variant="outline" size="sm" className="border-blue-200 text-blue-700 hover:bg-blue-50">
-                        Generate Contract
+                      <Label className="text-sm text-gray-500">Payment Actions</Label>
+                      <Button
+                        onClick={() => setIsPaymentDialogOpen(true)}
+                        variant="outline"
+                        size="sm"
+                        className="border-blue-200 text-blue-700 hover:bg-blue-50"
+                      >
+                        <DollarSign className="h-4 w-4 mr-1" />
+                        Process Payment
                       </Button>
                     </div>
                   )}
@@ -288,141 +496,436 @@ function LoanDetailsPanel({ loan, onClose }: { loan: typeof loans[0], onClose: (
             </Card>
           </div>
 
-          {/* Payment History Section */}
+          {/* Payment History */}
           <Card className="border-gray-200 shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <DollarSign className="h-5 w-5 text-amber-500" />
-                Payment History
+                Payment History ({loan.paymentHistory.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <Table>
-                  <TableHeader className="bg-gray-50">
-                    <TableRow className="hover:bg-gray-50">
-                      <TableHead className="text-gray-600 font-medium">Date</TableHead>
-                      <TableHead className="text-gray-600 font-medium">Amount</TableHead>
-                      <TableHead className="text-gray-600 font-medium">Principal</TableHead>
-                      <TableHead className="text-gray-600 font-medium">Interest</TableHead>
-                      <TableHead className="text-gray-600 font-medium">Remaining Balance</TableHead>
-                      <TableHead className="text-gray-600 font-medium">Status</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    <TableRow className="border-gray-200 hover:bg-gray-50">
-                      <TableCell className="text-gray-700">2025-05-15</TableCell>
-                      <TableCell className="text-gray-700 font-medium">₱5,000</TableCell>
-                      <TableCell className="text-gray-700">₱4,167</TableCell>
-                      <TableCell className="text-gray-700">₱833</TableCell>
-                      <TableCell className="text-gray-700">₱45,833</TableCell>
-                      <TableCell>
-                        <Badge variant="default" className="flex items-center gap-1">
-                          <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
-                            <circle cx="4" cy="4" r="3" />
-                          </svg>
-                          Paid
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
+              {loan.paymentHistory.length > 0 ? (
+                <div className="border border-gray-200 rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader className="bg-gray-50">
+                      <TableRow className="hover:bg-gray-50">
+                        <TableHead className="text-gray-600 font-medium">Date</TableHead>
+                        <TableHead className="text-gray-600 font-medium">Amount</TableHead>
+                        <TableHead className="text-gray-600 font-medium">Principal</TableHead>
+                        <TableHead className="text-gray-600 font-medium">Interest</TableHead>
+                        <TableHead className="text-gray-600 font-medium">Balance</TableHead>
+                        <TableHead className="text-gray-600 font-medium">Method</TableHead>
+                        <TableHead className="text-gray-600 font-medium">Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {loan.paymentHistory.map((payment) => (
+                        <TableRow key={payment.id} className="border-gray-200 hover:bg-gray-50">
+                          <TableCell className="text-gray-700">{payment.date}</TableCell>
+                          <TableCell className="text-gray-700 font-medium">
+                            ₱{payment.amount.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-gray-700">₱{payment.principal.toFixed(2)}</TableCell>
+                          <TableCell className="text-gray-700">₱{payment.interest.toFixed(2)}</TableCell>
+                          <TableCell className="text-gray-700">₱{payment.remainingBalance.toLocaleString()}</TableCell>
+                          <TableCell className="text-gray-700">{payment.method}</TableCell>
+                          <TableCell>
+                            <Badge variant="default" className="flex items-center gap-1">
+                              <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                                <circle cx="4" cy="4" r="3" />
+                              </svg>
+                              {payment.status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <DollarSign className="h-10 w-10 text-gray-300 mb-3" />
+                  <h4 className="text-gray-500 font-medium">No payment history</h4>
+                  <p className="text-gray-400 text-sm mt-1">Payments will appear here once processed</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
 
         <DialogFooter className="border-t border-gray-200 pt-4">
           <div className="flex justify-between w-full">
-            <Button
-              variant="outline"
-              onClick={() => console.log("Delete loan")}
-              className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700"
-            >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Delete Loan
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Loan
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the loan "{loan.id}" and all associated
+                    payment history.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={() => onDelete(loan.id)} className="bg-red-600 hover:bg-red-700">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={onClose}
-                className="text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
-              >
+              <Button variant="outline" onClick={onClose}>
                 Close
               </Button>
-              <Button 
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-                onClick={() => console.log("Process payment")}
-              >
-                <DollarSign className="h-4 w-4 mr-2" />
-                Process Payment
+              <Button onClick={() => onEdit(loan)} className="bg-blue-600 hover:bg-blue-700">
+                <Edit2 className="h-4 w-4 mr-2" />
+                Edit Loan
               </Button>
             </div>
           </div>
         </DialogFooter>
       </DialogContent>
+
+      <PaymentDialog
+        loan={loan}
+        isOpen={isPaymentDialogOpen}
+        onClose={() => setIsPaymentDialogOpen(false)}
+        onProcessPayment={onProcessPayment}
+      />
     </Dialog>
   )
-}// ... (keep the existing LoanDetailsPanel component exactly as is)
+}
+
+function LoanFormDialog({
+  loan,
+  isOpen,
+  onClose,
+  onSave,
+  mode,
+}: {
+  loan?: Loan
+  isOpen: boolean
+  onClose: () => void
+  onSave: (loan: Loan) => void
+  mode: "create" | "edit"
+}) {
+  const [formData, setFormData] = useState<Partial<Loan>>(
+    loan || {
+      clientName: "",
+      clientId: "",
+      type: "",
+      purpose: "",
+      amount: 0,
+      duration: "12 months",
+      status: "Pending",
+      interestRate: "12%",
+      paymentFrequency: "Monthly",
+      collateralType: "Unsecured",
+      coApplicantNumber: 0,
+      guarantorNumber: 0,
+    },
+  )
+  const [loanDuration, setLoanDuration] = useState(12)
+
+  const formatDuration = (months: number) => {
+    if (months < 12) return `${months} month${months > 1 ? "s" : ""}`
+    if (months % 12 === 0) {
+      const years = months / 12
+      return `${years} year${years > 1 ? "s" : ""}`
+    }
+    const years = Math.floor(months / 12)
+    const remainingMonths = months % 12
+    return `${years}y ${remainingMonths}m`
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+
+    const monthlyPayment = formData.amount ? (formData.amount * 1.12) / loanDuration : 0
+
+    const newLoan: Loan = {
+      ...formData,
+      id: loan?.id || `LN${String(Date.now()).slice(-3)}`,
+      applicationDate: loan?.applicationDate || new Date().toISOString().split("T")[0],
+      duration: `${loanDuration} months`,
+      remainingBalance: loan?.remainingBalance || formData.amount || 0,
+      nextPayment: loan?.nextPayment || "N/A",
+      validatedBy: loan?.validatedBy || "System",
+      creditScore: loan?.creditScore || 75,
+      monthlyPayment,
+      paymentHistory: loan?.paymentHistory || [],
+    } as Loan
+
+    onSave(newLoan)
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>{mode === "create" ? "Register New Loan" : `Edit Loan - ${loan?.id}`}</DialogTitle>
+          <DialogDescription>
+            {mode === "create" ? "Fill out the details for the new loan" : "Update the loan information"}
+          </DialogDescription>
+        </DialogHeader>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="clientName">Client Name *</Label>
+              <Input
+                id="clientName"
+                value={formData.clientName || ""}
+                onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="clientId">Client ID</Label>
+              <Input
+                id="clientId"
+                value={formData.clientId || ""}
+                onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="type">Loan Type *</Label>
+              <Select value={formData.type || ""} onValueChange={(value) => setFormData({ ...formData, type: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select loan type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Personal Loan">Personal Loan</SelectItem>
+                  <SelectItem value="Business Loan">Business Loan</SelectItem>
+                  <SelectItem value="Emergency Loan">Emergency Loan</SelectItem>
+                  <SelectItem value="Auto Loan">Auto Loan</SelectItem>
+                  <SelectItem value="Home Loan">Home Loan</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="amount">Loan Amount (₱) *</Label>
+              <Input
+                id="amount"
+                type="number"
+                min="0"
+                value={formData.amount || 0}
+                onChange={(e) => setFormData({ ...formData, amount: Number.parseInt(e.target.value) || 0 })}
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="purpose">Purpose *</Label>
+            <Input
+              id="purpose"
+              value={formData.purpose || ""}
+              onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="collateralType">Collateral Type</Label>
+              <Select
+                value={formData.collateralType || "Unsecured"}
+                onValueChange={(value) => setFormData({ ...formData, collateralType: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Secured">Secured</SelectItem>
+                  <SelectItem value="Unsecured">Unsecured</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="paymentFrequency">Payment Frequency</Label>
+              <Select
+                value={formData.paymentFrequency || "Monthly"}
+                onValueChange={(value) => setFormData({ ...formData, paymentFrequency: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Weekly">Weekly</SelectItem>
+                  <SelectItem value="Bi-Weekly">Bi-Weekly</SelectItem>
+                  <SelectItem value="Semi-Monthly">Semi-Monthly</SelectItem>
+                  <SelectItem value="Monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="duration">Duration</Label>
+            <div className="flex items-center gap-4 mt-2">
+              <Slider
+                id="duration"
+                min={1}
+                max={60}
+                step={1}
+                value={[loanDuration]}
+                onValueChange={(value) => setLoanDuration(value[0])}
+                className="flex-1"
+              />
+              <div className="w-32">
+                <Input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={loanDuration}
+                  onChange={(e) => {
+                    const value = Number.parseInt(e.target.value, 10)
+                    if (!Number.isNaN(value) && value >= 1 && value <= 60) {
+                      setLoanDuration(value)
+                    }
+                  }}
+                  className="text-right"
+                />
+                <p className="text-xs text-gray-500 mt-1">{formatDuration(loanDuration)}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="interestRate">Interest Rate</Label>
+              <Input
+                id="interestRate"
+                value={formData.interestRate || "12%"}
+                onChange={(e) => setFormData({ ...formData, interestRate: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={formData.status || "Pending"}
+                onValueChange={(value) => setFormData({ ...formData, status: value as LoanStatus })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Approved">Approved</SelectItem>
+                  <SelectItem value="Declined">Declined</SelectItem>
+                  <SelectItem value="Disbursed">Disbursed</SelectItem>
+                  <SelectItem value="Paid">Paid</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              <Save className="h-4 w-4 mr-2" />
+              {mode === "create" ? "Register Loan" : "Update Loan"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 export default function LoansPage() {
+  const [loans, setLoans] = useState<Loan[]>(initialLoans)
   const [searchText, setSearchText] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("All")
-  const [selectedLoan, setSelectedLoan] = useState<typeof loans[0] | null>(null)
-  const [selectedStatus, setSelectedStatus] = useState<string>("all")
-  const [selectedType, setSelectedType] = useState<string>("all")
-  const [sortOption, setSortOption] = useState<"none" | "date" | "amount">("none")
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
-  const [coApplicantNumber, setCoApplicantNumber] = useState<number>(0)
-  const [guarantorNumber, setGuarantorNumber] = useState<number>(0)
+  const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null)
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
+  const [editingLoan, setEditingLoan] = useState<Loan | null>(null)
 
-  const filteredLoans = loans.filter(loan => {
-    const matchesSearch = loan.id.toLowerCase().includes(searchText.toLowerCase()) ||
-                          loan.clientName.toLowerCase().includes(searchText.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'All' || loan.status === statusFilter;
+  const filteredLoans = loans.filter((loan) => {
+    const matchesSearch =
+      loan.id.toLowerCase().includes(searchText.toLowerCase()) ||
+      loan.clientName.toLowerCase().includes(searchText.toLowerCase()) ||
+      loan.type.toLowerCase().includes(searchText.toLowerCase())
 
-    return matchesSearch && matchesStatus;
+    const matchesStatus = statusFilter === "All" || loan.status === statusFilter
+
+    return matchesSearch && matchesStatus
   })
 
-  const sortedLoans = [...filteredLoans].sort((a, b) => {
-    if (sortOption === "none") return 0
-    
-    if (sortOption === "date") {
-      return sortDirection === "asc" 
-        ? new Date(a.applicationDate).getTime() - new Date(b.applicationDate).getTime()
-        : new Date(b.applicationDate).getTime() - new Date(a.applicationDate).getTime()
-    }
-    
-    if (sortOption === "amount") {
-      return sortDirection === "asc" 
-        ? a.amount - b.amount
-        : b.amount - a.amount
-    }
-    
-    return 0
-  })
+  const handleCreateLoan = (newLoan: Loan) => {
+    setLoans((prev) => [...prev, newLoan])
+    setIsCreateDialogOpen(false)
 
-  const toggleSortOrder = () => {
-    setSortOrder(prev => {
-      if (prev === "none") return "asc"
-      if (prev === "asc") return "desc"
-      return "none"
+    toast({
+      title: "Success",
+      description: `Loan ${newLoan.id} has been registered successfully.`,
     })
   }
 
-  const [loanDuration, setLoanDuration] = useState(12); // Default to 12 months
+  const handleUpdateLoan = (updatedLoan: Loan) => {
+    setLoans((prev) => prev.map((loan) => (loan.id === updatedLoan.id ? updatedLoan : loan)))
+    setEditingLoan(null)
+    setSelectedLoan(updatedLoan)
 
-  const formatDuration = (months: number) => {
-    if (months < 12) return `${months} month${months > 1 ? 's' : ''}`;
-    if (months % 12 === 0) {
-      const years = months / 12;
-      return `${years} year${years > 1 ? 's' : ''}`;
-    }
-    const years = Math.floor(months / 12);
-    const remainingMonths = months % 12;
-    return `${years}y ${remainingMonths}m`;
-  };
+    toast({
+      title: "Success",
+      description: `Loan ${updatedLoan.id} has been updated successfully.`,
+    })
+  }
+
+  const handleDeleteLoan = (loanId: string) => {
+    const loanToDelete = loans.find((l) => l.id === loanId)
+    setLoans((prev) => prev.filter((loan) => loan.id !== loanId))
+    setSelectedLoan(null)
+
+    toast({
+      title: "Success",
+      description: `Loan ${loanToDelete?.id} has been deleted successfully.`,
+      variant: "destructive",
+    })
+  }
+
+  const handleProcessPayment = (loanId: string, payment: Omit<Payment, "id">) => {
+    const paymentWithId = { ...payment, id: `PAY${Date.now()}` }
+
+    setLoans((prev) =>
+      prev.map((loan) => {
+        if (loan.id === loanId) {
+          const updatedLoan = {
+            ...loan,
+            paymentHistory: [...loan.paymentHistory, paymentWithId],
+            remainingBalance: payment.remainingBalance,
+            status: payment.remainingBalance <= 0 ? ("Paid" as LoanStatus) : loan.status,
+          }
+          setSelectedLoan(updatedLoan)
+          return updatedLoan
+        }
+        return loan
+      }),
+    )
+
+    toast({
+      title: "Payment Processed",
+      description: `Payment of ₱${payment.amount.toLocaleString()} has been recorded successfully.`,
+    })
+  }
+
+  const handleEditLoan = (loan: Loan) => {
+    setEditingLoan(loan)
+    setSelectedLoan(null)
+  }
 
   return (
     <div className="flex flex-col w-full">
@@ -445,201 +948,16 @@ export default function LoansPage() {
       </header>
 
       <main className="flex-1 p-6">
-           {selectedLoan ? (
-            <LoanDetailsPanel loan={selectedLoan} onClose={() => setSelectedLoan(null)} />
-          ) : (
         <Card className="shadow-sm border-gray-200">
           <CardHeader>
             <div className="flex items-center justify-between">
-            <CardTitle className="text-xl text-gray-800">Loans ({filteredLoans.length})</CardTitle>
-               <Dialog>
-                          <DialogTrigger asChild>
-                        <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                  <FilePlus2 className="mr-2 h-4 w-4" /> New Loan
-                </Button>
-                      </DialogTrigger>
-                      <DialogContent className="bg-white text-gray-800 border-gray-200 sm:max-w-[625px] rounded-lg">
-                        <DialogHeader>
-                          <DialogTitle className="text-xl text-gray-800">Register Loan</DialogTitle>
-                          <DialogDescription className="text-gray-500">
-                            Fill out the details for the new loan
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="grid gap-4 py-4">
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="fullName" className="text-right col-span-1 text-gray-700">
-                              Full Name
-                            </Label>
-                            <Input
-                              id="fullName"
-                              className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
-                              placeholder="Enter member's full name"
-                            />
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="gender" className="text-right col-span-1 text-gray-700">
-                              Gender
-                            </Label>
-                            <select 
-                              id="gender" 
-                              className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 rounded-md p-2"
-                            >
-                              <option value="">Select gender</option>
-                              <option value="Male">Male</option>
-                              <option value="Female">Female</option>
-                              <option value="Other">Other</option>
-                            </select>
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="birthday" className="text-right col-span-1 text-gray-700">
-                              Birthday
-                            </Label>
-                            <Input
-                              id="birthday"
-                              type="date"
-                              className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
-                            />
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="contact" className="text-right col-span-1 text-gray-700">
-                              Contact
-                            </Label>
-                            <Input
-                              id="contact"
-                              className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
-                              placeholder="Enter contact number"
-                            />
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="loan" className="text-right col-span-1 text-gray-700">
-                              Loan
-                            </Label>
-                              <select 
-                              id="loan" 
-                              className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 rounded-md p-2"
-                            >
-                              <option value="">Select Loan</option>
-                              <option value="Male">Personal</option>
-                              <option value="Female">Business</option>
-                              <option value="Other">Other</option>
-                            </select>
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="collateral" className="text-right col-span-1 text-gray-700">
-                              Collateral
-                            </Label>
-                              <div className="col-span-3 flex items-center gap-6">
-                              <div className="flex items-center space-x-2">
-                                <input
-                                  type="radio"
-                                  id="secured"
-                                  name="loanSecurity"
-                                  value="secured"
-                                  className="h-4 w-4 cursor-pointer text-blue-600 border-gray-300 focus:ring-blue-500"
-                                />
-                                <Label
-                                  htmlFor="secured"
-                                  className="font-normal text-gray-800 cursor-pointer"
-                                >
-                                  Secured
-                                </Label>
-                              </div>
-                              <div className="flex items-center space-x-2">
-                                <input
-                                  type="radio"
-                                  id="unsecured"
-                                  name="loanSecurity"
-                                  value="unsecured"
-                                  className="h-4 w-4 cursor-pointer text-blue-600 border-gray-300 focus:ring-blue-500"
-                                />
-                                <Label
-                                  htmlFor="unsecured"
-                                  className="font-normal text-gray-800 cursor-pointer"
-                                >
-                                  Unsecured
-                                </Label>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="duration" className="text-right col-span-1 text-gray-700">
-                              Duration
-                            </Label>
-                            <div className="col-span-3 flex items-center gap-4">
-                              <Slider
-                                id="duration"
-                                min={1}
-                                max={60} // 5 years
-                                step={1}
-                                value={[loanDuration]}
-                                onValueChange={(value) => setLoanDuration(value[0])}
-                                className="w-[60%]"
-                              />
-                              <div className="relative w-[40%]">
-                                <Input
-                                  type="number"
-                                  min={1}
-                                  max={60}
-                                  value={loanDuration}
-                                  onChange={(e) => {
-                                    const value = parseInt(e.target.value, 10);
-                                    if (e.target.value === '') {
-                                      setLoanDuration(1);
-                                    } else if (!isNaN(value) && value >= 1 && value <= 60) {
-                                      setLoanDuration(value);
-                                    }
-                                  }}
-                                  className="w-full bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 pr-24 text-right"
-                                />
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-500 pointer-events-none">
-                                  {formatDuration(loanDuration)}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="amount" className="text-right col-span-1 text-gray-700">
-                              Amount
-                            </Label>
-                              <Input
-                              id="amount"
-                              className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800"
-                              placeholder="Enter loan amount"
-                            />
-                          </div>
-                          <div className="grid grid-cols-4 items-center gap-4">
-                            <Label htmlFor="paymentFrequency" className="text-right col-span-1 text-gray-700">
-                              Payment Frequency
-                            </Label>
-                              <select 
-                              id="gender" 
-                              className="col-span-3 bg-gray-50 border-gray-200 focus:ring-blue-500 text-gray-800 rounded-md p-2"
-                            >
-                              <option value="">Select Payment Frequency</option>
-                              <option value="Weekly">Weekly</option>
-                              <option value="Bi-Weekly">Bi-Weekly</option>
-                              <option value="Semi-Monthly">Semi-Monthly</option>
-                              <option value="Monthly">Monthly</option>
-                              <option value="Other">Other</option>
-                            </select>
-                          </div>
-                        </div>
-                        <DialogFooter>
-                          <Button
-                            variant="outline"
-                            className="text-gray-700 border-gray-200 hover:bg-gray-100 hover:text-gray-900"
-                          >
-                            Cancel
-                          </Button>
-                          <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                            Register Loan
-                          </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                    </div>
-
-                        <div className="flex items-center gap-4 mt-4">
+              <CardTitle className="text-xl text-gray-800">Loans ({filteredLoans.length})</CardTitle>
+              <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+                <FilePlus2 className="mr-2 h-4 w-4" />
+                New Loan
+              </Button>
+            </div>
+            <div className="flex items-center gap-4 mt-4">
               <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                 <Input
@@ -649,20 +967,22 @@ export default function LoansPage() {
                   className="pl-10"
                 />
               </div>
-               <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="All">All Status</SelectItem>
-                  <SelectItem value="Approved">Approved</SelectItem>
                   <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Approved">Approved</SelectItem>
                   <SelectItem value="Declined">Declined</SelectItem>
+                  <SelectItem value="Disbursed">Disbursed</SelectItem>
+                  <SelectItem value="Paid">Paid</SelectItem>
                 </SelectContent>
               </Select>
-              </div>
-             
+            </div>
           </CardHeader>
+
           <CardContent>
             <Table>
               <TableHeader>
@@ -677,63 +997,89 @@ export default function LoansPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-               {sortedLoans.map((loan) => (
-                      <TableRow 
-                        key={loan.id} 
-                        className="border-gray-200 hover:bg-gray-50 cursor-pointer"
-                        onClick={() => setSelectedLoan(loan)}
+                {filteredLoans.map((loan) => (
+                  <TableRow
+                    key={loan.id}
+                    className="border-gray-200 hover:bg-gray-50 cursor-pointer"
+                    onClick={() => setSelectedLoan(loan)}
+                  >
+                    <TableCell className="font-medium text-gray-800">{loan.id}</TableCell>
+                    <TableCell className="text-gray-700">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                          <AvatarFallback className="bg-blue-100 text-blue-800">
+                            {loan.clientName
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{loan.clientName}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-gray-700">
+                      <Badge variant="outline" className="border-gray-200 text-gray-600">
+                        {loan.type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-gray-700 font-medium">₱{loan.amount.toLocaleString()}</TableCell>
+                    <TableCell>
+                      <Badge className={`flex items-center gap-1 ${statusStyles[loan.status]}`}>
+                        <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                          <circle cx="4" cy="4" r="3" />
+                        </svg>
+                        {loan.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-gray-500">{loan.applicationDate}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-blue-500 hover:text-blue-600"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setSelectedLoan(loan)
+                        }}
                       >
-                        <TableCell className="font-medium text-gray-800">{loan.id}</TableCell>
-                        <TableCell className="text-gray-700">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarFallback className="bg-blue-100 text-blue-800">
-                                {loan.clientName.split(" ").map(n => n[0]).join("")}
-                              </AvatarFallback>
-                            </Avatar>
-                            <span>{loan.clientName}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-gray-700">
-                          <Badge variant="outline" className="border-gray-200 text-gray-600">
-                            {loan.type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-gray-700 font-medium">₱{loan.amount.toLocaleString()}</TableCell>
-                        <TableCell className="text-gray-500">{loan.applicationDate}</TableCell>
-                        <TableCell>
-                          <Badge 
-                            className={`flex items-center gap-1 ${statusStyles[loan.status]}`}
-                          >
-                            <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
-                              <circle cx="4" cy="4" r="3" />
-                            </svg>
-                            {loan.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-8 w-8 text-blue-500 hover:text-blue-600"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setSelectedLoan(loan)
-                              }}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
-        )}
       </main>
+
+      {/* Dialogs */}
+      {selectedLoan && (
+        <LoanDetailsPanel
+          loan={selectedLoan}
+          onClose={() => setSelectedLoan(null)}
+          onEdit={handleEditLoan}
+          onDelete={handleDeleteLoan}
+          onProcessPayment={handleProcessPayment}
+        />
+      )}
+
+      <LoanFormDialog
+        isOpen={isCreateDialogOpen}
+        onClose={() => setIsCreateDialogOpen(false)}
+        onSave={handleCreateLoan}
+        mode="create"
+      />
+
+      {editingLoan && (
+        <LoanFormDialog
+          loan={editingLoan}
+          isOpen={true}
+          onClose={() => setEditingLoan(null)}
+          onSave={handleUpdateLoan}
+          mode="edit"
+        />
+      )}
     </div>
   )
 }
