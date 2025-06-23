@@ -19,7 +19,7 @@ export function AdminSidebar() {
   ]
 
   return (
-    <aside className="hidden w-72 flex-col border-r bg-white border-r-gray-200 sm:flex">
+    <aside className="fixed left-0 top-0 hidden h-screen w-72 flex-col border-r bg-white border-r-gray-200 sm:flex">
       <div className="border-b border-gray-200 p-5">
         <div className="flex items-center gap-2">
           <Shield className="h-8 w-8 text-blue-500" />
