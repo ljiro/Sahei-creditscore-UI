@@ -657,26 +657,24 @@ export default function MembersPage() {
 
   // Load members from .NET EF Core when page mounts
 useEffect(() => {
-  (window as any).globalSetMembers = (membersJson: any) => {
-    console.log("✅ Received Members from .NET:", membersJson);
+  // Delay to ensure .NET doesn't call too early
+  setTimeout(() => {
+    (window as any).globalSetMembers = (membersJson: any) => {
+      console.log("✅ Received Members from .NET:", membersJson);
+      const mapped = membersJson.map((m: any) => ({
+        ...m,
+        fullName: `${m.firstName} ${m.middleName ? m.middleName + " " : ""}${m.lastName} ${m.suffix || ""}`.trim(),
+      }));
+      setMembers(mapped);
+    };
 
-    const mapped = membersJson.map((m: any) => ({
-      ...m,
-      fullName: `${m.firstName} ${m.middleName ? m.middleName + " " : ""}${m.lastName} ${m.suffix || ""}`.trim(),
-      civilStatus: m.civilStatus || "N/A",
-      membershipStatus: m.membershipStatus || "Active",
-      loans: Array.isArray(m.loans) ? m.loans : [],
-    }));
-
-    setMembers(mapped);
-  };
-
-  // Trigger .NET to reload
-  if ((window as any).hybrid?.invoke) {
-    (window as any).hybrid.invoke("ReloadMembersFromDb");
-  } else {
-    console.warn("⚠️ Hybrid bridge not ready");
-  }
+    // ✅ Ask .NET to call back into JS
+    if ((window as any).hybrid?.invoke) {
+      (window as any).hybrid.invoke("ReloadMembersFromDb");
+    } else {
+      console.warn("⚠️ Hybrid bridge not ready");
+    }
+  }, 500); // Delay by 500ms
 }, []);
 
   const filteredMembers = members.filter((member) =>
