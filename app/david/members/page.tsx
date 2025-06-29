@@ -677,12 +677,26 @@ useEffect(() => {
   }, 500); // Delay by 500ms
 }, []);
 useEffect(() => {
-  if ((window as any).hybrid?.invoke) {
-    console.log("📢 JS is ready, notifying .NET...");
-    (window as any).hybrid.invoke("NotifyJsReady");
-  } else {
-    console.warn("⚠️ Hybrid bridge not ready yet.");
-  }
+  let attempts = 0;
+  const maxAttempts = 20;
+  const interval = 300;
+
+  const intervalId = setInterval(() => {
+    if ((window as any).hybrid?.invoke) {
+      console.log("📢 JS is ready, notifying .NET...");
+      (window as any).hybrid.invoke("NotifyJsReady");
+      clearInterval(intervalId);
+    } else {
+      attempts++;
+      console.log(`⏳ Waiting for hybrid bridge... (attempt ${attempts})`);
+      if (attempts >= maxAttempts) {
+        console.warn("❌ Failed to connect to hybrid bridge.");
+        clearInterval(intervalId);
+      }
+    }
+  }, interval);
+
+  return () => clearInterval(intervalId);
 }, []);
   const filteredMembers = members.filter((member) =>
     member.fullName.toLowerCase().includes(searchText.toLowerCase())
