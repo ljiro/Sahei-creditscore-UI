@@ -676,7 +676,14 @@ useEffect(() => {
     }
   }, 500); // Delay by 500ms
 }, []);
-
+useEffect(() => {
+  if ((window as any).hybrid?.invoke) {
+    console.log("📢 JS is ready, notifying .NET...");
+    (window as any).hybrid.invoke("NotifyJsReady");
+  } else {
+    console.warn("⚠️ Hybrid bridge not ready yet.");
+  }
+}, []);
   const filteredMembers = members.filter((member) =>
     member.fullName.toLowerCase().includes(searchText.toLowerCase())
   );
