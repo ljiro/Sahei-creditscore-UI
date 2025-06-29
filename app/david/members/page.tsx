@@ -655,6 +655,16 @@ export default function MembersPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
 
+
+  useEffect(() => {
+  if (window.hybrid && typeof window.hybrid.invoke === 'function') {
+    console.log("✅ JS is ready. Notifying .NET...");
+    window.hybrid.invoke("NotifyJsReady");
+  } else {
+    console.warn("⚠️ Hybrid bridge not ready");
+  }
+}, []);
+
   // Load members from .NET EF Core when page mounts
 useEffect(() => {
   // Delay to ensure .NET doesn't call too early
@@ -698,6 +708,17 @@ useEffect(() => {
 
   return () => clearInterval(intervalId);
 }, []);
+
+useEffect(() => {
+  if (window.hybrid && typeof window.hybrid.invoke === 'function') {
+    console.log("✅ JS is ready. Notifying .NET...");
+    window.hybrid.invoke("NotifyJsReady");
+  } else {
+    console.warn("⚠️ Hybrid bridge not ready");
+  }
+}, []);
+
+
   const filteredMembers = members.filter((member) =>
     member.fullName.toLowerCase().includes(searchText.toLowerCase())
   );
