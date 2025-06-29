@@ -656,25 +656,28 @@ export default function MembersPage() {
   const [editingMember, setEditingMember] = useState<Member | null>(null);
 
   // Load members from .NET EF Core when page mounts
-  useEffect(() => {
-    (window as any).globalSetMembers = (membersJson: any) => {
-      console.log("✅ Received Members from .NET:", membersJson);
+useEffect(() => {
+  (window as any).globalSetMembers = (membersJson: any) => {
+    console.log("✅ Received Members from .NET:", membersJson);
 
-      const mapped = membersJson.map((m: any) => ({
-        ...m,
-        fullName: `${m.firstName} ${m.middleName ? m.middleName + " " : ""}${m.lastName} ${m.suffix || ""}`.trim(),
-      }));
+    const mapped = membersJson.map((m: any) => ({
+      ...m,
+      fullName: `${m.firstName} ${m.middleName ? m.middleName + " " : ""}${m.lastName} ${m.suffix || ""}`.trim(),
+      civilStatus: m.civilStatus || "N/A",
+      membershipStatus: m.membershipStatus || "Active",
+      loans: Array.isArray(m.loans) ? m.loans : [],
+    }));
 
-      setMembers(mapped);
-    };
+    setMembers(mapped);
+  };
 
-    // Trigger .NET to reload
-    if ((window as any).hybrid?.invoke) {
-      (window as any).hybrid.invoke("ReloadMembersFromDb");
-    } else {
-      console.warn("⚠️ Hybrid bridge not ready");
-    }
-  }, []);
+  // Trigger .NET to reload
+  if ((window as any).hybrid?.invoke) {
+    (window as any).hybrid.invoke("ReloadMembersFromDb");
+  } else {
+    console.warn("⚠️ Hybrid bridge not ready");
+  }
+}, []);
 
   const filteredMembers = members.filter((member) =>
     member.fullName.toLowerCase().includes(searchText.toLowerCase())
