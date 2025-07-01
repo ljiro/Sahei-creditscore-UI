@@ -1,12 +1,10 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -56,8 +54,7 @@ import {
   Save,
 } from "lucide-react";
 
-import HybridWebView from "../hybridwebview/HybridWebView.js"; // adjust path based on file structure
-
+import HybridWebView from "../hybridwebview/HybridWebView.js";
 
 interface Member {
   memberId: number;
@@ -91,6 +88,12 @@ interface Member {
     validatedBy: string;
     status: string;
   }>;
+  remarks?: Array<{
+    id: string;
+    officer: string;
+    comment: string;
+    date: string;
+  }>;
 }
 
 const statusConfig = {
@@ -100,17 +103,78 @@ const statusConfig = {
   Closed: { className: "bg-gray-200 text-gray-800 border-gray-300" },
 };
 
+function AddRemarkDialog({
+  isOpen,
+  onClose,
+  onSave,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (comment: string) => void;
+}) {
+  const [comment, setComment] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (comment.trim()) {
+      onSave(comment);
+      setComment("");
+      onClose();
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Add New Remark</DialogTitle>
+          <DialogDescription>
+            Add a comment or note about this client for future reference.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="comment">Remark</Label>
+              <Textarea
+                id="comment"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Enter your remark here..."
+                rows={4}
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              Save Remark
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function ClientDetailsPanel({
   client,
   onClose,
+  onAddRemark,
   onEdit,
   onDelete,
 }: {
   client: Member;
   onClose: () => void;
+  onAddRemark: (comment: string) => void;
   onEdit: (client: Member) => void;
   onDelete: (clientId: number) => void;
 }) {
+  const [isAddRemarkOpen, setIsAddRemarkOpen] = useState(false);
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] bg-white rounded-lg max-h-[90vh] overflow-y-auto">
@@ -132,7 +196,6 @@ function ClientDetailsPanel({
         </DialogHeader>
 
         <div className="grid gap-8 py-4">
-          {/* Client Overview Card */}
           <Card className="border-gray-200 shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -186,7 +249,6 @@ function ClientDetailsPanel({
             </CardContent>
           </Card>
 
-          {/* Personal Details and Financial Information */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="border-gray-200 shadow-sm">
               <CardHeader className="pb-4">
@@ -283,7 +345,6 @@ function ClientDetailsPanel({
             </Card>
           </div>
 
-          {/* Loan History */}
           <Card className="border-gray-200 shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -334,6 +395,49 @@ function ClientDetailsPanel({
               )}
             </CardContent>
           </Card>
+
+          <Card className="border-gray-200 shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-purple-500" />
+                  Remarks ({(client.remarks || []).length})
+                </CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                  onClick={() => setIsAddRemarkOpen(true)}
+                >
+                  <Edit2 className="h-4 w-4 mr-2" />
+                  Add Remark
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {(client.remarks || []).length > 0 ? (
+                <div className="space-y-4">
+                  {(client.remarks || []).map((remark) => (
+                    <div key={remark.id} className="border-l-4 border-blue-200 pl-4 py-2 bg-gray-50 rounded">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium text-gray-800">{remark.officer}</p>
+                          <p className="text-sm text-gray-500">{remark.date}</p>
+                        </div>
+                      </div>
+                      <p className="mt-2 text-gray-700">{remark.comment}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <FileText className="h-10 w-10 text-gray-300 mb-3" />
+                  <h4 className="text-gray-500 font-medium">No remarks yet</h4>
+                  <p className="text-gray-400 text-sm mt-1">Add the first remark for this client</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         <DialogFooter className="border-t border-gray-200 pt-4">
@@ -376,6 +480,12 @@ function ClientDetailsPanel({
           </div>
         </DialogFooter>
       </DialogContent>
+
+      <AddRemarkDialog
+        isOpen={isAddRemarkOpen}
+        onClose={() => setIsAddRemarkOpen(false)}
+        onSave={onAddRemark}
+      />
     </Dialog>
   );
 }
@@ -430,6 +540,7 @@ function ClientFormDialog({
       membershipDate: client?.membershipDate || new Date().toISOString().split("T")[0],
       membershipStatus: formData.membershipStatus || "Active",
       loans: client?.loans || [],
+      remarks: client?.remarks || [],
     } as Member;
 
     onSave(newMember);
@@ -658,54 +769,55 @@ export default function MembersPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
 
-  // Expose the method for .NET to call
+  // HybridWebView integration
   useEffect(() => {
     (window as any).globalSetMembers = (membersJson: any[]) => {
-  console.log("✅ Received Members from .NET:", membersJson);
+      console.log("✅ Received Members from .NET:", membersJson);
 
-  const mapped = membersJson.map((m: any) => {
-    const genderMap = ["Male", "Female", "Other"];
-    const civilStatusMap = ["Single", "Married", "Divorced", "Widowed"];
-    const membershipStatusMap = ["Active", "Dormant", "Suspended", "Closed"];
+      const mapped = membersJson.map((m: any) => {
+        const genderMap = ["Male", "Female", "Other"];
+        const civilStatusMap = ["Single", "Married", "Divorced", "Widowed"];
+        const membershipStatusMap = ["Active", "Dormant", "Suspended", "Closed"];
 
-    const profile = m.MemberFinancialProfile || {};
+        const profile = m.MemberFinancialProfile || {};
 
-    return {
-      memberId: m.MemberId,
-      firstName: m.FirstName,
-      middleName: m.MiddleName || "",
-      lastName: m.LastName,
-      suffix: m.Suffix || "",
-      fullName: `${m.FirstName} ${m.MiddleName ? m.MiddleName + " " : ""}${m.LastName} ${m.Suffix || ""}`.trim(),
-      gender: genderMap[m.Gender] || "N/A",
-      dateOfBirth: m.DateOfBirth,
-      contact: (m.ContactInfos && m.ContactInfos[0]?.Value) || "",
-      address: (m.Addresses && m.Addresses[0]?.FullAddress) || "",
-      educationLevel: ["None", "Elementary", "High School", "College", "Postgrad"][m.EducationLevel] || "N/A",
-      civilStatus: civilStatusMap[m.CivilStatus] || "N/A",
-      dependents: profile.Dependents || 0,
-      industry: profile.Industry || "",
-      monthlyIncome: profile.MonthlyIncome || 0,
-      monthlyExpenses: profile.MonthlyExpenses || 0,
-      savingsBalance: profile.SavingsBalance || 0,
-      creditScore: profile.CreditScore || 0,
-      membershipDate: m.MembershipDate,
-      membershipStatus: membershipStatusMap[m.MembershipStatus] || "Unknown",
-      loans: (m.LoanAccounts || []).map((loan: any) => ({
-        id: loan.Id,
-        type: loan.Type,
-        purpose: loan.Purpose,
-        amount: loan.Amount,
-        applicationDate: loan.ApplicationDate,
-        duration: loan.Duration,
-        validatedBy: loan.ValidatedBy,
-        status: loan.Status,
-      }))
+        return {
+          memberId: m.MemberId,
+          firstName: m.FirstName,
+          middleName: m.MiddleName || "",
+          lastName: m.LastName,
+          suffix: m.Suffix || "",
+          fullName: `${m.FirstName} ${m.MiddleName ? m.MiddleName + " " : ""}${m.LastName} ${m.Suffix || ""}`.trim(),
+          gender: genderMap[m.Gender] || "N/A",
+          dateOfBirth: m.DateOfBirth,
+          contact: (m.ContactInfos && m.ContactInfos[0]?.Value) || "",
+          address: (m.Addresses && m.Addresses[0]?.FullAddress) || "",
+          educationLevel: ["None", "Elementary", "High School", "College", "Postgrad"][m.EducationLevel] || "N/A",
+          civilStatus: civilStatusMap[m.CivilStatus] || "N/A",
+          dependents: profile.Dependents || 0,
+          industry: profile.Industry || "",
+          monthlyIncome: profile.MonthlyIncome || 0,
+          monthlyExpenses: profile.MonthlyExpenses || 0,
+          savingsBalance: profile.SavingsBalance || 0,
+          creditScore: profile.CreditScore || 0,
+          membershipDate: m.MembershipDate,
+          membershipStatus: membershipStatusMap[m.MembershipStatus] || "Unknown",
+          loans: (m.LoanAccounts || []).map((loan: any) => ({
+            id: loan.Id,
+            type: loan.Type,
+            purpose: loan.Purpose,
+            amount: loan.Amount,
+            applicationDate: loan.ApplicationDate,
+            duration: loan.Duration,
+            validatedBy: loan.ValidatedBy,
+            status: loan.Status,
+          })),
+          remarks: []
+        };
+      });
+
+      setMembers(mapped);
     };
-  });
-
-  setMembers(mapped);
-};
 
     // Notify .NET that JS is ready
     HybridWebView.SendInvokeMessageToDotNet("NotifyJsReady");
@@ -740,7 +852,11 @@ export default function MembersPage() {
       Math.max(0, Math.floor((income - expenses) / 1000) + Math.floor(savings / 10000) + 50)
     );
 
-    const memberWithScore = { ...newMember, creditScore };
+    const memberWithScore = { 
+      ...newMember, 
+      creditScore,
+      remarks: newMember.remarks || [] 
+    };
     setMembers((prev) => [...prev, memberWithScore]);
     setIsCreateDialogOpen(false);
 
@@ -751,15 +867,59 @@ export default function MembersPage() {
   };
 
   const handleUpdateMember = (updatedMember: Member) => {
-    setMembers((prev) =>
-      prev.map((m) => (m.memberId === updatedMember.memberId ? updatedMember : m))
+    setMembers(prev => 
+      prev.map(member => {
+        if (member.memberId === updatedMember.memberId) {
+          return {
+            ...updatedMember,
+            remarks: updatedMember.remarks || member.remarks || []
+          };
+        }
+        return member;
+      })
     );
+    
     setEditingMember(null);
-    setSelectedMember(updatedMember);
+    
+    // Update the selected member with preserved remarks
+    const updatedWithRemarks = {
+      ...updatedMember,
+      remarks: updatedMember.remarks || members.find(m => m.memberId === updatedMember.memberId)?.remarks || []
+    };
+    setSelectedMember(updatedWithRemarks);
 
     toast({
       title: "Success",
       description: `Member ${updatedMember.fullName} has been updated successfully.`,
+    });
+  };
+
+  const handleAddRemark = (comment: string) => {
+    if (!selectedMember) return;
+
+    const newRemark = {
+      id: `RM${String(Date.now()).slice(-4)}`,
+      officer: "David Lee",
+      comment,
+      date: new Date().toISOString().split('T')[0]
+    };
+    
+    // Update members list
+    setMembers(prev => prev.map(m => 
+      m.memberId === selectedMember.memberId 
+        ? { ...m, remarks: [...(m.remarks || []), newRemark] } 
+        : m
+    ));
+    
+    // Update selected member
+    setSelectedMember(prev => ({
+      ...prev!,
+      remarks: [...(prev?.remarks || []), newRemark]
+    }));
+    
+    toast({
+      title: "Remark Added",
+      description: "Your remark has been saved successfully.",
     });
   };
 
@@ -782,7 +942,6 @@ export default function MembersPage() {
 
   return (
     <div className="flex flex-col w-full">
-      {/* Header */}
       <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-800">Member Management</h1>
@@ -927,11 +1086,11 @@ export default function MembersPage() {
         </Card>
       </main>
 
-      {/* Dialogs */}
       {selectedMember && (
         <ClientDetailsPanel
           client={selectedMember}
           onClose={() => setSelectedMember(null)}
+          onAddRemark={handleAddRemark}
           onEdit={handleEditMember}
           onDelete={handleDeleteMember}
         />
