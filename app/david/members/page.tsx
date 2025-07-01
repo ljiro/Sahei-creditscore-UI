@@ -661,13 +661,51 @@ export default function MembersPage() {
   // Expose the method for .NET to call
   useEffect(() => {
     (window as any).globalSetMembers = (membersJson: any[]) => {
-      console.log("✅ Received Members from .NET:", membersJson);
-      const mapped = membersJson.map((m: any) => ({
-        ...m,
-        fullName: `${m.firstName} ${m.middleName ? m.middleName + " " : ""}${m.lastName} ${m.suffix || ""}`.trim(),
-      }));
-      setMembers(mapped);
+  console.log("✅ Received Members from .NET:", membersJson);
+
+  const mapped = membersJson.map((m: any) => {
+    const genderMap = ["Male", "Female", "Other"];
+    const civilStatusMap = ["Single", "Married", "Divorced", "Widowed"];
+    const membershipStatusMap = ["Active", "Dormant", "Suspended", "Closed"];
+
+    const profile = m.MemberFinancialProfile || {};
+
+    return {
+      memberId: m.MemberId,
+      firstName: m.FirstName,
+      middleName: m.MiddleName || "",
+      lastName: m.LastName,
+      suffix: m.Suffix || "",
+      fullName: `${m.FirstName} ${m.MiddleName ? m.MiddleName + " " : ""}${m.LastName} ${m.Suffix || ""}`.trim(),
+      gender: genderMap[m.Gender] || "N/A",
+      dateOfBirth: m.DateOfBirth,
+      contact: (m.ContactInfos && m.ContactInfos[0]?.Value) || "",
+      address: (m.Addresses && m.Addresses[0]?.FullAddress) || "",
+      educationLevel: ["None", "Elementary", "High School", "College", "Postgrad"][m.EducationLevel] || "N/A",
+      civilStatus: civilStatusMap[m.CivilStatus] || "N/A",
+      dependents: profile.Dependents || 0,
+      industry: profile.Industry || "",
+      monthlyIncome: profile.MonthlyIncome || 0,
+      monthlyExpenses: profile.MonthlyExpenses || 0,
+      savingsBalance: profile.SavingsBalance || 0,
+      creditScore: profile.CreditScore || 0,
+      membershipDate: m.MembershipDate,
+      membershipStatus: membershipStatusMap[m.MembershipStatus] || "Unknown",
+      loans: (m.LoanAccounts || []).map((loan: any) => ({
+        id: loan.Id,
+        type: loan.Type,
+        purpose: loan.Purpose,
+        amount: loan.Amount,
+        applicationDate: loan.ApplicationDate,
+        duration: loan.Duration,
+        validatedBy: loan.ValidatedBy,
+        status: loan.Status,
+      }))
     };
+  });
+
+  setMembers(mapped);
+};
 
     // Notify .NET that JS is ready
     HybridWebView.SendInvokeMessageToDotNet("NotifyJsReady");
