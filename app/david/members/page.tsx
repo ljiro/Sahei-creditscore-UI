@@ -91,6 +91,12 @@ interface Member {
   }>
   creditScore: number
   joinedDate: string
+  remarks: Array<{
+    id: string
+    officer: string
+    comment: string
+    date: string
+  }>
 }
 
 const initialMembers: Member[] = [
@@ -124,6 +130,14 @@ const initialMembers: Member[] = [
     ],
     creditScore: 85,
     joinedDate: "2023-01-10",
+    remarks: [
+      {
+        id: "RM001",
+        officer: "Maria Santos",
+        comment: "Client has good payment history for previous loans.",
+        date: "2025-05-16"
+      }
+    ]
   },
   {
     id: "CL002",
@@ -155,20 +169,82 @@ const initialMembers: Member[] = [
     ],
     creditScore: 92,
     joinedDate: "2022-11-05",
+    remarks: []
   },
 ]
+
+function AddRemarkDialog({
+  isOpen,
+  onClose,
+  onSave,
+}: {
+  isOpen: boolean
+  onClose: () => void
+  onSave: (comment: string) => void
+}) {
+  const [comment, setComment] = useState("")
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (comment.trim()) {
+      onSave(comment)
+      setComment("")
+      onClose()
+    }
+  }
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Add New Remark</DialogTitle>
+          <DialogDescription>
+            Add a comment or note about this client for future reference.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSubmit}>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="comment">Remark</Label>
+              <Textarea
+                id="comment"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Enter your remark here..."
+                rows={4}
+                required
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
+              Save Remark
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  )
+}
 
 function ClientDetailsPanel({
   client,
   onClose,
+  onAddRemark,
   onEdit,
   onDelete,
 }: {
   client: Member
   onClose: () => void
+  onAddRemark: (comment: string) => void
   onEdit: (client: Member) => void
   onDelete: (clientId: string) => void
 }) {
+  const [isAddRemarkOpen, setIsAddRemarkOpen] = useState(false)
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] bg-white rounded-lg max-h-[90vh] overflow-y-auto">
@@ -382,6 +458,50 @@ function ClientDetailsPanel({
               )}
             </CardContent>
           </Card>
+
+          {/* Remarks Section */}
+          <Card className="border-gray-200 shadow-sm">
+            <CardHeader className="pb-4">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-purple-500" />
+                  Remarks ({client.remarks.length})
+                </CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                  onClick={() => setIsAddRemarkOpen(true)}
+                >
+                  <Edit2 className="h-4 w-4 mr-2" />
+                  Add Remark
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {client.remarks.length > 0 ? (
+                <div className="space-y-4">
+                  {client.remarks.map((remark) => (
+                    <div key={remark.id} className="border-l-4 border-blue-200 pl-4 py-2 bg-gray-50 rounded">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <p className="font-medium text-gray-800">{remark.officer}</p>
+                          <p className="text-sm text-gray-500">{remark.date}</p>
+                        </div>
+                      </div>
+                      <p className="mt-2 text-gray-700">{remark.comment}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <FileText className="h-10 w-10 text-gray-300 mb-3" />
+                  <h4 className="text-gray-500 font-medium">No remarks yet</h4>
+                  <p className="text-gray-400 text-sm mt-1">Add the first remark for this client</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
 
         <DialogFooter className="border-t border-gray-200 pt-4">
@@ -421,6 +541,13 @@ function ClientDetailsPanel({
           </div>
         </DialogFooter>
       </DialogContent>
+
+      <AddRemarkDialog
+        isOpen={isAddRemarkOpen}
+        onClose={() => setIsAddRemarkOpen(false)}
+        onSave={onAddRemark}
+      />
+      
     </Dialog>
   )
 }
@@ -721,13 +848,73 @@ export default function MembersPage() {
   }
 
   const handleUpdateMember = (updatedMember: Member) => {
-    setMembers((prev) => prev.map((member) => (member.id === updatedMember.id ? updatedMember : member)))
-    setEditingMember(null)
-    setSelectedMember(updatedMember)
+    setMembers(prev => 
+      prev.map(member => {
+        if (member.id === updatedMember.id) {
+          // Preserve the existing remarks if they're not provided in the update
+          const preservedRemarks = updatedMember.remarks || member.remarks || [];
+          return {
+            ...updatedMember,
+            remarks: preservedRemarks
+          };
+        }
+        return member;
+      })
+    );
+    
+    setEditingMember(null);
+    
+    // Update the selected member with preserved remarks
+    const updatedWithRemarks = {
+      ...updatedMember,
+      remarks: updatedMember.remarks || members.find(m => m.id === updatedMember.id)?.remarks || []
+    };
+    setSelectedMember(updatedWithRemarks);
 
     toast({
       title: "Success",
       description: `Member ${updatedMember.name} has been updated successfully.`,
+    });
+  };
+
+  const handleAddRemark = (memberId: string, comment: string) => {
+    setMembers(prev => prev.map(member => {
+      if (member.id === memberId) {
+        return {
+          ...member,
+          remarks: [
+            ...(member.remarks || []),
+            {
+              id: `RM${String(Date.now()).slice(-4)}`,
+              officer: "David Lee",
+              comment: comment,
+              date: new Date().toISOString().split('T')[0]
+            }
+          ]
+        }
+      }
+      return member
+    }))
+
+    // Update the selected member if it's the one being remarked
+    if (selectedMember?.id === memberId) {
+      setSelectedMember(prev => ({
+        ...prev!,
+        remarks: [
+          ...(prev?.remarks || []),
+          {
+            id: `RM${String(Date.now()).slice(-4)}`,
+            officer: "David Lee",
+            comment: comment,
+            date: new Date().toISOString().split('T')[0]
+          }
+        ]
+      }))
+    }
+
+    toast({
+      title: "Remark Added",
+      description: "Your remark has been saved successfully.",
     })
   }
 
@@ -899,6 +1086,7 @@ export default function MembersPage() {
         <ClientDetailsPanel
           client={selectedMember}
           onClose={() => setSelectedMember(null)}
+          onAddRemark={(comment) => handleAddRemark(selectedMember.id, comment)}
           onEdit={handleEditMember}
           onDelete={handleDeleteMember}
         />
