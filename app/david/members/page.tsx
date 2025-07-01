@@ -1,12 +1,10 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import React, { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -14,12 +12,10 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from "@/components/ui/dialog"
-import { Badge } from "@/components/ui/badge"
-import { Label } from "@/components/ui/label"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,8 +26,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
-import { toast } from "@/components/ui/use-toast"
+} from "@/components/ui/alert-dialog";
+import { toast } from "@/components/ui/use-toast";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Eye,
   Search,
@@ -54,144 +52,76 @@ import {
   Edit2,
   UserPlus2,
   Save,
-} from "lucide-react"
+} from "lucide-react";
+
+import HybridWebView from "../hybridwebview/HybridWebView.js";
+
+interface Member {
+  memberId: number;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  suffix?: string;
+  gender?: string;
+  dateOfBirth: string;
+  educationLevel?: string;
+  civilStatus: string;
+  membershipDate: string;
+  membershipStatus: string;
+  fullName: string;
+  email?: string;
+  contact?: string;
+  address?: string;
+  dependents?: number;
+  industry?: string;
+  monthlyIncome?: number;
+  savingsBalance?: number;
+  monthlyExpenses?: number;
+  creditScore?: number;
+  loans?: Array<{
+    id: string;
+    type: string;
+    purpose: string;
+    amount: number;
+    applicationDate: string;
+    duration: string;
+    validatedBy: string;
+    status: string;
+  }>;
+  remarks?: Array<{
+    id: string;
+    officer: string;
+    comment: string;
+    date: string;
+  }>;
+}
 
 const statusConfig = {
   Active: { className: "bg-green-100 text-green-800 border-green-200" },
   Dormant: { className: "bg-yellow-100 text-yellow-800 border-yellow-200" },
   Suspended: { className: "bg-orange-100 text-orange-800 border-orange-200" },
   Closed: { className: "bg-gray-200 text-gray-800 border-gray-300" },
-}
-
-interface Member {
-  id: string
-  name: string
-  email: string
-  gender: string
-  birthday: string
-  contact: string
-  address: string
-  education: string
-  maritalStatus: string
-  dependents: number
-  industry: string
-  monthlyIncome: number
-  savingsBalance: number
-  monthlyExpenses: number
-  status: "Active" | "Dormant" | "Suspended" | "Closed"
-  loans: Array<{
-    id: string
-    type: string
-    purpose: string
-    amount: number
-    applicationDate: string
-    duration: string
-    validatedBy: string
-    status: string
-  }>
-  creditScore: number
-  joinedDate: string
-  remarks: Array<{
-    id: string
-    officer: string
-    comment: string
-    date: string
-  }>
-}
-
-const initialMembers: Member[] = [
-  {
-    id: "CL001",
-    name: "Juan Dela Cruz",
-    gender: "Male",
-    birthday: "1985-05-15",
-    contact: "09123456789",
-    address: "123 Main St, Manila",
-    email: "juandelacruz@example.com",
-    education: "Bachelor's Degree",
-    maritalStatus: "Married",
-    dependents: 2,
-    industry: "Information Technology",
-    monthlyIncome: 75000,
-    savingsBalance: 150000,
-    monthlyExpenses: 35000,
-    status: "Active",
-    loans: [
-      {
-        id: "LN001",
-        type: "Personal Loan",
-        purpose: "Home Renovation",
-        amount: 50000,
-        applicationDate: "2025-05-15",
-        duration: "12 months",
-        validatedBy: "Maria Santos",
-        status: "Approved",
-      },
-    ],
-    creditScore: 85,
-    joinedDate: "2023-01-10",
-    remarks: [
-      {
-        id: "RM001",
-        officer: "Maria Santos",
-        comment: "Client has good payment history for previous loans.",
-        date: "2025-05-16"
-      }
-    ]
-  },
-  {
-    id: "CL002",
-    name: "Maria Santos",
-    email: "mariasantos@example.com",
-    gender: "Female",
-    birthday: "1990-08-22",
-    contact: "09234567890",
-    address: "456 Oak Ave, Quezon City",
-    education: "Master's Degree",
-    maritalStatus: "Single",
-    dependents: 0,
-    industry: "Business Owner",
-    monthlyIncome: 120000,
-    savingsBalance: 350000,
-    monthlyExpenses: 45000,
-    status: "Active",
-    loans: [
-      {
-        id: "LN002",
-        type: "Business Loan",
-        purpose: "Capital Expansion",
-        amount: 150000,
-        applicationDate: "2025-05-20",
-        duration: "24 months",
-        validatedBy: "Juan Dela Cruz",
-        status: "Approved",
-      },
-    ],
-    creditScore: 92,
-    joinedDate: "2022-11-05",
-    remarks: []
-  },
-]
+};
 
 function AddRemarkDialog({
   isOpen,
   onClose,
   onSave,
 }: {
-  isOpen: boolean
-  onClose: () => void
-  onSave: (comment: string) => void
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (comment: string) => void;
 }) {
-  const [comment, setComment] = useState("")
+  const [comment, setComment] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     if (comment.trim()) {
-      onSave(comment)
-      setComment("")
-      onClose()
+      onSave(comment);
+      setComment("");
+      onClose();
     }
-  }
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -227,7 +157,7 @@ function AddRemarkDialog({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 function ClientDetailsPanel({
@@ -237,13 +167,13 @@ function ClientDetailsPanel({
   onEdit,
   onDelete,
 }: {
-  client: Member
-  onClose: () => void
-  onAddRemark: (comment: string) => void
-  onEdit: (client: Member) => void
-  onDelete: (clientId: string) => void
+  client: Member;
+  onClose: () => void;
+  onAddRemark: (comment: string) => void;
+  onEdit: (client: Member) => void;
+  onDelete: (clientId: number) => void;
 }) {
-  const [isAddRemarkOpen, setIsAddRemarkOpen] = useState(false)
+  const [isAddRemarkOpen, setIsAddRemarkOpen] = useState(false);
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
@@ -253,25 +183,24 @@ function ClientDetailsPanel({
             <div>
               <DialogTitle className="text-2xl font-bold text-gray-800 flex items-center gap-2">
                 <User className="h-6 w-6" />
-                {client.name}
+                {client.fullName}
                 <Badge variant="outline" className="ml-2 border-gray-300 text-gray-600">
-                  {client.id}
+                  {client.memberId}
                 </Badge>
               </DialogTitle>
               <DialogDescription className="text-gray-500">
-                Comprehensive client profile and financial history
+                Comprehensive member profile and financial history
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
         <div className="grid gap-8 py-4">
-          {/* Client Overview Card */}
           <Card className="border-gray-200 shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <Info className="h-5 w-5 text-blue-500" />
-                Client Overview
+                Member Overview
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -282,7 +211,7 @@ function ClientDetailsPanel({
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Gender</p>
-                    <p className="font-medium text-gray-800">{client.gender}</p>
+                    <p className="font-medium text-gray-800">{client.gender || "N/A"}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -292,7 +221,9 @@ function ClientDetailsPanel({
                   <div>
                     <p className="text-sm text-gray-500">Age</p>
                     <p className="font-medium text-gray-800">
-                      {new Date().getFullYear() - new Date(client.birthday).getFullYear()} years
+                      {client.dateOfBirth
+                        ? new Date().getFullYear() - new Date(client.dateOfBirth).getFullYear() + " years"
+                        : "N/A"}
                     </p>
                   </div>
                 </div>
@@ -302,7 +233,7 @@ function ClientDetailsPanel({
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Contact</p>
-                    <p className="font-medium text-gray-800">{client.contact}</p>
+                    <p className="font-medium text-gray-800">{client.contact || "N/A"}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -311,14 +242,13 @@ function ClientDetailsPanel({
                   </div>
                   <div>
                     <p className="text-sm text-gray-500">Address</p>
-                    <p className="font-medium text-gray-800 line-clamp-1">{client.address}</p>
+                    <p className="font-medium text-gray-800 line-clamp-1">{client.address || "N/A"}</p>
                   </div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Personal Details and Financial Information */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="border-gray-200 shadow-sm">
               <CardHeader className="pb-4">
@@ -333,25 +263,25 @@ function ClientDetailsPanel({
                     <Label className="text-sm text-gray-500">Education</Label>
                     <div className="flex items-center gap-2 mt-1">
                       <GraduationCap className="h-4 w-4 text-gray-400" />
-                      <p className="text-gray-800">{client.education}</p>
+                      <p className="text-gray-800">{client.educationLevel || "N/A"}</p>
                     </div>
                   </div>
                   <div>
                     <Label className="text-sm text-gray-500">Marital Status</Label>
                     <div className="flex items-center gap-2 mt-1">
                       <HeartPulse className="h-4 w-4 text-gray-400" />
-                      <p className="text-gray-800">{client.maritalStatus}</p>
+                      <p className="text-gray-800">{client.civilStatus || "N/A"}</p>
                     </div>
                   </div>
                   <div>
                     <Label className="text-sm text-gray-500">Dependents</Label>
-                    <p className="text-gray-800">{client.dependents}</p>
+                    <p className="text-gray-800">{client.dependents || 0}</p>
                   </div>
                   <div>
                     <Label className="text-sm text-gray-500">Industry</Label>
                     <div className="flex items-center gap-2 mt-1">
                       <Briefcase className="h-4 w-4 text-gray-400" />
-                      <p className="text-gray-800">{client.industry}</p>
+                      <p className="text-gray-800">{client.industry || "N/A"}</p>
                     </div>
                   </div>
                 </div>
@@ -369,38 +299,44 @@ function ClientDetailsPanel({
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm text-gray-500">Monthly Income</Label>
-                    <p className="text-gray-800 font-medium">₱{client.monthlyIncome.toLocaleString()}</p>
+                    <p className="text-gray-800 font-medium">
+                      ₱{(client.monthlyIncome || 0).toLocaleString()}
+                    </p>
                   </div>
                   <div>
                     <Label className="text-sm text-gray-500">Monthly Expenses</Label>
-                    <p className="text-gray-800 font-medium">₱{client.monthlyExpenses.toLocaleString()}</p>
+                    <p className="text-gray-800 font-medium">
+                      ₱{(client.monthlyExpenses || 0).toLocaleString()}
+                    </p>
                   </div>
                   <div>
                     <Label className="text-sm text-gray-500">Savings Balance</Label>
-                    <p className="text-gray-800 font-medium">₱{client.savingsBalance.toLocaleString()}</p>
+                    <p className="text-gray-800 font-medium">
+                      ₱{(client.savingsBalance || 0).toLocaleString()}
+                    </p>
                   </div>
                   <div>
                     <Label className="text-sm text-gray-500">Credit Score</Label>
                     <div className="flex items-center gap-2">
                       <BarChart2
                         className={`h-4 w-4 ${
-                          client.creditScore >= 85
+                          (client.creditScore || 0) >= 85
                             ? "text-green-500"
-                            : client.creditScore >= 70
+                            : (client.creditScore || 0) >= 70
                               ? "text-yellow-500"
                               : "text-red-500"
                         }`}
                       />
                       <span
                         className={`font-medium ${
-                          client.creditScore >= 85
+                          (client.creditScore || 0) >= 85
                             ? "text-green-600"
-                            : client.creditScore >= 70
+                            : (client.creditScore || 0) >= 70
                               ? "text-yellow-600"
                               : "text-red-600"
                         }`}
                       >
-                        {client.creditScore}
+                        {client.creditScore || "N/A"}
                       </span>
                     </div>
                   </div>
@@ -409,16 +345,15 @@ function ClientDetailsPanel({
             </Card>
           </div>
 
-          {/* Loan History */}
           <Card className="border-gray-200 shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <CreditCard className="h-5 w-5 text-amber-500" />
-                Loan History ({client.loans.length})
+                Loan History ({(client.loans || []).length})
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {client.loans.length > 0 ? (
+              {(client.loans || []).length > 0 ? (
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
                   <Table>
                     <TableHeader className="bg-gray-50">
@@ -432,12 +367,14 @@ function ClientDetailsPanel({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {client.loans.map((loan) => (
+                      {(client.loans || []).map((loan) => (
                         <TableRow key={loan.id} className="border-gray-200 hover:bg-gray-50">
                           <TableCell className="font-medium text-gray-800">{loan.id}</TableCell>
                           <TableCell className="text-gray-700">{loan.type}</TableCell>
                           <TableCell className="text-gray-700">{loan.purpose}</TableCell>
-                          <TableCell className="text-gray-700 font-medium">₱{loan.amount.toLocaleString()}</TableCell>
+                          <TableCell className="text-gray-700 font-medium">
+                            ₱{loan.amount.toLocaleString()}
+                          </TableCell>
                           <TableCell className="text-gray-500">{loan.applicationDate}</TableCell>
                           <TableCell>
                             <Badge variant={loan.status === "Approved" ? "default" : "destructive"}>
@@ -453,19 +390,18 @@ function ClientDetailsPanel({
                 <div className="flex flex-col items-center justify-center py-8 text-center">
                   <FileText className="h-10 w-10 text-gray-300 mb-3" />
                   <h4 className="text-gray-500 font-medium">No loan applications</h4>
-                  <p className="text-gray-400 text-sm mt-1">This client hasn't applied for any loans yet</p>
+                  <p className="text-gray-400 text-sm mt-1">This member hasn't applied for any loans yet</p>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Remarks Section */}
           <Card className="border-gray-200 shadow-sm">
             <CardHeader className="pb-4">
               <div className="flex justify-between items-center">
                 <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                   <FileText className="h-5 w-5 text-purple-500" />
-                  Remarks ({client.remarks.length})
+                  Remarks ({(client.remarks || []).length})
                 </CardTitle>
                 <Button 
                   variant="outline" 
@@ -479,9 +415,9 @@ function ClientDetailsPanel({
               </div>
             </CardHeader>
             <CardContent>
-              {client.remarks.length > 0 ? (
+              {(client.remarks || []).length > 0 ? (
                 <div className="space-y-4">
-                  {client.remarks.map((remark) => (
+                  {(client.remarks || []).map((remark) => (
                     <div key={remark.id} className="border-l-4 border-blue-200 pl-4 py-2 bg-gray-50 rounded">
                       <div className="flex justify-between items-start">
                         <div>
@@ -510,20 +446,23 @@ function ClientDetailsPanel({
               <AlertDialogTrigger asChild>
                 <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
                   <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Client
+                  Delete Member
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the client "{client.name}" and all
+                    This action cannot be undone. This will permanently delete the member "{client.fullName}" and all
                     associated data.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => onDelete(client.id)} className="bg-red-600 hover:bg-red-700">
+                  <AlertDialogAction
+                    onClick={() => onDelete(client.memberId)}
+                    className="bg-red-600 hover:bg-red-700"
+                  >
                     Delete
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -547,9 +486,8 @@ function ClientDetailsPanel({
         onClose={() => setIsAddRemarkOpen(false)}
         onSave={onAddRemark}
       />
-      
     </Dialog>
-  )
+  );
 }
 
 function ClientFormDialog({
@@ -559,51 +497,60 @@ function ClientFormDialog({
   onSave,
   mode,
 }: {
-  client?: Member
-  isOpen: boolean
-  onClose: () => void
-  onSave: (client: Member) => void
-  mode: "create" | "edit"
+  client?: Member;
+  isOpen: boolean;
+  onClose: () => void;
+  onSave: (client: Member) => void;
+  mode: "create" | "edit";
 }) {
   const [formData, setFormData] = useState<Partial<Member>>(
     client || {
-      name: "",
-      email: "",
+      firstName: "",
+      lastName: "",
       gender: "",
-      birthday: "",
+      dateOfBirth: "",
       contact: "",
       address: "",
-      education: "",
-      maritalStatus: "",
+      educationLevel: "",
+      civilStatus: "",
       dependents: 0,
       industry: "",
       monthlyIncome: 0,
       savingsBalance: 0,
       monthlyExpenses: 0,
-      status: "Active",
+      membershipStatus: "Active",
       loans: [],
       creditScore: 0,
-    },
-  )
+    }
+  );
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    const newClient: Member = {
+    const newMember: Member = {
       ...formData,
-      id: client?.id || `CL${String(Date.now()).slice(-3)}`,
-      joinedDate: client?.joinedDate || new Date().toISOString().split("T")[0],
+      memberId: client?.memberId || Math.floor(Math.random() * 10000),
+      firstName: formData.firstName || "",
+      lastName: formData.lastName || "",
+      fullName: `${formData.firstName} ${formData.middleName ? formData.middleName + " " : ""}${formData.lastName} ${
+        formData.suffix || ""
+      }`.trim(),
+      dateOfBirth: formData.dateOfBirth || "",
+      civilStatus: formData.civilStatus || "",
+      membershipDate: client?.membershipDate || new Date().toISOString().split("T")[0],
+      membershipStatus: formData.membershipStatus || "Active",
       loans: client?.loans || [],
-    } as Member
+      remarks: client?.remarks || [],
+    } as Member;
 
-    onSave(newClient)
-  }
+    onSave(newMember);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{mode === "create" ? "Register New Member" : `Edit Member - ${client?.name}`}</DialogTitle>
+          <DialogTitle>{mode === "create" ? "Register New Member" : `Edit Member - ${client?.fullName}`}</DialogTitle>
           <DialogDescription>
             {mode === "create" ? "Fill out the details for the new member" : "Update the member information"}
           </DialogDescription>
@@ -612,22 +559,40 @@ function ClientFormDialog({
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="name">Full Name *</Label>
+              <Label htmlFor="firstName">First Name *</Label>
               <Input
-                id="name"
-                value={formData.name || ""}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                id="firstName"
+                value={formData.firstName || ""}
+                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                 required
               />
             </div>
             <div>
-              <Label htmlFor="email">Email *</Label>
+              <Label htmlFor="lastName">Last Name *</Label>
               <Input
-                id="email"
-                type="email"
-                value={formData.email || ""}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                id="lastName"
+                value={formData.lastName || ""}
+                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                 required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="middleName">Middle Name</Label>
+              <Input
+                id="middleName"
+                value={formData.middleName || ""}
+                onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="suffix">Suffix</Label>
+              <Input
+                id="suffix"
+                value={formData.suffix || ""}
+                onChange={(e) => setFormData({ ...formData, suffix: e.target.value })}
               />
             </div>
           </div>
@@ -650,12 +615,12 @@ function ClientFormDialog({
               </Select>
             </div>
             <div>
-              <Label htmlFor="birthday">Birthday</Label>
+              <Label htmlFor="dateOfBirth">Birthday</Label>
               <Input
-                id="birthday"
+                id="dateOfBirth"
                 type="date"
-                value={formData.birthday || ""}
-                onChange={(e) => setFormData({ ...formData, birthday: e.target.value })}
+                value={formData.dateOfBirth || ""}
+                onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
               />
             </div>
           </div>
@@ -671,10 +636,10 @@ function ClientFormDialog({
               />
             </div>
             <div>
-              <Label htmlFor="status">Status</Label>
+              <Label htmlFor="membershipStatus">Status</Label>
               <Select
-                value={formData.status || "Active"}
-                onValueChange={(value) => setFormData({ ...formData, status: value as any })}
+                value={formData.membershipStatus || "Active"}
+                onValueChange={(value) => setFormData({ ...formData, membershipStatus: value as any })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -701,18 +666,18 @@ function ClientFormDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="education">Education</Label>
+              <Label htmlFor="educationLevel">Education</Label>
               <Input
-                id="education"
-                value={formData.education || ""}
-                onChange={(e) => setFormData({ ...formData, education: e.target.value })}
+                id="educationLevel"
+                value={formData.educationLevel || ""}
+                onChange={(e) => setFormData({ ...formData, educationLevel: e.target.value })}
               />
             </div>
             <div>
-              <Label htmlFor="maritalStatus">Marital Status</Label>
+              <Label htmlFor="civilStatus">Marital Status</Label>
               <Select
-                value={formData.maritalStatus || ""}
-                onValueChange={(value) => setFormData({ ...formData, maritalStatus: value })}
+                value={formData.civilStatus || ""}
+                onValueChange={(value) => setFormData({ ...formData, civilStatus: value })}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select status" />
@@ -793,69 +758,121 @@ function ClientFormDialog({
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }
 
 export default function MembersPage() {
-  const [members, setMembers] = useState<Member[]>(initialMembers)
-  const [searchText, setSearchText] = useState("")
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null)
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "none">("none")
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
-  const [editingMember, setEditingMember] = useState<Member | null>(null)
+  const [members, setMembers] = useState<Member[]>([]);
+  const [searchText, setSearchText] = useState("");
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "none">("none");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [editingMember, setEditingMember] = useState<Member | null>(null);
 
-  const filteredMembers = members.filter((client) => {
-    return (
-      client.id.toLowerCase().includes(searchText.toLowerCase()) ||
-      client.name.toLowerCase().includes(searchText.toLowerCase()) ||
-      client.contact.toLowerCase().includes(searchText.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchText.toLowerCase())
-    )
-  })
+  // HybridWebView integration
+  useEffect(() => {
+    (window as any).globalSetMembers = (membersJson: any[]) => {
+      console.log("✅ Received Members from .NET:", membersJson);
+
+      const mapped = membersJson.map((m: any) => {
+        const genderMap = ["Male", "Female", "Other"];
+        const civilStatusMap = ["Single", "Married", "Divorced", "Widowed"];
+        const membershipStatusMap = ["Active", "Dormant", "Suspended", "Closed"];
+
+        const profile = m.MemberFinancialProfile || {};
+
+        return {
+          memberId: m.MemberId,
+          firstName: m.FirstName,
+          middleName: m.MiddleName || "",
+          lastName: m.LastName,
+          suffix: m.Suffix || "",
+          fullName: `${m.FirstName} ${m.MiddleName ? m.MiddleName + " " : ""}${m.LastName} ${m.Suffix || ""}`.trim(),
+          gender: genderMap[m.Gender] || "N/A",
+          dateOfBirth: m.DateOfBirth,
+          contact: (m.ContactInfos && m.ContactInfos[0]?.Value) || "",
+          address: (m.Addresses && m.Addresses[0]?.FullAddress) || "",
+          educationLevel: ["None", "Elementary", "High School", "College", "Postgrad"][m.EducationLevel] || "N/A",
+          civilStatus: civilStatusMap[m.CivilStatus] || "N/A",
+          dependents: profile.Dependents || 0,
+          industry: profile.Industry || "",
+          monthlyIncome: profile.MonthlyIncome || 0,
+          monthlyExpenses: profile.MonthlyExpenses || 0,
+          savingsBalance: profile.SavingsBalance || 0,
+          creditScore: profile.CreditScore || 0,
+          membershipDate: m.MembershipDate,
+          membershipStatus: membershipStatusMap[m.MembershipStatus] || "Unknown",
+          loans: (m.LoanAccounts || []).map((loan: any) => ({
+            id: loan.Id,
+            type: loan.Type,
+            purpose: loan.Purpose,
+            amount: loan.Amount,
+            applicationDate: loan.ApplicationDate,
+            duration: loan.Duration,
+            validatedBy: loan.ValidatedBy,
+            status: loan.Status,
+          })),
+          remarks: []
+        };
+      });
+
+      setMembers(mapped);
+    };
+
+    // Notify .NET that JS is ready
+    HybridWebView.SendInvokeMessageToDotNet("NotifyJsReady");
+
+    // Ask .NET to load members
+    HybridWebView.SendInvokeMessageToDotNet("ReloadMembersFromDb");
+  }, []);
+
+  const filteredMembers = members.filter((member) =>
+    member.fullName.toLowerCase().includes(searchText.toLowerCase())
+  );
 
   const sortedMembers = [...filteredMembers].sort((a, b) => {
-    if (sortOrder === "none") return 0
-    if (sortOrder === "asc") return a.name.localeCompare(b.name)
-    return b.name.localeCompare(a.name)
-  })
+    if (sortOrder === "asc") return a.fullName.localeCompare(b.fullName);
+    if (sortOrder === "desc") return b.fullName.localeCompare(a.fullName);
+    return 0;
+  });
 
-  const toggleSortOrder = () => {
-    setSortOrder((prev) => {
-      if (prev === "none") return "asc"
-      if (prev === "asc") return "desc"
-      return "none"
-    })
-  }
+  const toggleSort = () => {
+    setSortOrder((prev) =>
+      prev === "asc" ? "desc" : prev === "desc" ? "none" : "asc"
+    );
+  };
 
   const handleCreateMember = (newMember: Member) => {
-    // Calculate credit score based on financial data
-    const income = newMember.monthlyIncome || 0
-    const expenses = newMember.monthlyExpenses || 0
-    const savings = newMember.savingsBalance || 0
+    const income = newMember.monthlyIncome || 0;
+    const expenses = newMember.monthlyExpenses || 0;
+    const savings = newMember.savingsBalance || 0;
+
     const creditScore = Math.min(
       100,
-      Math.max(0, Math.floor((income - expenses) / 1000) + Math.floor(savings / 10000) + 50),
-    )
+      Math.max(0, Math.floor((income - expenses) / 1000) + Math.floor(savings / 10000) + 50)
+    );
 
-    const memberWithScore = { ...newMember, creditScore }
-    setMembers((prev) => [...prev, memberWithScore])
-    setIsCreateDialogOpen(false)
+    const memberWithScore = { 
+      ...newMember, 
+      creditScore,
+      remarks: newMember.remarks || [] 
+    };
+    setMembers((prev) => [...prev, memberWithScore]);
+    setIsCreateDialogOpen(false);
 
     toast({
       title: "Success",
-      description: `Member ${newMember.name} has been registered successfully.`,
-    })
-  }
+      description: `Member ${newMember.fullName} has been registered successfully.`,
+    });
+  };
 
   const handleUpdateMember = (updatedMember: Member) => {
     setMembers(prev => 
       prev.map(member => {
-        if (member.id === updatedMember.id) {
-          // Preserve the existing remarks if they're not provided in the update
-          const preservedRemarks = updatedMember.remarks || member.remarks || [];
+        if (member.memberId === updatedMember.memberId) {
           return {
             ...updatedMember,
-            remarks: preservedRemarks
+            remarks: updatedMember.remarks || member.remarks || []
           };
         }
         return member;
@@ -867,77 +884,64 @@ export default function MembersPage() {
     // Update the selected member with preserved remarks
     const updatedWithRemarks = {
       ...updatedMember,
-      remarks: updatedMember.remarks || members.find(m => m.id === updatedMember.id)?.remarks || []
+      remarks: updatedMember.remarks || members.find(m => m.memberId === updatedMember.memberId)?.remarks || []
     };
     setSelectedMember(updatedWithRemarks);
 
     toast({
       title: "Success",
-      description: `Member ${updatedMember.name} has been updated successfully.`,
+      description: `Member ${updatedMember.fullName} has been updated successfully.`,
     });
   };
 
-  const handleAddRemark = (memberId: string, comment: string) => {
-    setMembers(prev => prev.map(member => {
-      if (member.id === memberId) {
-        return {
-          ...member,
-          remarks: [
-            ...(member.remarks || []),
-            {
-              id: `RM${String(Date.now()).slice(-4)}`,
-              officer: "David Lee",
-              comment: comment,
-              date: new Date().toISOString().split('T')[0]
-            }
-          ]
-        }
-      }
-      return member
-    }))
+  const handleAddRemark = (comment: string) => {
+    if (!selectedMember) return;
 
-    // Update the selected member if it's the one being remarked
-    if (selectedMember?.id === memberId) {
-      setSelectedMember(prev => ({
-        ...prev!,
-        remarks: [
-          ...(prev?.remarks || []),
-          {
-            id: `RM${String(Date.now()).slice(-4)}`,
-            officer: "David Lee",
-            comment: comment,
-            date: new Date().toISOString().split('T')[0]
-          }
-        ]
-      }))
-    }
-
+    const newRemark = {
+      id: `RM${String(Date.now()).slice(-4)}`,
+      officer: "David Lee",
+      comment,
+      date: new Date().toISOString().split('T')[0]
+    };
+    
+    // Update members list
+    setMembers(prev => prev.map(m => 
+      m.memberId === selectedMember.memberId 
+        ? { ...m, remarks: [...(m.remarks || []), newRemark] } 
+        : m
+    ));
+    
+    // Update selected member
+    setSelectedMember(prev => ({
+      ...prev!,
+      remarks: [...(prev?.remarks || []), newRemark]
+    }));
+    
     toast({
       title: "Remark Added",
       description: "Your remark has been saved successfully.",
-    })
-  }
+    });
+  };
 
-  const handleDeleteMember = (memberId: string) => {
-    const memberToDelete = members.find((m) => m.id === memberId)
-    setMembers((prev) => prev.filter((member) => member.id !== memberId))
-    setSelectedMember(null)
+  const handleDeleteMember = (memberId: number) => {
+    const deleted = members.find((m) => m.memberId === memberId);
+    setMembers((prev) => prev.filter((m) => m.memberId !== memberId));
+    setSelectedMember(null);
 
     toast({
-      title: "Success",
-      description: `Member ${memberToDelete?.name} has been deleted successfully.`,
+      title: "Deleted",
+      description: `Member ${deleted?.fullName} was removed.`,
       variant: "destructive",
-    })
-  }
+    });
+  };
 
   const handleEditMember = (member: Member) => {
-    setEditingMember(member)
-    setSelectedMember(null)
-  }
+    setEditingMember(member);
+    setSelectedMember(null);
+  };
 
   return (
     <div className="flex flex-col w-full">
-      {/* Header */}
       <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
         <div>
           <h1 className="text-2xl font-semibold text-gray-800">Member Management</h1>
@@ -960,7 +964,10 @@ export default function MembersPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-xl text-gray-800">Members ({filteredMembers.length})</CardTitle>
-              <Button onClick={() => setIsCreateDialogOpen(true)} className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Button
+                onClick={() => setIsCreateDialogOpen(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
                 <UserPlus2 className="mr-2 h-4 w-4" />
                 New Member
               </Button>
@@ -978,7 +985,7 @@ export default function MembersPage() {
               <Button
                 variant="outline"
                 className="border-gray-200 text-gray-700 hover:bg-gray-100 hover:text-gray-900"
-                onClick={toggleSortOrder}
+                onClick={toggleSort}
               >
                 <ArrowUpDown className="mr-2 h-4 w-4" />
                 {sortOrder === "none" ? "Sort" : sortOrder === "asc" ? "A-Z" : "Z-A"}
@@ -992,8 +999,7 @@ export default function MembersPage() {
                 <TableRow className="border-gray-200">
                   <TableHead className="text-gray-700">Member ID</TableHead>
                   <TableHead className="text-gray-700">Name</TableHead>
-                  <TableHead className="text-gray-700">Email</TableHead>
-                  <TableHead className="text-gray-700">Phone</TableHead>
+                  <TableHead className="text-gray-700">Contact</TableHead>
                   <TableHead className="text-gray-700">Credit Score</TableHead>
                   <TableHead className="text-gray-700">Total Loans</TableHead>
                   <TableHead className="text-gray-700">Status</TableHead>
@@ -1003,61 +1009,60 @@ export default function MembersPage() {
               <TableBody>
                 {sortedMembers.map((member) => (
                   <TableRow
-                    key={member.id}
+                    key={member.memberId}
                     className="border-gray-200 hover:bg-gray-50 cursor-pointer"
                     onClick={() => setSelectedMember(member)}
                   >
-                    <TableCell className="font-medium text-gray-800">{member.id}</TableCell>
+                    <TableCell className="font-medium text-gray-800">{member.memberId}</TableCell>
                     <TableCell className="text-gray-700">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback className="bg-blue-100 text-blue-800">
-                            {member.name
+                            {member.fullName
                               .split(" ")
                               .map((n) => n[0])
                               .join("")}
                           </AvatarFallback>
                         </Avatar>
-                        <span>{member.name}</span>
+                        <span>{member.fullName}</span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-gray-700">{member.email}</TableCell>
-                    <TableCell className="text-gray-700">{member.contact}</TableCell>
+                    <TableCell className="text-gray-700">{member.contact || "N/A"}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div
                           className={`h-2 w-2 rounded-full ${
-                            member.creditScore >= 85
+                            (member.creditScore || 0) >= 85
                               ? "bg-green-500"
-                              : member.creditScore >= 70
+                              : (member.creditScore || 0) >= 70
                                 ? "bg-yellow-500"
                                 : "bg-red-500"
                           }`}
                         />
                         <span
                           className={`font-medium ${
-                            member.creditScore >= 85
+                            (member.creditScore || 0) >= 85
                               ? "text-green-600"
-                              : member.creditScore >= 70
+                              : (member.creditScore || 0) >= 70
                                 ? "text-yellow-600"
                                 : "text-red-600"
                           }`}
                         >
-                          {member.creditScore}
+                          {member.creditScore || "N/A"}
                         </span>
                       </div>
                     </TableCell>
                     <TableCell className="text-gray-700">
-                      <Badge variant={member.loans.length > 0 ? "default" : "outline"}>
-                        {member.loans.length} {member.loans.length === 1 ? "loan" : "loans"}
+                      <Badge variant={(member.loans || []).length > 0 ? "default" : "outline"}>
+                        {(member.loans || []).length} {(member.loans || []).length === 1 ? "loan" : "loans"}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-gray-700">
                       <Badge
                         variant="outline"
-                        className={statusConfig[member.status as keyof typeof statusConfig].className}
+                        className={statusConfig[member.membershipStatus as keyof typeof statusConfig]?.className}
                       >
-                        {member.status}
+                        {member.membershipStatus}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -1066,8 +1071,8 @@ export default function MembersPage() {
                         size="icon"
                         className="h-8 w-8 text-blue-500 hover:text-blue-600"
                         onClick={(e) => {
-                          e.stopPropagation()
-                          setSelectedMember(member)
+                          e.stopPropagation();
+                          setSelectedMember(member);
                         }}
                       >
                         <Eye className="h-4 w-4" />
@@ -1081,12 +1086,11 @@ export default function MembersPage() {
         </Card>
       </main>
 
-      {/* Dialogs */}
       {selectedMember && (
         <ClientDetailsPanel
           client={selectedMember}
           onClose={() => setSelectedMember(null)}
-          onAddRemark={(comment) => handleAddRemark(selectedMember.id, comment)}
+          onAddRemark={handleAddRemark}
           onEdit={handleEditMember}
           onDelete={handleDeleteMember}
         />
@@ -1109,5 +1113,5 @@ export default function MembersPage() {
         />
       )}
     </div>
-  )
+  );
 }
