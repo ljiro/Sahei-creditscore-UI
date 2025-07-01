@@ -56,6 +56,9 @@ import {
   Save,
 } from "lucide-react";
 
+import HybridWebView from "../hybridwebview/HybridWebView.js"; // adjust path based on file structure
+
+
 interface Member {
   memberId: number;
   firstName: string;
@@ -655,21 +658,9 @@ export default function MembersPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
 
-
+  // Expose the method for .NET to call
   useEffect(() => {
-  if (window.hybrid && typeof window.hybrid.invoke === 'function') {
-    console.log("✅ JS is ready. Notifying .NET...");
-    window.hybrid.invoke("NotifyJsReady");
-  } else {
-    console.warn("⚠️ Hybrid bridge not ready");
-  }
-}, []);
-
-  // Load members from .NET EF Core when page mounts
-useEffect(() => {
-  // Delay to ensure .NET doesn't call too early
-  setTimeout(() => {
-    (window as any).globalSetMembers = (membersJson: any) => {
+    (window as any).globalSetMembers = (membersJson: any[]) => {
       console.log("✅ Received Members from .NET:", membersJson);
       const mapped = membersJson.map((m: any) => ({
         ...m,
@@ -678,57 +669,20 @@ useEffect(() => {
       setMembers(mapped);
     };
 
-    // ✅ Ask .NET to call back into JS
-    if ((window as any).hybrid?.invoke) {
-      (window as any).hybrid.invoke("ReloadMembersFromDb");
-    } else {
-      console.warn("⚠️ Hybrid bridge not ready");
-    }
-  }, 500); // Delay by 500ms
-}, []);
-useEffect(() => {
-  let attempts = 0;
-  const maxAttempts = 20;
-  const interval = 300;
+    // Notify .NET that JS is ready
+    HybridWebView.SendInvokeMessageToDotNet("NotifyJsReady");
 
-  const intervalId = setInterval(() => {
-    if ((window as any).hybrid?.invoke) {
-      console.log("📢 JS is ready, notifying .NET...");
-      (window as any).hybrid.invoke("NotifyJsReady");
-      clearInterval(intervalId);
-    } else {
-      attempts++;
-      console.log(`⏳ Waiting for hybrid bridge... (attempt ${attempts})`);
-      if (attempts >= maxAttempts) {
-        console.warn("❌ Failed to connect to hybrid bridge.");
-        clearInterval(intervalId);
-      }
-    }
-  }, interval);
-
-  return () => clearInterval(intervalId);
-}, []);
-
-useEffect(() => {
-  if (window.hybrid && typeof window.hybrid.invoke === 'function') {
-    console.log("✅ JS is ready. Notifying .NET...");
-    window.hybrid.invoke("NotifyJsReady");
-  } else {
-    console.warn("⚠️ Hybrid bridge not ready");
-  }
-}, []);
-
+    // Ask .NET to load members
+    HybridWebView.SendInvokeMessageToDotNet("ReloadMembersFromDb");
+  }, []);
 
   const filteredMembers = members.filter((member) =>
     member.fullName.toLowerCase().includes(searchText.toLowerCase())
   );
 
   const sortedMembers = [...filteredMembers].sort((a, b) => {
-    if (sortOrder === "asc") {
-      return a.fullName.localeCompare(b.fullName);
-    } else if (sortOrder === "desc") {
-      return b.fullName.localeCompare(a.fullName);
-    }
+    if (sortOrder === "asc") return a.fullName.localeCompare(b.fullName);
+    if (sortOrder === "desc") return b.fullName.localeCompare(a.fullName);
     return 0;
   });
 
@@ -739,13 +693,13 @@ useEffect(() => {
   };
 
   const handleCreateMember = (newMember: Member) => {
-    // Calculate credit score based on financial data
     const income = newMember.monthlyIncome || 0;
     const expenses = newMember.monthlyExpenses || 0;
     const savings = newMember.savingsBalance || 0;
+
     const creditScore = Math.min(
       100,
-      Math.max(0, Math.floor((income - expenses) / 1000) + Math.floor(savings / 10000) + 50),
+      Math.max(0, Math.floor((income - expenses) / 1000) + Math.floor(savings / 10000) + 50)
     );
 
     const memberWithScore = { ...newMember, creditScore };
@@ -760,9 +714,7 @@ useEffect(() => {
 
   const handleUpdateMember = (updatedMember: Member) => {
     setMembers((prev) =>
-      prev.map((member) =>
-        member.memberId === updatedMember.memberId ? updatedMember : member
-      )
+      prev.map((m) => (m.memberId === updatedMember.memberId ? updatedMember : m))
     );
     setEditingMember(null);
     setSelectedMember(updatedMember);
@@ -774,13 +726,13 @@ useEffect(() => {
   };
 
   const handleDeleteMember = (memberId: number) => {
-    const memberToDelete = members.find((m) => m.memberId === memberId);
-    setMembers((prev) => prev.filter((member) => member.memberId !== memberId));
+    const deleted = members.find((m) => m.memberId === memberId);
+    setMembers((prev) => prev.filter((m) => m.memberId !== memberId));
     setSelectedMember(null);
 
     toast({
-      title: "Success",
-      description: `Member ${memberToDelete?.fullName} has been deleted successfully.`,
+      title: "Deleted",
+      description: `Member ${deleted?.fullName} was removed.`,
       variant: "destructive",
     });
   };
