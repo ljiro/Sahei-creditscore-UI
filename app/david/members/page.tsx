@@ -56,6 +56,75 @@ import {
 
 import HybridWebView from "../hybridwebview/HybridWebView.js";
 
+const initialMembers: Member[] = [
+  {
+    memberId: 1,
+    firstName: "Juan",
+    lastName: "Dela Cruz",
+    fullName: "Juan Dela Cruz",
+    gender: "Male",
+    dateOfBirth: "1985-05-15",
+    contact: "09123456789",
+    address: "123 Main St, Manila",
+    email: "juandelacruz@example.com",
+    educationLevel: "Bachelor's Degree",
+    civilStatus: "Married",
+    dependents: 2,
+    industry: "Information Technology",
+    monthlyIncome: 75000,
+    savingsBalance: 150000,
+    monthlyExpenses: 35000,
+    membershipStatus: "Active",
+    loans: [
+      {
+        id: "LN001",
+        type: "Personal Loan",
+        purpose: "Home Renovation",
+        amount: 50000,
+        applicationDate: "2025-05-15",
+        duration: "12 months",
+        validatedBy: "Maria Santos",
+        status: "Approved",
+      },
+    ],
+    creditScore: 85,
+    membershipDate: "2023-01-10",
+  },
+  {
+    memberId: 3,
+    firstName: "Maria",
+    lastName: "Santos",
+    fullName: "Maria Santos",
+    email: "mariasantos@example.com",
+    gender: "Female",
+    dateOfBirth: "1990-08-22",
+    contact: "09234567890",
+    address: "456 Oak Ave, Quezon City",
+    educationLevel: "Master's Degree",
+    civilStatus: "Single",
+    dependents: 0,
+    industry: "Business Owner",
+    monthlyIncome: 120000,
+    savingsBalance: 350000,
+    monthlyExpenses: 45000,
+    membershipStatus: "Active",
+    loans: [
+      {
+        id: "LN002",
+        type: "Business Loan",
+        purpose: "Capital Expansion",
+        amount: 150000,
+        applicationDate: "2025-05-20",
+        duration: "24 months",
+        validatedBy: "Juan Dela Cruz",
+        status: "Approved",
+      },
+    ],
+    creditScore: 92,
+    membershipDate: "2022-11-05",
+  },
+];
+
 interface Member {
   memberId: number;
   firstName: string;
@@ -63,10 +132,10 @@ interface Member {
   lastName: string;
   suffix?: string;
   gender?: string;
-  dateOfBirth: string;
+  dateOfBirth?: string;
   educationLevel?: string;
-  civilStatus: string;
-  membershipDate: string;
+  civilStatus?: string;
+  membershipDate?: string;
   membershipStatus: string;
   fullName: string;
   email?: string;
@@ -184,9 +253,6 @@ function ClientDetailsPanel({
               <DialogTitle className="text-2xl font-bold text-gray-800 flex items-center gap-2">
                 <User className="h-6 w-6" />
                 {client.fullName}
-                <Badge variant="outline" className="ml-2 border-gray-300 text-gray-600">
-                  {client.memberId}
-                </Badge>
               </DialogTitle>
               <DialogDescription className="text-gray-500">
                 Comprehensive member profile and financial history
@@ -770,61 +836,85 @@ export default function MembersPage() {
   const [editingMember, setEditingMember] = useState<Member | null>(null);
 
   // HybridWebView integration
-  useEffect(() => {
-    (window as any).globalSetMembers = (membersJson: any[]) => {
-      console.log("✅ Received Members from .NET:", membersJson);
+useEffect(() => {
+  (window as any).globalSetMembers = (dataFromDotNet: any) => {
+    console.log("✅ Received data from .NET. Data:", dataFromDotNet);
+    
+    let membersJson = [];
+    if (typeof dataFromDotNet === 'string') {
+      try {
+        membersJson = JSON.parse(dataFromDotNet);
+      } catch (e) {
+        console.error("Error parsing JSON string from .NET:", e);
+        return;
+      }
+    } else if (Array.isArray(dataFromDotNet)) {
+      membersJson = dataFromDotNet;
+    } else {
+        console.error("Received data of unexpected type from .NET:", typeof dataFromDotNet);
+        return;
+    }
 
-      const mapped = membersJson.map((m: any) => {
-        const genderMap = ["Male", "Female", "Other"];
-        const civilStatusMap = ["Single", "Married", "Divorced", "Widowed"];
-        const membershipStatusMap = ["Active", "Dormant", "Suspended", "Closed"];
+    const genderMap = { 0: "Male", 1: "Female", 2: "Other" };
+    const educationMap = { 1: "Elementary Undergraduate", 2: "Elementary Graduate", 3: "High School Undergraduate", 4: "High School Graduate", 5: "Vocational", 6: "College Undergraduate", 7: "College Graduate", 8: "Masters Graduate", 9: "Doctorate Graduate", 10: "Other" };
+    const civilStatusMap = { 1: "Single", 2: "Married", 3: "Widowed", 4: "Separated", 5: "Divorced" };
+    const membershipStatusMap = { 0: "Active", 1: "Inactive", 2: "Closed" }; // Adjusted key for "Active" to 0 based on log
 
-        const profile = m.MemberFinancialProfile || {};
+    const mapped = membersJson.map((m: any) => {
+      // Safely access nested financial profile
+      const profile = m.MemberFinancialProfile || {};
 
-        return {
-          memberId: m.MemberId,
-          firstName: m.FirstName,
-          middleName: m.MiddleName || "",
-          lastName: m.LastName,
-          suffix: m.Suffix || "",
-          fullName: `${m.FirstName} ${m.MiddleName ? m.MiddleName + " " : ""}${m.LastName} ${m.Suffix || ""}`.trim(),
-          gender: genderMap[m.Gender] || "N/A",
-          dateOfBirth: m.DateOfBirth,
-          contact: (m.ContactInfos && m.ContactInfos[0]?.Value) || "",
-          address: (m.Addresses && m.Addresses[0]?.FullAddress) || "",
-          educationLevel: ["None", "Elementary", "High School", "College", "Postgrad"][m.EducationLevel] || "N/A",
-          civilStatus: civilStatusMap[m.CivilStatus] || "N/A",
-          dependents: profile.Dependents || 0,
-          industry: profile.Industry || "",
-          monthlyIncome: profile.MonthlyIncome || 0,
-          monthlyExpenses: profile.MonthlyExpenses || 0,
-          savingsBalance: profile.SavingsBalance || 0,
-          creditScore: profile.CreditScore || 0,
-          membershipDate: m.MembershipDate,
-          membershipStatus: membershipStatusMap[m.MembershipStatus] || "Unknown",
-          loans: (m.LoanAccounts || []).map((loan: any) => ({
-            id: loan.Id,
-            type: loan.Type,
-            purpose: loan.Purpose,
-            amount: loan.Amount,
-            applicationDate: loan.ApplicationDate,
-            duration: loan.Duration,
-            validatedBy: loan.ValidatedBy,
-            status: loan.Status,
-          })),
-          remarks: []
-        };
-      });
+      return {
+        memberId: m.MemberId,
+        firstName: m.FirstName,
+        lastName: m.LastName,
+        middleName: m.MiddleName || "",
+        suffix: m.Suffix || "",
+        fullName: m.FullName || `${m.FirstName || ""} ${m.LastName || ""}`.trim(),
+        
+        gender: genderMap[m.Gender] || "N/A",
+        educationLevel: educationMap[m.EducationLevel] || "N/A",
+        civilStatus: civilStatusMap[m.CivilStatus] || "N/A",
+        membershipStatus: membershipStatusMap[m.MembershipStatus] || "Unknown",
 
-      setMembers(mapped);
-    };
+        dateOfBirth: m.DateOfBirth ? m.DateOfBirth.split("T")[0] : "",
+        membershipDate: m.MembershipDate ? m.MembershipDate.split("T")[0] : "",
 
-    // Notify .NET that JS is ready
-    HybridWebView.SendInvokeMessageToDotNet("NotifyJsReady");
+        // Access nested contact & address info
+        contact: m.Contact || "",
+        address: m.Address || "",
+        
+        // Access financial data from profile object
+        dependents: m.Dependents || 0,
+        industry: m.Industry || "",
+        monthlyIncome: m.MonthlyIncome || 0,
+        savingsBalance: m.SavingsBalance || 0,
+        monthlyExpenses: m.MonthlyExpenses || 0,
+        creditScore: m.CreditScore || 0,
+        
+        // Access loans from the correct property: m.LoanAccounts
+        loans: (m.Loans || []).map((loan: any) => ({
+          id: loan.id,
+          type: loan.type,
+          purpose: loan.purpose,
+          amount: loan.amount,
+          applicationDate: loan.applicationDate,
+          duration: loan.duration,
+          validatedBy: loan.validatedBy,
+          status: loan.status,
+        })),
 
-    // Ask .NET to load members
-    HybridWebView.SendInvokeMessageToDotNet("ReloadMembersFromDb");
-  }, []);
+        remarks: m.Remarks || [],
+      };
+    });
+
+    setMembers(mapped);
+  };
+
+  // Ask .NET to load members
+  HybridWebView.SendInvokeMessageToDotNet("getMembers");
+
+}, []);
 
   const filteredMembers = members.filter((member) =>
     member.fullName.toLowerCase().includes(searchText.toLowerCase())
@@ -997,7 +1087,6 @@ export default function MembersPage() {
             <Table>
               <TableHeader>
                 <TableRow className="border-gray-200">
-                  <TableHead className="text-gray-700">Member ID</TableHead>
                   <TableHead className="text-gray-700">Name</TableHead>
                   <TableHead className="text-gray-700">Contact</TableHead>
                   <TableHead className="text-gray-700">Credit Score</TableHead>
@@ -1013,7 +1102,6 @@ export default function MembersPage() {
                     className="border-gray-200 hover:bg-gray-50 cursor-pointer"
                     onClick={() => setSelectedMember(member)}
                   >
-                    <TableCell className="font-medium text-gray-800">{member.memberId}</TableCell>
                     <TableCell className="text-gray-700">
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
