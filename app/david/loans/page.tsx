@@ -1016,6 +1016,7 @@ export default function LoansPage() {
 
   const handleEditLoan = (loan: Loan) => {
     setEditingLoan(loan)
+    HybridWebView.SendInvokeMessageToDotNet("updateLoan", loan);
     setSelectedLoan(null)
   }
 
