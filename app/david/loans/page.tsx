@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
 import type React from "react"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -51,6 +51,7 @@ import {
   Eye,
   Loader2,
 } from "lucide-react"
+import HybridWebView from "../hybridwebview/HybridWebView.js";
 
 const statusStyles = {
   Approved: "bg-green-100 text-green-800 hover:bg-green-100 border-green-200",
@@ -853,6 +854,95 @@ export default function LoansPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [editingLoan, setEditingLoan] = useState<Loan | null>(null)
 
+
+   // HybridWebView integration for receiving loan data from .NET
+    useEffect(() => {
+    (window as any).globalSetLoans = (dataFromDotNet: any) => {
+      console.log("✅ Received loan data from .NET:", dataFromDotNet);
+      
+      let loansJson = [];
+      if (typeof dataFromDotNet === 'string') {
+        try {
+          loansJson = JSON.parse(dataFromDotNet);
+        } catch (e) {
+          console.error("Error parsing JSON string from .NET:", e);
+          return;
+        }
+      } else if (Array.isArray(dataFromDotNet)) {
+        loansJson = dataFromDotNet;
+      } else {
+        console.error("Received data of unexpected type from .NET:", typeof dataFromDotNet);
+        return;
+      }
+
+      const loanStatusMap: Record<string, LoanStatus> = {
+        "Active": "Disbursed",
+        "Pending": "Pending",
+        "Closed": "Paid",
+        "Defaulted": "Declined"
+      };
+
+      const paymentStatusMap: Record<string, "Paid" | "Pending" | "Overdue"> = {
+        "Paid": "Paid",
+        "Pending": "Pending",
+        "Overdue": "Overdue"
+      };
+
+      const mappedLoans = loansJson.map((loanData: any) => {
+        // Find the most recent payment if any exists
+        const payments = loanData.LedgerEntries
+          ?.filter((entry: any) => entry.Type === "Payment")
+          .map((payment: any, index: number) => ({
+            id: `PAY${loanData.LoanId}-${index}`,
+            date: payment.TransactionDate.split('T')[0],
+            amount: payment.Credit,
+            principal: payment.Credit * 0.9, // Assuming 10% interest
+            interest: payment.Credit * 0.1,
+            remainingBalance: payment.RunningBalance,
+            status: paymentStatusMap["Paid"], // Default to Paid for ledger entries
+            method: payment.Notes?.includes('bank') ? 'Bank Transfer' : 'Cash'
+          })) || [];
+
+        const disbursementEntry = loanData.LedgerEntries?.find((entry: any) => entry.Type === "Disbursement");
+        
+        return {
+          id: `LN${loanData.LoanId}`,
+          clientName: "Client Name", // You'll need to get this from your data
+          clientId: "CL001", // You'll need to get this from your data
+          type: loanData.ProductType,
+          purpose: "Business Expansion", // Default purpose
+          amount: loanData.PrincipalAmount,
+          applicationDate: loanData.DateGranted.split('T')[0],
+          duration: `${loanData.TermMonths} months`,
+          status: loanStatusMap[loanData.LoanStatus] || "Pending",
+          interestRate: `${(loanData.InterestRate * 100).toFixed(2)}%`,
+          remainingBalance: loanData.LedgerEntries?.slice(-1)[0]?.RunningBalance || loanData.PrincipalAmount,
+          nextPayment: payments.length > 0 ? 
+            new Date(new Date(payments[payments.length-1].date).getTime() + 30*24*60*60*1000).toISOString().split('T')[0] : 
+            new Date(new Date(loanData.DateGranted).getTime() + 30*24*60*60*1000).toISOString().split('T')[0],
+          validatedBy: "Loan Officer", // Default value
+          creditScore: 75, // Default value
+          coApplicantNumber: loanData.CoMakers?.length || 0,
+          guarantorNumber: loanData.CoMakers?.filter((c: any) => c.Status === "Active").length || 0,
+          paymentHistory: payments,
+          monthlyPayment: loanData.InstallmentAmount,
+          collateralType: loanData.CoMakers?.length > 0 ? "Secured" : "Unsecured",
+          paymentFrequency: loanData.PayFrequency
+        } as Loan;
+      });
+
+      setLoans(mappedLoans);
+
+        
+    };
+
+    HybridWebView.SendInvokeMessageToDotNet("getLoans");
+
+  }, []);
+
+
+
+
   const filteredLoans = loans.filter((loan) => {
     const matchesSearch =
       loan.id.toLowerCase().includes(searchText.toLowerCase()) ||
@@ -873,6 +963,8 @@ export default function LoansPage() {
       description: `Loan ${newLoan.id} has been registered successfully.`,
     })
   }
+
+   
 
   const handleUpdateLoan = (updatedLoan: Loan) => {
     setLoans((prev) => prev.map((loan) => (loan.id === updatedLoan.id ? updatedLoan : loan)))
