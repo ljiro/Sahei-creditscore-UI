@@ -945,7 +945,7 @@ export default function LoansPage() {
 
   const filteredLoans = loans.filter((loan) => {
     const matchesSearch =
-      loan.id.toLowerCase().includes(searchText.toLowerCase()) ||
+      loan.id.includes(searchText.toLowerCase()) ||
       loan.clientName.toLowerCase().includes(searchText.toLowerCase()) ||
       loan.type.toLowerCase().includes(searchText.toLowerCase())
 
