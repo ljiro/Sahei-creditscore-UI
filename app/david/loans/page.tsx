@@ -907,8 +907,8 @@ export default function LoansPage() {
         
         return {
           id: `LN${loanData.LoanId}`,
-          clientName: "Client Name", // You'll need to get this from your data
-          clientId: "CL001", // You'll need to get this from your data
+          clientName: loanData.MemberFullName, // You'll need to get this from your data
+          clientId: loanData.MemberId, // You'll need to get this from your data
           type: loanData.ProductType,
           purpose: "Business Expansion", // Default purpose
           amount: loanData.PrincipalAmount,
