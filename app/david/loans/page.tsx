@@ -906,7 +906,7 @@ export default function LoansPage() {
         const disbursementEntry = loanData.LedgerEntries?.find((entry: any) => entry.Type === "Disbursement");
         
         return {
-          id: `LN${loanData.LoanId}`,
+          id: loanData.LoanId,
           clientName: loanData.MemberFullName, // You'll need to get this from your data
           clientId: loanData.MemberId, // You'll need to get this from your data
           type: loanData.ProductType,
