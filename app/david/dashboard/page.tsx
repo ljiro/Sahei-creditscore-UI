@@ -28,7 +28,7 @@ interface Loan {
 }
 
 const DashboardPage = () => {
-  const pathname = usePathname()
+  const pathname = usePathname();
   const [cards, setCards] = useState([
     ["Approved", 0],
     ["Declined", 0],
@@ -37,7 +37,6 @@ const DashboardPage = () => {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [branches, setBranches] = useState<string[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string>("all");
-  
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: addDays(new Date(), -30),
     to: new Date(),
@@ -138,73 +137,43 @@ const DashboardPage = () => {
     }]
   });
 
-  // Generate realistic sample loan data
-  const generateSampleLoans = (count = 200): Loan[] => {
-    const statuses = ["Approved", "Disapproved", "Pending"];
-    const types = ["Personal", "Business", "Auto", "Mortgage", "Education"];
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    
-    // Weighted probabilities for more realistic data
-    const statusWeights = [0.6, 0.25, 0.15]; // 60% approved, 25% declined, 15% pending
-    const typeWeights = [0.4, 0.3, 0.15, 0.1, 0.05]; // Personal loans most common
-    
-    return Array.from({ length: count }, (_, i) => {
-      // Weighted random selection
-      const randomStatus = getWeightedRandom(statuses, statusWeights);
-      const randomType = getWeightedRandom(types, typeWeights);
-      
-      // Random date in the past 6 months
-      const monthOffset = Math.floor(Math.random() * 6);
-      const day = Math.floor(Math.random() * 28) + 1;
-      const date = new Date();
-      date.setMonth(date.getMonth() - monthOffset);
-      date.setDate(day);
-      
-      return {
-        loan_status: randomStatus,
-        loan_type: randomType,
-        createdAt: date.toISOString()
-      };
-    });
-  };
+  // HybridWebView integration for receiving dashboard loan data from .NET or parent
+  useEffect(() => {
+    (window as any).globalSetDashboardLoans = (dataFromDotNet: any, branchList?: string[]) => {
+      let loansJson = [];
+      if (typeof dataFromDotNet === 'string') {
+        try {
+          loansJson = JSON.parse(dataFromDotNet);
+        } catch (e) {
+          console.error("Error parsing JSON string for dashboard loans:", e);
+          return;
+        }
+      } else if (Array.isArray(dataFromDotNet)) {
+        loansJson = dataFromDotNet;
+      } else {
+        console.error("Received dashboard data of unexpected type:", typeof dataFromDotNet);
+        return;
+      }
 
-  // Helper function for weighted random selection
-  const getWeightedRandom = (items: string[], weights: number[]) => {
-    let random = Math.random() * weights.reduce((a, b) => a + b, 0);
-    return items.find((_, i) => (random -= weights[i]) < 0) || items[0];
-  };
+      // Optionally map/transform data if needed (assume already in Loan[] shape)
+      setLoans(loansJson);
+      setBranches(branchList || []);
 
-  const getLoans = async () => {
-    try {
-      // Simulate API call with generated data
-      const data = generateSampleLoans();
-      
-      setLoans(data);
-      
       // Update status cards
-      const approvedCount = data.filter(item => item.loan_status === "Approved").length;
-      const declinedCount = data.filter(item => item.loan_status === "Disapproved").length;
-      const pendingCount = data.filter(item => item.loan_status === "Pending").length;
-      
+      const approvedCount = loansJson.filter((item: any) => item.loan_status === "Approved").length;
+      const declinedCount = loansJson.filter((item: any) => item.loan_status === "Disapproved" || item.loan_status === "Declined").length;
+      const pendingCount = loansJson.filter((item: any) => item.loan_status === "Pending").length;
       setCards([
         ["Approved", approvedCount],
         ["Declined", declinedCount],
         ["Pending", pendingCount]
       ]);
-      
-      // Simulate branch data
-      setBranches(["Main Branch", "Downtown", "Westside", "Eastside", "North Branch"]);
-      
-      // Update charts
-      countByType(data);
-      countByMonth(data);
-    } catch (e) {
-      console.error("Error loading loan data:", e);
-    }
-  };
+      countByType(loansJson);
+      countByMonth(loansJson);
+    };
+    // Optionally: request data from .NET/parent here
+    // HybridWebView.SendInvokeMessageToDotNet("getDashboardLoans");
+  }, []);
 
   const countByMonth = (loanData: Loan[]) => {
     const monthNames = [
@@ -283,10 +252,6 @@ const DashboardPage = () => {
       }]
     });
   };
-
-  useEffect(() => {
-    getLoans();
-  }, []);
 
   useEffect(() => {
     if (loans.length > 0) {
