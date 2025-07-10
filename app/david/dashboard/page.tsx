@@ -181,7 +181,7 @@ const DashboardPage = () => {
       'July', 'August', 'September', 'October', 'November', 'December'
     ];
     
-    // Get current month and go back 5 months
+    // Get current month and go back five (5) months
     const currentDate = new Date();
     const monthsToShow = 6;
     const monthCounts: Record<string, number> = {};

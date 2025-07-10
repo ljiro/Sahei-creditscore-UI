@@ -5,14 +5,29 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { FileText, UploadCloud, X, CheckCircle2, AlertCircle } from "lucide-react"
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { ChevronDown, Shield, BarChart2, Users2, User, Book, LogOut } from "lucide-react"
+import { FileText, UploadCloud, X, CheckCircle2, AlertCircle, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { Progress } from "@/components/ui/progress"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from "@/components/ui/dialog"
 
 export default function UploadPage() {
-  const pathname = usePathname()
+  // File upload state
   const [clientFile, setClientFile] = useState<File | null>(null)
   const [loanFile, setLoanFile] = useState<File | null>(null)
   const [isUploadingClient, setIsUploadingClient] = useState(false)
@@ -22,6 +37,21 @@ export default function UploadPage() {
     loan: "success" | "error" | null
   }>({ client: null, loan: null })
 
+  // Name matching state
+  const [potentialMatches, setPotentialMatches] = useState<Array<{
+    id: number
+    newRecord: Record<string, string>
+    existingRecord: Record<string, string>
+    confidence: number
+    matchReasons: string[]
+  }> | null>(null)
+  const [currentMatchId, setCurrentMatchId] = useState<number | null>(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false)
+  const [pendingAction, setPendingAction] = useState<"merge" | "not-duplicate" | null>(null)
+  const [decidedMatches, setDecidedMatches] = useState<number[]>([])
+
+  // Handle file selection
   const handleClientFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setClientFile(e.target.files[0])
@@ -36,6 +66,18 @@ export default function UploadPage() {
     }
   }
 
+  // Handle file removal
+  const removeClientFile = () => {
+    setClientFile(null)
+    setUploadStatus({ ...uploadStatus, client: null })
+  }
+
+  const removeLoanFile = () => {
+    setLoanFile(null)
+    setUploadStatus({ ...uploadStatus, loan: null })
+  }
+
+  // Simulate file upload
   const handleClientUpload = async () => {
     if (!clientFile) return
 
@@ -43,16 +85,12 @@ export default function UploadPage() {
     setUploadStatus({ ...uploadStatus, client: null })
 
     try {
-      const formData = new FormData()
-      formData.append('file', clientFile)
-      
-      const response = await fetch('http://localhost:5000/upload_clientinfo', {
-        method: 'POST',
-        body: formData
-      })
-
-      if (!response.ok) throw new Error('Client upload failed')
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500))
       setUploadStatus(prev => ({ ...prev, client: "success" }))
+      
+      // Simulate finding matches after upload
+      simulateNameMatching()
     } catch (error) {
       console.error('Client upload error:', error)
       setUploadStatus(prev => ({ ...prev, client: "error" }))
@@ -68,15 +106,8 @@ export default function UploadPage() {
     setUploadStatus({ ...uploadStatus, loan: null })
 
     try {
-      const formData = new FormData()
-      formData.append('file', loanFile)
-      
-      const response = await fetch('http://localhost:5000/upload_loaninfo', {
-        method: 'POST',
-        body: formData
-      })
-
-      if (!response.ok) throw new Error('Loan upload failed')
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1500))
       setUploadStatus(prev => ({ ...prev, loan: "success" }))
     } catch (error) {
       console.error('Loan upload error:', error)
@@ -86,38 +117,184 @@ export default function UploadPage() {
     }
   }
 
-  const removeClientFile = () => {
-    setClientFile(null)
-    setUploadStatus({ ...uploadStatus, client: null })
+  // Simulate name matching with sample data
+  const simulateNameMatching = () => {
+    const matches = [
+      {
+        id: 1,
+        newRecord: {
+          name: "JUANCHO REYES",
+          birthdate: "10/25/1985",
+          address: "123 Main St, Manila",
+          sssNumber: "1234567890",
+          phone: "09123456789",
+          email: "juancho.reyes@example.com"
+        },
+        existingRecord: {
+          name: "JUAN C. REYES",
+          birthdate: "10/25/1985",
+          address: "456 Oak Ave, Quezon City",
+          sssNumber: "1234567890",
+          phone: "09123456789",
+          email: "juan.reyes@example.com"
+        },
+        confidence: 92,
+        matchReasons: [
+          "Name Similarity: 85%",
+          "Exact Birthdate Match",
+          "Exact SSS Number Match",
+          "Same Phone Number"
+        ]
+      },
+      {
+        id: 2,
+        newRecord: {
+          name: "MARIA CRUZ",
+          birthdate: "05/15/1990",
+          address: "789 Pine Rd, Makati",
+          sssNumber: "0987654321",
+          phone: "09987654321",
+          email: "maria.cruz@example.com"
+        },
+        existingRecord: {
+          name: "MARIA SANTOS",
+          birthdate: "05/15/1990",
+          address: "321 Elm St, Pasig",
+          sssNumber: "0987654321",
+          phone: "09987654321",
+          email: "maria.santos@example.com"
+        },
+        confidence: 95,
+        matchReasons: [
+          "Name Similarity: 70%",
+          "Exact Birthdate Match",
+          "Exact SSS Number Match",
+          "Same Phone Number"
+        ]
+      },
+      {
+        id: 3,
+        newRecord: {
+          name: "ROBERT LIM",
+          birthdate: "07/30/1982",
+          address: "555 Cedar Ln, Mandaluyong",
+          sssNumber: "4567890123",
+          phone: "09112223334",
+          email: "robert.lim@example.com"
+        },
+        existingRecord: {
+          name: "BOBBY LIM",
+          birthdate: "07/30/1982",
+          address: "777 Maple Dr, San Juan",
+          sssNumber: "4567890123",
+          phone: "09112223334",
+          email: "bobby.lim@example.com"
+        },
+        confidence: 88,
+        matchReasons: [
+          "Name Similarity: 80% (Nickname match)",
+          "Exact Birthdate Match",
+          "Exact SSS Number Match",
+          "Same Phone Number"
+        ]
+      }
+    ]
+
+    setPotentialMatches(matches)
+    setCurrentMatchId(matches[0]?.id || null)
+    setDecidedMatches([])
+    setIsDialogOpen(true)
   }
 
-  const removeLoanFile = () => {
-    setLoanFile(null)
-    setUploadStatus({ ...uploadStatus, loan: null })
+  // Get current match data
+  const getCurrentMatch = () => {
+    if (!potentialMatches || currentMatchId === null) return null
+    return potentialMatches.find(match => match.id === currentMatchId)
   }
+
+  // Handle match confirmation
+  const handleConfirmMatch = (isDuplicate: boolean) => {
+    if (!potentialMatches || currentMatchId === null) return
+    
+    // Add current match to decided matches
+    setDecidedMatches(prev => [...prev, currentMatchId])
+    
+    // Find next undecided match
+    const nextMatch = potentialMatches.find(
+      match => !decidedMatches.includes(match.id) && match.id !== currentMatchId
+    )
+    
+    if (nextMatch) {
+      setCurrentMatchId(nextMatch.id)
+    } else {
+      setIsDialogOpen(false)
+    }
+    
+    setIsConfirmDialogOpen(false)
+  }
+
+  // Show confirmation dialog
+  const showConfirmation = (action: "merge" | "not-duplicate") => {
+    setPendingAction(action)
+    setIsConfirmDialogOpen(true)
+  }
+
+  // Navigate between undecided matches
+  const navigateMatch = (direction: "prev" | "next") => {
+    if (!potentialMatches || currentMatchId === null) return
+    
+    const undecidedMatches = potentialMatches.filter(
+      match => !decidedMatches.includes(match.id)
+    )
+    
+    if (undecidedMatches.length <= 1) return
+    
+    const currentIndex = undecidedMatches.findIndex(
+      match => match.id === currentMatchId
+    )
+    
+    let newIndex
+    if (direction === "prev") {
+      newIndex = currentIndex > 0 ? currentIndex - 1 : undecidedMatches.length - 1
+    } else {
+      newIndex = currentIndex < undecidedMatches.length - 1 ? currentIndex + 1 : 0
+    }
+    
+    setCurrentMatchId(undecidedMatches[newIndex].id)
+  }
+
+  // Handle dialog close
+  const handleDialogClose = () => {
+    setIsDialogOpen(false)
+  }
+
+  const currentMatch = getCurrentMatch()
+  const undecidedMatches = potentialMatches?.filter(
+    match => !decidedMatches.includes(match.id)
+  ) || []
+  const totalMatches = potentialMatches?.length || 0
 
   return (
     <div className="flex min-h-screen w-full bg-gray-50">
-      {/* Main Content */}
       <div className="flex flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-6">
           <h1 className="text-xl font-semibold text-gray-800">Data Upload</h1>
           <div className="ml-auto flex items-center gap-3">
             <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
               <Avatar className="h-9 w-9">
-                <AvatarImage src="/placeholder.svg?height=36&width=36" alt="David" />
-                <AvatarFallback className="text-gray-900">DL</AvatarFallback>
+                <AvatarImage src="/placeholder.svg?height=36&width=36" alt="User" />
+                <AvatarFallback className="text-gray-900">AD</AvatarFallback>
               </Avatar>
               <div>
-                <p className="text-sm font-medium text-gray-800">David Lee</p>
-                <p className="text-xs text-gray-500">IT Administrator</p>
+                <p className="text-sm font-medium text-gray-800">Admin User</p>
+                <p className="text-xs text-gray-500">Loan Officer</p>
               </div>
-              <ChevronDown className="h-4 w-4 text-gray-400 cursor-pointer" />
             </div>
           </div>
         </header>
 
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 space-y-6">
+          {/* Upload Card */}
           <Card className="shadow-sm border-gray-200 max-w-2xl mx-auto">
             <CardHeader>
               <CardTitle className="text-xl text-gray-800">Upload Data Files</CardTitle>
@@ -127,12 +304,12 @@ export default function UploadPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {/* members Upload Section */}
+                {/* Members Upload Section */}
                 <div className="space-y-4 border-b border-gray-200 pb-6">
-                  <h3 className="font-medium text-gray-800">members Data</h3>
+                  <h3 className="font-medium text-gray-800">Members Data</h3>
                   <div className="grid w-full items-center gap-1.5">
                     <Label htmlFor="client-file" className="text-gray-700">
-                      Select members Excel File
+                      Select Members Excel File
                     </Label>
                     <Input 
                       id="client-file" 
@@ -175,7 +352,7 @@ export default function UploadPage() {
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            Uploading Client Data...
+                            Uploading...
                           </>
                         ) : (
                           <>
@@ -250,7 +427,7 @@ export default function UploadPage() {
                               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
-                            Uploading Loan Data...
+                            Uploading...
                           </>
                         ) : (
                           <>
@@ -284,13 +461,155 @@ export default function UploadPage() {
                     <li>Maximum file size: 5MB per file</li>
                     <li>Ensure data follows the required format</li>
                     <li>First row should contain column headers</li>
-                    <li>You can upload one or both files at the same time</li>
                   </ul>
                 </div>
               </div>
             </CardContent>
           </Card>
+
+          {/* Success message when all matches are resolved */}
+          {uploadStatus.client === "success" && !isDialogOpen && potentialMatches && (
+            <Card className="shadow-sm border-green-200 bg-green-50 max-w-2xl mx-auto">
+              <CardHeader className="p-4">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="h-5 w-5 text-green-600" />
+                  <span className="text-green-800 font-medium">
+                    {decidedMatches.length === totalMatches
+                      ? "All potential duplicates reviewed. Data processing complete!"
+                      : "Client data uploaded successfully!"}
+                  </span>
+                </div>
+              </CardHeader>
+            </Card>
+          )}
         </main>
+
+        {/* Name Matching Dialog */}
+        <Dialog open={isDialogOpen && currentMatch !== null} onOpenChange={handleDialogClose}>
+          <DialogContent className="sm:max-w-2xl">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                <span>Potential Duplicate Member Found</span>
+              </DialogTitle>
+              <DialogDescription>
+                {`Reviewing match ${undecidedMatches.findIndex(m => m.id === currentMatchId) + 1} of ${undecidedMatches.length} (${totalMatches} total)`}
+              </DialogDescription>
+            </DialogHeader>
+
+            {currentMatch && (
+              <div className="space-y-4">
+                {/* Navigation Controls */}
+                <div className="flex justify-between items-center">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    disabled={undecidedMatches.length <= 1}
+                    onClick={() => navigateMatch("prev")}
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </Button>
+                  
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-medium">Confidence:</span>
+                    <Progress value={currentMatch.confidence} className="h-2 w-32" />
+                    <span className="text-sm font-medium">{currentMatch.confidence}%</span>
+                  </div>
+                  
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    disabled={undecidedMatches.length <= 1}
+                    onClick={() => navigateMatch("next")}
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </Button>
+                </div>
+
+                {/* Match Reasons */}
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Match Reasons:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {currentMatch.matchReasons.map((reason, i) => (
+                      <span key={i} className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                        {reason}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Comparison Table */}
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[150px]">Field</TableHead>
+                      <TableHead>New Applicant</TableHead>
+                      <TableHead>Existing Member</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {Object.keys(currentMatch.newRecord).map((key) => (
+                      <TableRow key={key}>
+                        <TableCell className="font-medium capitalize">
+                          {key.replace(/([A-Z])/g, ' $1').trim()}
+                        </TableCell>
+                        <TableCell>{currentMatch.newRecord[key]}</TableCell>
+                        <TableCell>{currentMatch.existingRecord[key]}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button 
+                variant="outline"
+                onClick={() => showConfirmation("not-duplicate")}
+              >
+                Not a Duplicate
+              </Button>
+              <Button 
+                onClick={() => showConfirmation("merge")}
+              >
+                Merge Records
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Confirmation Dialog */}
+        <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                <span>Confirm Your Decision</span>
+              </DialogTitle>
+            </DialogHeader>
+            
+            <div className="py-4">
+              {pendingAction === "merge" ? (
+                <p>Are you sure these records belong to the same person? This will merge the new applicant with the existing member.</p>
+              ) : (
+                <p>Are you sure these records are for different people? This will keep them as separate records.</p>
+              )}
+            </div>
+
+            <DialogFooter className="gap-2 sm:gap-0">
+              <DialogClose asChild>
+                <Button variant="outline">
+                  No, Go Back
+                </Button>
+              </DialogClose>
+              <Button 
+                onClick={() => pendingAction && handleConfirmMatch(pendingAction === "merge")}
+              >
+                Yes, Confirm
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )
