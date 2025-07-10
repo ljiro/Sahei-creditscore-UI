@@ -77,27 +77,36 @@ export default function UploadPage() {
     setUploadStatus({ ...uploadStatus, loan: null })
   }
 
-  // Simulate file upload
+  // File upload handler for client file
   const handleClientUpload = async () => {
-    if (!clientFile) return
-
-    setIsUploadingClient(true)
-    setUploadStatus({ ...uploadStatus, client: null })
+    if (!clientFile) return;
+    setIsUploadingClient(true);
+    setUploadStatus({ ...uploadStatus, client: null });
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      setUploadStatus(prev => ({ ...prev, client: "success" }))
-      
-      // Simulate finding matches after upload
-      simulateNameMatching()
+      // Send file to .NET backend for processing and name matching
+      // The backend should process the file, check for duplicates, and call window.globalSetPotentialMatches with results
+      if (window.HybridWebView && window.HybridWebView.SendInvokeMessageToDotNet) {
+        // Read file as base64 or ArrayBuffer (depending on backend expectation)
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const fileData = e.target?.result;
+          // Send file data to .NET backend (you may need to adjust the message and payload format)
+          window.HybridWebView.SendInvokeMessageToDotNet("uploadMembersFile", {
+            fileName: clientFile.name,
+            fileData: fileData // base64 or ArrayBuffer
+          });
+        };
+        reader.readAsDataURL(clientFile); // or readAsArrayBuffer(clientFile)
+      }
+      setUploadStatus(prev => ({ ...prev, client: "success" }));
     } catch (error) {
-      console.error('Client upload error:', error)
-      setUploadStatus(prev => ({ ...prev, client: "error" }))
+      console.error('Client upload error:', error);
+      setUploadStatus(prev => ({ ...prev, client: "error" }));
     } finally {
-      setIsUploadingClient(false)
+      setIsUploadingClient(false);
     }
-  }
+  };
 
   const handleLoanUpload = async () => {
     if (!loanFile) return
@@ -117,94 +126,17 @@ export default function UploadPage() {
     }
   }
 
-  // Simulate name matching with sample data
-  const simulateNameMatching = () => {
-    const matches = [
-      {
-        id: 1,
-        newRecord: {
-          name: "JUANCHO REYES",
-          birthdate: "10/25/1985",
-          address: "123 Main St, Manila",
-          sssNumber: "1234567890",
-          phone: "09123456789",
-          email: "juancho.reyes@example.com"
-        },
-        existingRecord: {
-          name: "JUAN C. REYES",
-          birthdate: "10/25/1985",
-          address: "456 Oak Ave, Quezon City",
-          sssNumber: "1234567890",
-          phone: "09123456789",
-          email: "juan.reyes@example.com"
-        },
-        confidence: 92,
-        matchReasons: [
-          "Name Similarity: 85%",
-          "Exact Birthdate Match",
-          "Exact SSS Number Match",
-          "Same Phone Number"
-        ]
-      },
-      {
-        id: 2,
-        newRecord: {
-          name: "MARIA CRUZ",
-          birthdate: "05/15/1990",
-          address: "789 Pine Rd, Makati",
-          sssNumber: "0987654321",
-          phone: "09987654321",
-          email: "maria.cruz@example.com"
-        },
-        existingRecord: {
-          name: "MARIA SANTOS",
-          birthdate: "05/15/1990",
-          address: "321 Elm St, Pasig",
-          sssNumber: "0987654321",
-          phone: "09987654321",
-          email: "maria.santos@example.com"
-        },
-        confidence: 95,
-        matchReasons: [
-          "Name Similarity: 70%",
-          "Exact Birthdate Match",
-          "Exact SSS Number Match",
-          "Same Phone Number"
-        ]
-      },
-      {
-        id: 3,
-        newRecord: {
-          name: "ROBERT LIM",
-          birthdate: "07/30/1982",
-          address: "555 Cedar Ln, Mandaluyong",
-          sssNumber: "4567890123",
-          phone: "09112223334",
-          email: "robert.lim@example.com"
-        },
-        existingRecord: {
-          name: "BOBBY LIM",
-          birthdate: "07/30/1982",
-          address: "777 Maple Dr, San Juan",
-          sssNumber: "4567890123",
-          phone: "09112223334",
-          email: "bobby.lim@example.com"
-        },
-        confidence: 88,
-        matchReasons: [
-          "Name Similarity: 80% (Nickname match)",
-          "Exact Birthdate Match",
-          "Exact SSS Number Match",
-          "Same Phone Number"
-        ]
-      }
-    ]
-
-    setPotentialMatches(matches)
-    setCurrentMatchId(matches[0]?.id || null)
-    setDecidedMatches([])
-    setIsDialogOpen(true)
-  }
+  // Receive potential matches from .NET backend
+  // This function will be called by .NET after processing the uploaded file
+  // The payload should be an array of match objects (same shape as before)
+  React.useEffect(() => {
+    (window as any).globalSetPotentialMatches = (matches: any[]) => {
+      setPotentialMatches(matches);
+      setCurrentMatchId(matches[0]?.id || null);
+      setDecidedMatches([]);
+      setIsDialogOpen(matches.length > 0);
+    };
+  }, []);
 
   // Get current match data
   const getCurrentMatch = () => {
