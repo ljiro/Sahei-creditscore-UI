@@ -18,7 +18,7 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
+import HybridWebView from "../hybridwebview/HybridWebView.js";
 Chart.register(...registerables, ChartDataLabels);
 
 interface Loan {
@@ -27,8 +27,13 @@ interface Loan {
   createdAt: string;
 }
 
+interface DateRangePayload {
+  startDate: string;
+  endDate: string;
+}
+
 const DashboardPage = () => {
-  const pathname = usePathname()
+  const pathname = usePathname();
   const [cards, setCards] = useState([
     ["Approved", 0],
     ["Declined", 0],
@@ -42,6 +47,29 @@ const DashboardPage = () => {
     from: addDays(new Date(), -30),
     to: new Date(),
   });
+
+  // Handle date range changes and send to .NET
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    setDateRange(range);
+    
+    if (range?.from && range?.to) {
+      const dateRangePayload: DateRangePayload = {
+        startDate: range.from.toISOString(),
+        endDate: range.to.toISOString()
+      };
+      
+      console.log("Sending date range to .NET:", dateRangePayload);
+      
+      if (typeof HybridWebView !== 'undefined') {
+        HybridWebView.SendInvokeMessageToDotNet(
+          "sendDashboardDates", 
+          JSON.stringify(dateRangePayload)
+        );
+      } else {
+        console.warn("HybridWebView not available - would send:", dateRangePayload);
+      }
+    }
+  };
 
   // Vibrant color palette
   const chartColors = {
@@ -456,7 +484,6 @@ const DashboardPage = () => {
 
   return (
     <div className="flex min-h-screen w-full bg-gray-50">
-
       {/* Main Content */}
       <div className="flex flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-6">
@@ -524,7 +551,7 @@ const DashboardPage = () => {
                     mode="range"
                     defaultMonth={dateRange?.from}
                     selected={dateRange}
-                    onSelect={setDateRange}
+                    onSelect={handleDateRangeChange}
                     numberOfMonths={2}
                   />
                 </PopoverContent>
