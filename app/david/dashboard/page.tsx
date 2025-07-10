@@ -315,8 +315,10 @@ const DashboardPage = () => {
           "Payment received for loan #L-10012"
         ]
       };
-      (window as any).globalSetDashboard(sampleData);
+     
     }
+
+      HybridWebView.SendInvokeMessageToDotNet("getDashboardInfo");
 
   }, []);
 
