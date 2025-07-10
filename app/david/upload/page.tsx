@@ -1,5 +1,14 @@
 "use client"
 
+// Extend the Window interface to include HybridWebView
+declare global {
+  interface Window {
+    HybridWebView?: {
+      SendInvokeMessageToDotNet?: (method: string, payload: any) => void
+    }
+  }
+}
+
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,6 +34,7 @@ import {
   DialogTitle,
   DialogClose,
 } from "@/components/ui/dialog"
+import React from "react"
 
 export default function UploadPage() {
   // File upload state
@@ -85,14 +95,14 @@ export default function UploadPage() {
 
     try {
       // Send file to .NET backend for processing and name matching
-      // The backend should process the file, check for duplicates, and call window.globalSetPotentialMatches with results
+      // backend should process the file, check for duplicates, and call window.globalSetPotentialMatches with results
       if (window.HybridWebView && window.HybridWebView.SendInvokeMessageToDotNet) {
         // Read file as base64 or ArrayBuffer (depending on backend expectation)
         const reader = new FileReader();
         reader.onload = function (e) {
           const fileData = e.target?.result;
-          // Send file data to .NET backend (you may need to adjust the message and payload format)
-          window.HybridWebView.SendInvokeMessageToDotNet("uploadMembersFile", {
+          // Send file data to .NET backend (may need to adjust the message and payload format)
+          window.HybridWebView?.SendInvokeMessageToDotNet?.("uploadMembersFile", {
             fileName: clientFile.name,
             fileData: fileData // base64 or ArrayBuffer
           });
