@@ -10,12 +10,12 @@ export function AdminSidebar() {
 
   const navItems = [
     { href: "/david/dashboard", icon: BarChart2, label: "Dashboard" },
-    { href: "/david/users", icon: Users2, label: "Users" },
+    //{ href: "/david/users", icon: Users2, label: "Users" },
     { href: "/david/members", icon: User, label: "Members" },
     { href: "/david/loans", icon: Book, label: "Loans" },
     { href: "/david/reports", icon: FileText, label: "Reports" },
     { href: "/david/upload", icon: Upload, label: "Upload Data" },
-    { href: "/david/loan-product-config", icon: Settings, label: "Loan Products" },
+    //{ href: "/david/loan-product-config", icon: Settings, label: "Loan Products" },
   ]
 
   return (
