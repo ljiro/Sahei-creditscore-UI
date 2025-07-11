@@ -256,13 +256,14 @@ export default function LoanReportsPage() {
     
     return Math.min(Math.max(score, 30), 100);
   }
-
-  const filteredLoans = reports.filter(loan => {
-    const matchesSearch = loan.id.toLowerCase().includes(searchText.toLowerCase()) ||
-                         loan.clientName.toLowerCase().includes(searchText.toLowerCase());
+const filteredLoans = reports.filter(loan => {
+    const searchTextLower = searchText.toLowerCase();
+    const matchesSearch = 
+        loan.id.toString().toLowerCase().includes(searchTextLower) ||
+        loan.clientName.toLowerCase().includes(searchTextLower);
     const matchesStatus = statusFilter === "All" ? true : loan.status === statusFilter;
     return matchesSearch && matchesStatus;
-  });
+});
 
   function LoanContract({ loan, onClose }: { loan: LoanReport, onClose: () => void }) {
     const contractRef = useRef<HTMLDivElement>(null);
