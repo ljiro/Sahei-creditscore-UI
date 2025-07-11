@@ -93,6 +93,14 @@ export default function UploadPage() {
 
       if (!response.ok) throw new Error(`${type} upload failed`)
       setUploadStatus(prev => ({ ...prev, [type]: "success" }))
+    } catch (error) {
+      console.error(`${type} upload error:`, error)
+      setUploadStatus(prev => ({ ...prev, [type]: "error" }))
+    } finally {
+      setUploading(false)
+    }
+  }
+
   // Handle file removal
   const removeClientFile = () => {
     setClientFile(null)
@@ -128,10 +136,10 @@ export default function UploadPage() {
       }
       setUploadStatus(prev => ({ ...prev, client: "success" }));
     } catch (error) {
-      console.error(`${type} upload error:`, error)
-      setUploadStatus(prev => ({ ...prev, [type]: "error" }))
+      console.error('Client upload error:', error)
+      setUploadStatus(prev => ({ ...prev, client: "error" }))
     } finally {
-      setUploading(false)
+      setIsUploadingClient(false)
     }
   }
 
