@@ -75,7 +75,7 @@ interface Payment {
 }
 
 interface Loan {
-  id: string
+  id: number
   clientName: string
   clientId: string
   type: string
@@ -99,7 +99,7 @@ interface Loan {
 
 const initialLoans: Loan[] = [
   {
-    id: "LN001",
+    id: 1,
     clientName: "Juan Dela Cruz",
     clientId: "CL001",
     type: "Personal Loan",
@@ -142,7 +142,7 @@ const initialLoans: Loan[] = [
     ],
   },
   {
-    id: "LN002",
+    id: 2,
     clientName: "Maria Santos",
     clientId: "CL002",
     type: "Business Loan",
@@ -174,7 +174,7 @@ function PaymentDialog({
   loan: Loan
   isOpen: boolean
   onClose: () => void
-  onProcessPayment: (loanId: string, payment: Omit<Payment, "id">) => void
+  onProcessPayment: (loanId: number, payment: Omit<Payment, "id">) => void
 }) {
   const [paymentData, setPaymentData] = useState({
     amount: loan.monthlyPayment,
@@ -322,8 +322,8 @@ function LoanDetailsPanel({
   loan: Loan
   onClose: () => void
   onEdit: (loan: Loan) => void
-  onDelete: (loanId: string) => void
-  onProcessPayment: (loanId: string, payment: Omit<Payment, "id">) => void
+  onDelete: (loanId: number) => void
+  onProcessPayment: (loanId: number, payment: Omit<Payment, "id">) => void
 }) {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false)
 
@@ -906,9 +906,9 @@ export default function LoansPage() {
         const disbursementEntry = loanData.LedgerEntries?.find((entry: any) => entry.Type === "Disbursement");
         
         return {
-          id: `LN${loanData.LoanId}`,
-          clientName: "Client Name", // You'll need to get this from your data
-          clientId: "CL001", // You'll need to get this from your data
+          id: loanData.LoanId,
+          clientName: loanData.MemberFullName, // You'll need to get this from your data
+          clientId: loanData.MemberId, // You'll need to get this from your data
           type: loanData.ProductType,
           purpose: "Business Expansion", // Default purpose
           amount: loanData.PrincipalAmount,
@@ -943,16 +943,17 @@ export default function LoansPage() {
 
 
 
-  const filteredLoans = loans.filter((loan) => {
+const filteredLoans = loans.filter((loan) => {
+    const searchTextLower = searchText.toLowerCase();
     const matchesSearch =
-      loan.id.toLowerCase().includes(searchText.toLowerCase()) ||
-      loan.clientName.toLowerCase().includes(searchText.toLowerCase()) ||
-      loan.type.toLowerCase().includes(searchText.toLowerCase())
+      loan.id.toString().includes(searchTextLower) || // Convert number to string first
+      loan.clientName.toLowerCase().includes(searchTextLower) ||
+      (loan.type && loan.type.toLowerCase().includes(searchTextLower)); // Optional chaining if type might be undefined
 
-    const matchesStatus = statusFilter === "All" || loan.status === statusFilter
+    const matchesStatus = statusFilter === "All" || loan.status === statusFilter;
 
-    return matchesSearch && matchesStatus
-  })
+    return matchesSearch && matchesStatus;
+});
 
   const handleCreateLoan = (newLoan: Loan) => {
     setLoans((prev) => [...prev, newLoan])
@@ -977,7 +978,7 @@ export default function LoansPage() {
     })
   }
 
-  const handleDeleteLoan = (loanId: string) => {
+  const handleDeleteLoan = (loanId: number) => {
     const loanToDelete = loans.find((l) => l.id === loanId)
     setLoans((prev) => prev.filter((loan) => loan.id !== loanId))
     setSelectedLoan(null)
@@ -989,7 +990,7 @@ export default function LoansPage() {
     })
   }
 
-  const handleProcessPayment = (loanId: string, payment: Omit<Payment, "id">) => {
+  const handleProcessPayment = (loanId: number, payment: Omit<Payment, "id">) => {
     const paymentWithId = { ...payment, id: `PAY${Date.now()}` }
 
     setLoans((prev) =>

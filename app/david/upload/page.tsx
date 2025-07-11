@@ -76,6 +76,23 @@ export default function UploadPage() {
     }
   }
 
+  const uploadFile = async (file: File | null, type: "client" | "loan") => {
+    if (!file) return
+    const setUploading = type === "client" ? setIsUploadingClient : setIsUploadingLoan
+    const endpoint = type === "client" ? "upload_clientinfo" : "upload_loaninfo"
+
+    setUploading(true)
+    setUploadStatus(prev => ({ ...prev, [type]: null }))
+
+    try {
+      const response = await fetch(`http://localhost:5000/${endpoint}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/octet-stream" },
+        body: file
+      })
+
+      if (!response.ok) throw new Error(`${type} upload failed`)
+      setUploadStatus(prev => ({ ...prev, [type]: "success" }))
   // Handle file removal
   const removeClientFile = () => {
     setClientFile(null)
@@ -111,12 +128,12 @@ export default function UploadPage() {
       }
       setUploadStatus(prev => ({ ...prev, client: "success" }));
     } catch (error) {
-      console.error('Client upload error:', error);
-      setUploadStatus(prev => ({ ...prev, client: "error" }));
+      console.error(`${type} upload error:`, error)
+      setUploadStatus(prev => ({ ...prev, [type]: "error" }))
     } finally {
-      setIsUploadingClient(false);
+      setUploading(false)
     }
-  };
+  }
 
   const handleLoanUpload = async () => {
     if (!loanFile) return
