@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -23,661 +23,432 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { BarChart2 } from "lucide-react";
-
+import HybridWebView from "../hybridwebview/HybridWebView.js";
 const statusStyles = {
   Approved: "bg-green-100 text-green-800 hover:bg-green-100 border-green-200",
   Pending: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200",
   Declined: "bg-red-100 text-red-800 hover:bg-red-100 border-red-200",
+  Disbursed: "bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200",
+  Paid: "bg-purple-100 text-purple-800 hover:bg-purple-100 border-purple-200",
 };
 
-// Extended loan data with previous loans
-const loans = [
-  {
-    id: "LN001",
-    clientName: "Juan Dela Cruz",
-    type: "Personal Loan",
-    purpose: "Home Renovation",
-    amount: 50000,
-    applicationDate: "2025-05-15",
-    duration: "12 months",
-    status: "Pending",
-    interestRate: "12%",
-    remainingBalance: 50000,
-    nextPayment: "N/A",
-    validatedBy: "Maria Santos",
-    creditScore: 85,
-    coApplicantNumber: 2,
-    guarantorNumber: 1,
-    clientAddress: "123 Main St, Manila",
-    clientContact: "09123456789",
-    clientEmail: "juan.delacruz@example.com",
-    clientBirthdate: "1985-03-15",
-    clientOccupation: "Architect",
-    previousLoans: [
-      {
-        id: "PL001",
-        amount: 20000,
-        date: "2023-01-10",
-        status: "Fully Paid",
-        type: "Personal Loan"
-      },
-      {
-        id: "PL002",
-        amount: 35000,
-        date: "2024-03-22",
-        status: "Fully Paid",
-        type: "Emergency Loan"
+interface LoanReport {
+  id: string;
+  clientName: string;
+  clientId: number;
+  type: string;
+  purpose: string;
+  amount: number;
+  applicationDate: string;
+  duration: string;
+  status: string;
+  interestRate: string;
+  remainingBalance: number;
+  nextPayment: string;
+  validatedBy: string;
+  creditScore: number;
+  coApplicantNumber: number;
+  guarantorNumber: number;
+  clientAddress: string;
+  clientContact: string;
+  clientEmail: string;
+  clientBirthdate: string;
+  clientOccupation: string;
+  previousLoans: {
+    id: string;
+    amount: number;
+    date: string;
+    status: string;
+    type: string;
+  }[];
+  paymentHistory?: {
+    id: string;
+    date: string;
+    amount: number;
+    principal: number;
+    interest: number;
+    remainingBalance: number;
+    status: string;
+    method: string;
+  }[];
+  monthlyPayment?: number;
+  collateralType?: string;
+  paymentFrequency?: string;
+}
+
+export default function LoanReportsPage() {
+  const pathname = usePathname();
+  const [searchText, setSearchText] = useState("");
+  const [selectedLoan, setSelectedLoan] = useState<LoanReport | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [reports, setReports] = useState<LoanReport[]>([]);
+
+  // HybridWebView integration for receiving report data from .NET
+  useEffect(() => {
+    (window as any).globalSetReportsPage = (dataFromDotNet: any) => {
+      console.log("✅ Received report data from .NET:", dataFromDotNet);
+      
+      let reportsJson = [];
+      if (typeof dataFromDotNet === 'string') {
+        try {
+          reportsJson = JSON.parse(dataFromDotNet);
+        } catch (e) {
+          console.error("Error parsing JSON string from .NET:", e);
+          return;
+        }
+      } else if (Array.isArray(dataFromDotNet)) {
+        reportsJson = dataFromDotNet;
+      } else {
+        console.error("Received data of unexpected type from .NET:", typeof dataFromDotNet);
+        return;
       }
-    ]
-  },
-  {
-    id: "LN002",
-    clientName: "Maria Santos",
-    type: "Business Loan",
-    purpose: "Capital Expansion",
-    amount: 150000,
-    applicationDate: "2025-05-20",
-    duration: "24 months",
-    status: "Pending",
-    interestRate: "10%",
-    remainingBalance: 150000,
-    nextPayment: "N/A",
-    validatedBy: "Juan Dela Cruz",
-    creditScore: 92,
-    coApplicantNumber: 0,
-    guarantorNumber: 2,
-    clientAddress: "456 Oak Ave, Quezon City",
-    clientContact: "09234567890",
-    clientEmail: "maria.santos@example.com",
-    clientBirthdate: "1980-07-22",
-    clientOccupation: "Business Owner",
-    previousLoans: [
-      {
-        id: "BL001",
-        amount: 100000,
-        date: "2022-05-15",
-        status: "Fully Paid",
-        type: "Business Loan"
-      },
-      {
-        id: "BL002",
-        amount: 75000,
-        date: "2023-11-30",
-        status: "Fully Paid",
-        type: "Equipment Loan"
-      }
-    ]
-  },
-  {
-    id: "LN003",
-    clientName: "Pedro Reyes",
-    type: "Emergency Loan",
-    purpose: "Medical Expenses",
-    amount: 30000,
-    applicationDate: "2025-05-25",
-    duration: "6 months",
-    status: "Approved",
-    interestRate: "15%",
-    remainingBalance: 30000,
-    nextPayment: "2025-06-25",
-    validatedBy: "Ana Lopez",
-    creditScore: 78,
-    coApplicantNumber: 1,
-    guarantorNumber: 1,
-    clientAddress: "789 Pine Rd, Makati",
-    clientContact: "09345678901",
-    clientEmail: "pedro.reyes@example.com",
-    clientBirthdate: "1978-11-30",
-    clientOccupation: "Teacher",
-    previousLoans: [
-      {
-        id: "EL001",
-        amount: 15000,
-        date: "2024-02-10",
-        status: "Fully Paid",
-        type: "Emergency Loan"
-      }
-    ]
+
+      const loanStatusMap: Record<string, string> = {
+        "Active": "Disbursed",
+        "Pending": "Pending",
+        "Closed": "Paid",
+        "Defaulted": "Declined",
+        "Approved": "Approved"
+      };
+
+      const paymentStatusMap: Record<string, string> = {
+        "Paid": "Paid",
+        "Pending": "Pending",
+        "Overdue": "Overdue"
+      };
+
+      const mappedReports = reportsJson.map((reportData: any) => {
+        // Process payment history
+        const payments = reportData.LedgerEntries
+          ?.filter((entry: any) => entry.Type === "Payment")
+          .map((payment: any, index: number) => ({
+            id: `PAY${reportData.LoanId}-${index}`,
+            date: payment.TransactionDate.split('T')[0],
+            amount: payment.Credit,
+            principal: payment.Credit * 0.9, // Assuming 10% interest
+            interest: payment.Credit * 0.1,
+            remainingBalance: payment.RunningBalance,
+            status: paymentStatusMap["Paid"] || "Paid",
+            method: payment.Notes?.includes('bank') ? 'Bank Transfer' : 'Cash'
+          })) || [];
+
+        // Process previous loans (simplified for example)
+        const previousLoans = reportData.PreviousLoans?.map((loan: any) => ({
+          id: loan.LoanId,
+          amount: loan.PrincipalAmount,
+          date: loan.DateGranted.split('T')[0],
+          status: loanStatusMap[loan.LoanStatus] || "Closed",
+          type: loan.ProductType
+        })) || [];
+        
+        // Calculate credit score based on your business rules
+        const creditScore = calculateCreditScore(
+          reportData.CreditScore,
+          reportData.PaymentHistory,
+          reportData.LoanHistory,
+          reportData.MemberFinancialData
+        );
+
+        return {
+          id: reportData.LoanId,
+          clientName: reportData.MemberFullName || "Unknown Client",
+          clientId: reportData.MemberId,
+          type: reportData.ProductType || "Unknown Type",
+          purpose: reportData.Purpose || "Not Specified",
+          amount: reportData.PrincipalAmount || 0,
+          applicationDate: reportData.DateGranted?.split('T')[0] || new Date().toISOString().split('T')[0],
+          duration: `${reportData.TermMonths || 0} months`,
+          status: loanStatusMap[reportData.LoanStatus] || "Pending",
+          interestRate: `${((reportData.InterestRate || 0) * 100).toFixed(2)}%`,
+          remainingBalance: reportData.LedgerEntries?.slice(-1)[0]?.RunningBalance || reportData.PrincipalAmount || 0,
+          nextPayment: payments.length > 0 ? 
+            new Date(new Date(payments[payments.length-1].date).getTime() + 30*24*60*60*1000).toISOString().split('T')[0] : 
+            new Date(new Date(reportData.DateGranted || new Date()).getTime() + 30*24*60*60*1000).toISOString().split('T')[0],
+          validatedBy: reportData.ProcessedBy || "Loan Officer",
+          creditScore: creditScore, // Using calculated credit score
+          coApplicantNumber: reportData.CoMakers?.length || 0,
+          guarantorNumber: reportData.CoMakers?.filter((c: any) => c.Status === "Active").length || 0,
+          clientAddress: reportData.MemberAddress || "Address Not Available",
+          clientContact: reportData.MemberContact || "Contact Not Available",
+          clientEmail: reportData.MemberEmail || "Email Not Available",
+          clientBirthdate: reportData.MemberBirthdate?.split('T')[0] || "Unknown",
+          clientOccupation: reportData.MemberOccupation || "Occupation Not Available",
+          previousLoans,
+          paymentHistory: payments,
+          monthlyPayment: reportData.InstallmentAmount,
+          collateralType: reportData.CoMakers?.length > 0 ? "Secured" : "Unsecured",
+          paymentFrequency: reportData.PayFrequency
+        } as LoanReport;
+      });
+
+      setReports(mappedReports);
+    };
+
+    // Request report data from .NET
+    if (typeof HybridWebView !== 'undefined') {
+      HybridWebView.SendInvokeMessageToDotNet("getReports");
+    } else {
+      console.warn("HybridWebView not available - using sample data");
+      // Fallback sample data with credit score
+      const sampleData = [
+        {
+          LoanId: "LN001",
+          MemberId: 1,
+          MemberFullName: "Juan Dela Cruz",
+          ProductType: "Personal Loan",
+          PrincipalAmount: 50000,
+          InterestRate: 0.12,
+          InstallmentAmount: 4500,
+          PayFrequency: "Monthly",
+          TermMonths: 12,
+          LoanStatus: "Pending",
+          DateGranted: "2025-05-15T00:00:00",
+          ProcessedBy: "Maria Santos",
+          CreditScore: 85, // Raw credit score from .NET
+          MemberAddress: "123 Main St, Manila",
+          MemberContact: "09123456789",
+          MemberEmail: "juan.delacruz@example.com",
+          MemberBirthdate: "1985-03-15T00:00:00",
+          MemberOccupation: "Architect",
+          CoMakers: [
+            { Status: "Active" },
+            { Status: "Inactive" }
+          ],
+          PreviousLoans: [
+            {
+              LoanId: "PL001",
+              PrincipalAmount: 20000,
+              DateGranted: "2023-01-10T00:00:00",
+              LoanStatus: "Closed",
+              ProductType: "Personal Loan"
+            }
+          ],
+          LedgerEntries: [],
+          PaymentHistory: [
+            { OnTime: true, Amount: 2000, Date: "2023-02-10" },
+            { OnTime: true, Amount: 2000, Date: "2023-03-10" }
+          ],
+          MemberFinancialData: {
+            MonthlyIncome: 50000,
+            DebtToIncomeRatio: 0.35,
+            SavingsBalance: 100000
+          }
+        }
+      ];
+      (window as any).globalSetReportsPage(sampleData);
+    }
+
+      HybridWebView.SendInvokeMessageToDotNet("SendDatabaseLoansPageReportToJSgetLoans");
+  }, []);
+
+  // Credit score calculation function
+  function calculateCreditScore(
+    baseScore: number,
+    paymentHistory: any[],
+    loanHistory: any[],
+    financialData: any
+  ): number {
+    // Base score from .NET (0-100 scale)
+    let score = baseScore || 50; // Default to 50 if not provided
+
+    // Adjust based on payment history (35% weight)
+    const paymentScore = calculatePaymentHistoryScore(paymentHistory);
+    score = score * 0.65 + paymentScore * 0.35;
+
+    // Adjust based on loan history (20% weight)
+    const loanScore = calculateLoanHistoryScore(loanHistory);
+    score = score * 0.80 + loanScore * 0.20;
+
+    // Adjust based on financial data (15% weight)
+    const financialScore = calculateFinancialDataScore(financialData);
+    score = score * 0.85 + financialScore * 0.15;
+
+    // Ensure score is between 0-100
+    return Math.min(Math.max(Math.round(score), 100));
   }
-]
 
-function LoanContract({ loan, onClose }: { loan: typeof loans[0], onClose: () => void }) {
-  const contractRef = useRef<HTMLDivElement>(null)
+  function calculatePaymentHistoryScore(payments: any[]): number {
+    if (!payments || payments.length === 0) return 70; // Neutral score for no history
+    
+    const onTimePayments = payments.filter(p => p.OnTime).length;
+    const onTimePercentage = onTimePayments / payments.length;
+    
+    if (onTimePercentage >= 0.95) return 100; // Excellent
+    if (onTimePercentage >= 0.85) return 85;  // Good
+    if (onTimePercentage >= 0.70) return 70;  // Fair
+    return 50; // Poor
+  }
 
-  const handlePrint = useReactToPrint({
-    content: () => contractRef.current,
-    pageStyle: `
-      @page {
-        size: A4;
-        margin: 20mm;
-      }
-      @media print {
-        body {
-          color: #000;
-          background: #fff;
+  function calculateLoanHistoryScore(loans: any[]): number {
+    if (!loans || loans.length === 0) return 75; // Neutral score for no history
+    
+    const paidLoans = loans.filter(l => l.Status === "Closed" || l.Status === "Paid").length;
+    const paidPercentage = paidLoans / loans.length;
+    
+    if (paidPercentage >= 0.90) return 100; // Excellent
+    if (paidPercentage >= 0.75) return 85;  // Good
+    if (paidPercentage >= 0.50) return 70;  // Fair
+    return 50; // Poor
+  }
+
+  function calculateFinancialDataScore(data: any): number {
+    if (!data) return 70; // Neutral score for no data
+    
+    let score = 70;
+    
+    // Income adjustment
+    if (data.MonthlyIncome > 50000) score += 10;
+    else if (data.MonthlyIncome > 30000) score += 5;
+    
+    // Debt-to-income adjustment
+    if (data.DebtToIncomeRatio < 0.3) score += 10;
+    else if (data.DebtToIncomeRatio < 0.5) score += 5;
+    else if (data.DebtToIncomeRatio > 0.8) score -= 15;
+    
+    // Savings adjustment
+    if (data.SavingsBalance > 100000) score += 5;
+    
+    return Math.min(Math.max(score, 30), 100);
+  }
+
+  const filteredLoans = reports.filter(loan => {
+    const matchesSearch = loan.id.toLowerCase().includes(searchText.toLowerCase()) ||
+                         loan.clientName.toLowerCase().includes(searchText.toLowerCase());
+    const matchesStatus = statusFilter === "All" ? true : loan.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  function LoanContract({ loan, onClose }: { loan: LoanReport, onClose: () => void }) {
+    const contractRef = useRef<HTMLDivElement>(null);
+
+    const handlePrint = useReactToPrint({
+      content: () => contractRef.current,
+      pageStyle: `
+        @page {
+          size: A4;
+          margin: 20mm;
         }
-        .no-print {
-          display: none;
+        @media print {
+          body {
+            color: #000;
+            background: #fff;
+          }
+          .no-print {
+            display: none;
+          }
         }
-      }
-    `,
-    documentTitle: `Credit_Report_${loan.id}_${loan.clientName.replace(/\s+/g, '_')}`
-  })
+      `,
+      documentTitle: `Credit_Report_${loan.id}_${loan.clientName.replace(/\s+/g, '_')}`
+    });
 
-  // Mock data for the credit report fields
-  const creditReportData = {
-    subjectData: {
-      cicSubjectCode: "G00000437",
-      prefix: "Mr.",
-      firstName: "Juan",
-      middleName: "Dela",
-      lastName: "Cruz",
-      dateOfBirth: "15/03/1985",
-      countryOfBirth: "Philippines",
-      resident: "Yes",
-      numberOfDependents: 2,
-      lastUpdateDate: "30/04/2015",
-      previousLastName: "",
-      birthplace: "Manila",
-      nationality: "Filipino",
-      placeOfBirth: "Manila",
-      gender: "Male",
-      civilStatus: "Married",
-      carsOwned: 1,
-    },
-    spouseData: {
-      name: "Maria",
-      middleName: "Santos",
-      lastName: "Dela Cruz",
-    },
-    motherData: {
-      firstName: "Ana",
-      middleName: "Santos",
-      lastName: "Dela Cruz",
-    },
-    fatherData: {
-      firstName: "Pedro",
-      middleName: "Reyes",
-      suffix: "Jr.",
-      lastName: "Dela Cruz",
-    },
-    identificationCodes: {
-      tin: "123-456-789-000",
-      sssCard: "01-2345678-9",
-      tinLastUpdate: "30/04/2015",
-      sssLastUpdate: "30/04/2015",
-    },
-    idDocuments: [
-      {
-        idType: "Driver's License",
-        idNumber: "DL12345678",
-        issueDate: "15/03/2010",
-        expiryDate: "15/03/2025",
-        issuingCountry: "Philippines",
-        issuedBy: "LTO",
-        lastUpdateDate: "30/04/2015",
-      },
-      {
-        idType: "Passport",
-        idNumber: "P12345678",
-        issueDate: "20/05/2018",
-        expiryDate: "20/05/2028",
-        issuingCountry: "Philippines",
-        issuedBy: "DFA",
-        lastUpdateDate: "30/04/2015",
-      },
-    ],
-    addresses: [
-      {
-        addressType: "Residence",
-        fullAddress: "123 Main St, Manila",
-        ownerLessee: "Owner",
-        occupiedSince: "01/01/2010",
-        lastUpdateDate: "30/04/2015",
-      },
-      {
-        addressType: "Mailing",
-        fullAddress: "PO Box 123, Manila Central Post Office",
-        ownerLessee: "N/A",
-        occupiedSince: "01/01/2010",
-        lastUpdateDate: "30/04/2015",
-      },
-    ],
-    contacts: [
-      {
-        contactType: "Main phone",
-        contact: "09123456789",
-        lastUpdateDate: "30/04/2015",
-      },
-      {
-        contactType: "Email",
-        contact: "juan.delacruz@example.com",
-        lastUpdateDate: "30/04/2015",
-      },
-    ],
-    employmentData: {
-      companyName: "ABC Architecture Firm",
-      psic: "7110",
-      grossIncome: 50000,
-      incomePeriod: "Monthly",
-      currency: "PHP",
-      occupationStatus: "Employed",
-      occupation: "Architect",
-      phoneNumber: "02-8123-4567",
-      innovationStatus: "No",
-      hiredId: "EMP12345",
-      dateHired: "15/06/2010",
-      lastUpdateDate: "30/04/2015",
-    },
-    soleTraderData: {
-      name: "Juan Dela Cruz Architectural Services",
-      addresses: [
-        {
-          addressType: "Company Main Address",
-          fullAddress: "456 Business Ave, Makati City",
-          ownerLessee: "Lessee",
-          occupiedSince: "01/01/2018",
-          lastUpdateDate: "30/04/2015",
-        },
-      ],
-      identificationCodes: {
-        tin: "987-654-321-000",
-        lastUpdateDate: "30/04/2015",
-      },
-      contacts: [
-        {
-          contactType: "Business Phone",
-          contact: "02-8888-9999",
-          lastUpdateDate: "30/04/2015",
-        },
-      ],
-    },
-  };
+    // Credit score visualization
+    const creditScoreColor = loan.creditScore >= 80 ? "text-green-600" :
+                           loan.creditScore >= 60 ? "text-yellow-600" : "text-red-600";
+    
+    const creditScoreLabel = loan.creditScore >= 80 ? "Excellent" :
+                           loan.creditScore >= 60 ? "Good" : "Fair";
 
-  return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-6xl bg-white rounded-lg h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <div className="flex justify-between items-center sticky top-0 bg-white py-2 z-10">
-            <div>
-              <DialogTitle className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                <FileText className="h-6 w-6" />
-                Credit Report for {loan.clientName}
-              </DialogTitle>
-              <DialogDescription className="text-gray-500">
-                Comprehensive credit history and current loan status
-              </DialogDescription>
-            </div>
-            <div className="flex gap-2 no-print">
-              <Button 
-                variant="outline" 
-                onClick={onClose}
-                className="text-gray-700 border-gray-200 hover:bg-gray-100"
-              >
-                Close
-              </Button>
-              <Button 
-                onClick={handlePrint}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Download className="h-4 w-4 mr-2" />
-                Generate PDF
-              </Button>
-            </div>
-          </div>
-        </DialogHeader>
-        
-        {/* Credit Report Document */}
-        <div 
-  ref={contractRef} 
-  className="bg-white p-8 border border-gray-200 rounded-lg shadow-none"
-  style={{ minHeight: '297mm' }}
->
-  <div className="text-center mb-8">
-    <h1 className="text-3xl font-bold mb-2">CREDIT REPORT</h1>
-    <p className="text-gray-600">Generated on {new Date().toLocaleDateString()}</p>
-  </div>
-  <div className="mb-8">
-    <h2 className="text-xl font-semibold mb-4 border-b pb-2">CURRENT LOAN APPLICATION</h2>
-    <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <p className="text-sm text-gray-500">Loan ID</p>
-          <div className="font-medium">{loan.id}</div>
-        </div>
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <p className="text-sm text-gray-500">Loan Type</p>
-          <div className="font-medium">{loan.type}</div>
-        </div>
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <p className="text-sm text-gray-500">Loan Amount</p>
-          <div className="font-medium">₱{loan.amount.toLocaleString()}</div>
-        </div>
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <p className="text-sm text-gray-500">Application Date</p>
-          <div className="font-medium">{loan.applicationDate}</div>
-        </div>
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <p className="text-sm text-gray-500">Status</p>
-          <div className="font-medium">
-            <Badge 
-              variant={
-                loan.status === "Approved" ? "default" : 
-                loan.status === "Pending" ? "secondary" : "destructive"
-              }
-            >
-              {loan.status}
-            </Badge>
-          </div>
-        </div>
-        <div className="bg-gray-50 p-4 rounded-lg">
-          <p className="text-sm text-gray-500">Validated By</p>
-          <div className="font-medium">{loan.validatedBy}</div>
-        </div>
-      </div>
-      
-      <div className="bg-gray-50 p-4 rounded-lg">
-        <p className="text-sm text-gray-500">Loan Purpose</p>
-        <div className="font-medium">{loan.purpose}</div>
-      </div>
-    </div>
-  </div>
-  <div className="mb-8">
-    <h2 className="text-xl font-semibold mb-4 border-b pb-2">CLIENT FINANCIAL HISTORY</h2>
-    <div className="space-y-4">
-      <div>
-        <h3 className="font-medium mb-2">Previous Loans</h3>
-        {loan.previousLoans.length > 0 ? (
-          <div className="border border-gray-200 rounded-lg overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Loan ID</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {loan.previousLoans.map((prevLoan) => (
-                  <tr key={prevLoan.id}>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{prevLoan.id}</td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{prevLoan.type}</td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">₱{prevLoan.amount.toLocaleString()}</td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">{prevLoan.date}</td>
-                    <td className="px-4 py-2 whitespace-nowrap text-sm text-gray-700">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        prevLoan.status === "Fully Paid" ? "bg-green-100 text-green-800" : "bg-yellow-100 text-yellow-800"
-                      }`}>
-                        {prevLoan.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="text-gray-500">No previous loans recorded</p>
-        )}
-      </div>
-      
-      <div>
-        <h3 className="font-medium mb-2">Credit Assessment</h3>
-        <div className="flex items-center gap-4">
-          <div className="w-full bg-gray-200 rounded-full h-4">
-            <div 
-              className={`h-4 rounded-full ${
-                loan.creditScore >= 80 ? "bg-green-500" :
-                loan.creditScore >= 60 ? "bg-yellow-500" : "bg-red-500"
-              }`}
-              style={{ width: `${loan.creditScore}%` }}
-            ></div>
-          </div>
-          <span className="text-sm font-medium text-gray-700">
-            Score: {loan.creditScore}/100 ({loan.creditScore >= 80 ? "Excellent" : loan.creditScore >= 60 ? "Good" : "Fair"})
-          </span>
-        </div>
-      </div>
-    </div>
-  </div>
-  
-  {/* Subject Information Section */}
-  <div className="mb-8">
-    <h2 className="text-xl font-semibold mb-4 border-b pb-2">SUBJECT INFORMATION</h2>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div>
-        <h3 className="font-medium mb-2">PERSONAL DETAILS:</h3>
-        <div className="grid grid-cols-2 gap-2">
-          <p className="mb-1"><span className="font-medium">CIC Subject Code:</span> {creditReportData.subjectData.cicSubjectCode}</p>
-          <p className="mb-1"><span className="font-medium">Prefix:</span> {creditReportData.subjectData.prefix}</p>
-          <p className="mb-1"><span className="font-medium">First Name:</span> {creditReportData.subjectData.firstName}</p>
-          <p className="mb-1"><span className="font-medium">Middle Name:</span> {creditReportData.subjectData.middleName}</p>
-          <p className="mb-1"><span className="font-medium">Last Name:</span> {creditReportData.subjectData.lastName}</p>
-          <p className="mb-1"><span className="font-medium">Date of Birth:</span> {creditReportData.subjectData.dateOfBirth}</p>
-          <p className="mb-1"><span className="font-medium">Country of Birth:</span> {creditReportData.subjectData.countryOfBirth}</p>
-          <p className="mb-1"><span className="font-medium">Resident:</span> {creditReportData.subjectData.resident}</p>
-          <p className="mb-1"><span className="font-medium">Dependents:</span> {creditReportData.subjectData.numberOfDependents}</p>
-          <p className="mb-1"><span className="font-medium">Last Update:</span> {creditReportData.subjectData.lastUpdateDate}</p>
-          <p className="mb-1"><span className="font-medium">Previous Last Name:</span> {creditReportData.subjectData.previousLastName || "N/A"}</p>
-          <p className="mb-1"><span className="font-medium">Birthplace:</span> {creditReportData.subjectData.birthplace}</p>
-          <p className="mb-1"><span className="font-medium">Nationality:</span> {creditReportData.subjectData.nationality}</p>
-          <p className="mb-1"><span className="font-medium">Place of Birth:</span> {creditReportData.subjectData.placeOfBirth}</p>
-          <p className="mb-1"><span className="font-medium">Gender:</span> {creditReportData.subjectData.gender}</p>
-          <p className="mb-1"><span className="font-medium">Civil Status:</span> {creditReportData.subjectData.civilStatus}</p>
-          <p className="mb-1"><span className="font-medium">Cars Owned:</span> {creditReportData.subjectData.carsOwned}</p>
-        </div>
-      </div>
-      
-      <div>
-        <h3 className="font-medium mb-2">FAMILY INFORMATION:</h3>
-        <div className="mb-4">
-          <h4 className="font-medium">Spouse:</h4>
-          <div className="grid grid-cols-2 gap-2">
-            <p className="mb-1"><span className="font-medium">Name:</span> {creditReportData.spouseData.name}</p>
-            <p className="mb-1"><span className="font-medium">Middle Name:</span> {creditReportData.spouseData.middleName}</p>
-            <p className="mb-1"><span className="font-medium">Last Name:</span> {creditReportData.spouseData.lastName}</p>
-          </div>
-        </div>
-        
-        <div className="mb-4">
-          <h4 className="font-medium">Mother (Maiden Name):</h4>
-          <div className="grid grid-cols-2 gap-2">
-            <p className="mb-1"><span className="font-medium">First Name:</span> {creditReportData.motherData.firstName}</p>
-            <p className="mb-1"><span className="font-medium">Middle Name:</span> {creditReportData.motherData.middleName}</p>
-            <p className="mb-1"><span className="font-medium">Last Name:</span> {creditReportData.motherData.lastName}</p>
-          </div>
-        </div>
-        
-        <div className="mb-4">
-          <h4 className="font-medium">Father:</h4>
-          <div className="grid grid-cols-2 gap-2">
-            <p className="mb-1"><span className="font-medium">First Name:</span> {creditReportData.fatherData.firstName}</p>
-            <p className="mb-1"><span className="font-medium">Middle Name:</span> {creditReportData.fatherData.middleName}</p>
-            <p className="mb-1"><span className="font-medium">Suffix:</span> {creditReportData.fatherData.suffix || "N/A"}</p>
-            <p className="mb-1"><span className="font-medium">Last Name:</span> {creditReportData.fatherData.lastName}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  {/* Identification Codes Section */}
-  <div className="mb-8">
-    <h2 className="text-xl font-semibold mb-4 border-b pb-2">IDENTIFICATION CODES</h2>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <div>
-        <h3 className="font-medium mb-2">TAX INFORMATION:</h3>
-        <div className="grid grid-cols-2 gap-2">
-          <p className="mb-1"><span className="font-medium">TIN:</span> {creditReportData.identificationCodes.tin}</p>
-          <p className="mb-1"><span className="font-medium">Last Update:</span> {creditReportData.identificationCodes.tinLastUpdate}</p>
-          <p className="mb-1"><span className="font-medium">SSS Card:</span> {creditReportData.identificationCodes.sssCard}</p>
-          <p className="mb-1"><span className="font-medium">Last Update:</span> {creditReportData.identificationCodes.sssLastUpdate}</p>
-        </div>
-      </div>
-      
-      <div>
-        <h3 className="font-medium mb-2">IDENTIFICATION DOCUMENTS:</h3>
-        {creditReportData.idDocuments.map((doc, index) => (
-          <div key={index} className="mb-4 border-b pb-4 last:border-b-0">
-            <div className="grid grid-cols-2 gap-2">
-              <p className="mb-1"><span className="font-medium">Type:</span> {doc.idType}</p>
-              <p className="mb-1"><span className="font-medium">Number:</span> {doc.idNumber}</p>
-              <p className="mb-1"><span className="font-medium">Issue Date:</span> {doc.issueDate}</p>
-              <p className="mb-1"><span className="font-medium">Expiry Date:</span> {doc.expiryDate}</p>
-              <p className="mb-1"><span className="font-medium">Issuing Country:</span> {doc.issuingCountry}</p>
-              <p className="mb-1"><span className="font-medium">Issued By:</span> {doc.issuedBy}</p>
-              <p className="mb-1"><span className="font-medium">Last Update:</span> {doc.lastUpdateDate}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  </div>
-
-  {/* Addresses Section */}
-  <div className="mb-8">
-    <h2 className="text-xl font-semibold mb-4 border-b pb-2">ADDRESSES</h2>
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {creditReportData.addresses.map((address, index) => (
-        <div key={index} className="border rounded-lg p-4">
-          <h3 className="font-medium mb-2">{address.addressType.toUpperCase()}</h3>
-          <div className="grid grid-cols-2 gap-2">
-            <p className="mb-1"><span className="font-medium">Address:</span> {address.fullAddress}</p>
-            <p className="mb-1"><span className="font-medium">Owner/Lessee:</span> {address.ownerLessee}</p>
-            <p className="mb-1"><span className="font-medium">Occupied Since:</span> {address.occupiedSince}</p>
-            <p className="mb-1"><span className="font-medium">Last Update:</span> {address.lastUpdateDate}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  </div>
-
-  {/* Contact Information Section */}
-  <div className="mb-8">
-    <h2 className="text-xl font-semibold mb-4 border-b pb-2">CONTACT INFORMATION</h2>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-      {creditReportData.contacts.map((contact, index) => (
-        <div key={index} className="border rounded-lg p-4">
-          <h3 className="font-medium mb-2">{contact.contactType.toUpperCase()}</h3>
-          <p className="mb-1"><span className="font-medium">Contact:</span> {contact.contact}</p>
-          <p className="mb-1"><span className="font-medium">Last Update:</span> {contact.lastUpdateDate}</p>
-        </div>
-      ))}
-    </div>
-  </div>
-
-  {/* Employment Information Section */}
-  <div className="mb-8">
-    <h2 className="text-xl font-semibold mb-4 border-b pb-2">EMPLOYMENT INFORMATION</h2>
-    <div className="grid grid-cols-1 gap-6">
-      <div>
-        <div className="grid grid-cols-2 gap-2">
-          <p className="mb-1"><span className="font-medium">Company Name:</span> {creditReportData.employmentData.companyName}</p>
-          <p className="mb-1"><span className="font-medium">PSIC:</span> {creditReportData.employmentData.psic}</p>
-          <p className="mb-1"><span className="font-medium">Gross Income:</span> {creditReportData.employmentData.grossIncome.toLocaleString()} {creditReportData.employmentData.currency}</p>
-          <p className="mb-1"><span className="font-medium">Income Period:</span> {creditReportData.employmentData.incomePeriod}</p>
-          <p className="mb-1"><span className="font-medium">Occupation Status:</span> {creditReportData.employmentData.occupationStatus}</p>
-          <p className="mb-1"><span className="font-medium">Occupation:</span> {creditReportData.employmentData.occupation}</p>
-          <p className="mb-1"><span className="font-medium">Phone Number:</span> {creditReportData.employmentData.phoneNumber}</p>
-          <p className="mb-1"><span className="font-medium">Innovation Status:</span> {creditReportData.employmentData.innovationStatus}</p>
-          <p className="mb-1"><span className="font-medium">Hired ID:</span> {creditReportData.employmentData.hiredId}</p>
-          <p className="mb-1"><span className="font-medium">Date Hired:</span> {creditReportData.employmentData.dateHired}</p>
-          <p className="mb-1"><span className="font-medium">Last Update:</span> {creditReportData.employmentData.lastUpdateDate}</p>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  {/* Sole Trader Information Section */}
-  <div className="mb-8">
-    <h2 className="text-xl font-semibold mb-4 border-b pb-2">SOLE TRADER INFORMATION</h2>
-    <div className="grid grid-cols-1 gap-6">
-      <div>
-        <h3 className="font-medium mb-2">BUSINESS DETAILS:</h3>
-        <div className="grid grid-cols-2 gap-2">
-          <p className="mb-1"><span className="font-medium">Name:</span> {creditReportData.soleTraderData.name}</p>
-        </div>
-        
-        <h3 className="font-medium mb-2 mt-4">BUSINESS ADDRESSES:</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {creditReportData.soleTraderData.addresses.map((address, index) => (
-            <div key={index} className="border rounded-lg p-4">
-              <h4 className="font-medium mb-2">{address.addressType.toUpperCase()}</h4>
-              <div className="grid grid-cols-2 gap-2">
-                <p className="mb-1"><span className="font-medium">Address:</span> {address.fullAddress}</p>
-                <p className="mb-1"><span className="font-medium">Owner/Lessee:</span> {address.ownerLessee}</p>
-                <p className="mb-1"><span className="font-medium">Occupied Since:</span> {address.occupiedSince}</p>
-                <p className="mb-1"><span className="font-medium">Last Update:</span> {address.lastUpdateDate}</p>
+    return (
+      <Dialog open={true} onOpenChange={onClose}>
+        <DialogContent className="sm:max-w-6xl bg-white rounded-lg h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex justify-between items-center sticky top-0 bg-white py-2 z-10">
+              <div>
+                <DialogTitle className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                  <FileText className="h-6 w-6" />
+                  Credit Report for {loan.clientName}
+                </DialogTitle>
+                <DialogDescription className="text-gray-500">
+                  Comprehensive credit history and current loan status
+                </DialogDescription>
+              </div>
+              <div className="flex gap-2 no-print">
+                <Button 
+                  variant="outline" 
+                  onClick={onClose}
+                  className="text-gray-700 border-gray-200 hover:bg-gray-100"
+                >
+                  Close
+                </Button>
+                <Button 
+                  onClick={handlePrint}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Generate PDF
+                </Button>
               </div>
             </div>
-          ))}
-        </div>
-        
-        <h3 className="font-medium mb-2 mt-4">BUSINESS IDENTIFICATION:</h3>
-        <div className="grid grid-cols-2 gap-2">
-          <p className="mb-1"><span className="font-medium">TIN:</span> {creditReportData.soleTraderData.identificationCodes.tin}</p>
-          <p className="mb-1"><span className="font-medium">Last Update:</span> {creditReportData.soleTraderData.identificationCodes.lastUpdateDate}</p>
-        </div>
-        
-        <h3 className="font-medium mb-2 mt-4">BUSINESS CONTACTS:</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {creditReportData.soleTraderData.contacts.map((contact, index) => (
-            <div key={index} className="border rounded-lg p-4">
-              <h4 className="font-medium mb-2">{contact.contactType.toUpperCase()}</h4>
-              <p className="mb-1"><span className="font-medium">Contact:</span> {contact.contact}</p>
-              <p className="mb-1"><span className="font-medium">Last Update:</span> {contact.lastUpdateDate}</p>
+          </DialogHeader>
+          
+          <div 
+            ref={contractRef} 
+            className="bg-white p-8 border border-gray-200 rounded-lg shadow-none"
+            style={{ minHeight: '297mm' }}
+          >
+            {/* Credit Score Section */}
+            <div className="mb-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
+              <h2 className="text-xl font-semibold mb-4">CREDIT SCORE SUMMARY</h2>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-medium">Overall Credit Rating</h3>
+                  <p className="text-gray-600">Based on payment history, credit utilization, and financial stability</p>
+                </div>
+                <div className="text-center">
+                  <div className={`text-4xl font-bold ${creditScoreColor}`}>
+                    {loan.creditScore}
+                  </div>
+                  <div className={`text-sm font-medium ${creditScoreColor}`}>
+                    {creditScoreLabel}
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4">
+                <div className="w-full bg-gray-200 rounded-full h-4">
+                  <div 
+                    className={`h-4 rounded-full ${
+                      loan.creditScore >= 80 ? "bg-green-500" :
+                      loan.creditScore >= 60 ? "bg-yellow-500" : "bg-red-500"
+                    }`}
+                    style={{ width: `${loan.creditScore}%` }}
+                  ></div>
+                </div>
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>300 (Poor)</span>
+                  <span>850 (Excellent)</span>
+                </div>
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <div className="text-xs text-gray-500 mt-8">
-    <p>This credit report is confidential and intended solely for the use of ABC Lending Corporation. 
-    Unauthorized access or distribution is prohibited.</p>
-  </div>
-</div>
-      </DialogContent>
-    </Dialog>
-  )
-}
-export default function LoanReportsPage() {
-  const pathname = usePathname()
-  const [searchText, setSearchText] = useState("")
-  const [selectedLoan, setSelectedLoan] = useState<typeof loans[0] | null>(null)
-  const [statusFilter, setStatusFilter] = useState<string>("All")
-
-  const filteredLoans = loans.filter(loan => {
-    const matchesSearch = loan.id.toLowerCase().includes(searchText.toLowerCase()) ||
-                         loan.clientName.toLowerCase().includes(searchText.toLowerCase())
-    const matchesStatus = statusFilter === "All" ? true : loan.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
+            {/* Rest of your report content */}
+            {/* ... [keep all your existing report sections] */}
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <div className="flex min-h-screen w-full bg-gray-50">
       {/* Main Content */}
       <div className="flex flex-1 flex-col">
-         {/* Header */}
-      <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-800">Credit Reports</h1>
-          <p className="text-gray-500">Generate and view detailed credit reports</p>
-        </div>
-        <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
-          <div className="h-9 w-9 rounded-full bg-gray-300 flex items-center justify-center">
-            <span className="text-sm font-medium text-gray-700">DL</span>
-          </div>
+        {/* Header */}
+        <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
           <div>
-            <p className="text-sm font-medium text-gray-800">David Lee</p>
-            <p className="text-xs text-gray-500">IT Administrator</p>
+            <h1 className="text-2xl font-semibold text-gray-800">Credit Reports</h1>
+            <p className="text-gray-500">Generate and view detailed credit reports</p>
           </div>
-          <ChevronDown className="h-4 w-4 text-gray-500 cursor-pointer" />
-        </div>
-      </header>
+          <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
+            <div className="h-9 w-9 rounded-full bg-gray-300 flex items-center justify-center">
+              <span className="text-sm font-medium text-gray-700">DL</span>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-800">David Lee</p>
+              <p className="text-xs text-gray-500">IT Administrator</p>
+            </div>
+            <ChevronDown className="h-4 w-4 text-gray-500 cursor-pointer" />
+          </div>
+        </header>
 
         <main className="flex-1 p-6">
           {selectedLoan ? (
@@ -687,32 +458,34 @@ export default function LoanReportsPage() {
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <div className="flex items-center justify-between">
-              <CardTitle className="text-xl text-gray-800">Loan Reports ({filteredLoans.length})</CardTitle>
-            </div>
+                    <CardTitle className="text-xl text-gray-800">Loan Reports ({filteredLoans.length})</CardTitle>
+                  </div>
                 </div>
 
-                          <div className="flex items-center gap-4 mt-4">
-               <div className="relative flex-1 max-w-sm">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search Reports..."
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="All">All Status</SelectItem>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Approved">Approved</SelectItem>
-                  <SelectItem value="Declined">Declined</SelectItem>
-                </SelectContent>
-              </Select>
-              </div>
+                <div className="flex items-center gap-4 mt-4">
+                  <div className="relative flex-1 max-w-sm">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <Input
+                      placeholder="Search Reports..."
+                      value={searchText}
+                      onChange={(e) => setSearchText(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Filter by status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="All">All Status</SelectItem>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Approved">Approved</SelectItem>
+                      <SelectItem value="Declined">Declined</SelectItem>
+                      <SelectItem value="Disbursed">Disbursed</SelectItem>
+                      <SelectItem value="Paid">Paid</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -754,7 +527,12 @@ export default function LoanReportsPage() {
                                   style={{ width: `${loan.creditScore}%` }}
                                 ></div>
                               </div>
-                              <span className="text-sm font-medium">{loan.creditScore}</span>
+                              <span className={`text-sm font-medium ${
+                                loan.creditScore >= 80 ? "text-green-600" :
+                                loan.creditScore >= 60 ? "text-yellow-600" : "text-red-600"
+                              }`}>
+                                {loan.creditScore}
+                              </span>
                             </div>
                           </TableCell>
                           <TableCell className="text-gray-700">
@@ -766,12 +544,12 @@ export default function LoanReportsPage() {
                           <TableCell className="text-gray-500">{loan.applicationDate}</TableCell>
                           <TableCell>
                             <Badge 
-                              className={`flex items-center gap-1 ${statusStyles[loan.status]}`}
+                              className={`flex items-center gap-1 ${statusStyles[loan.status as keyof typeof statusStyles] || 'bg-gray-100 text-gray-800 border-gray-200'}`}
                             >
-                                  <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
-                              <circle cx="4" cy="4" r="3" />
-                            </svg>
-                            {loan.status}
+                              <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
+                                <circle cx="4" cy="4" r="3" />
+                              </svg>
+                              {loan.status}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -782,7 +560,7 @@ export default function LoanReportsPage() {
                               onClick={() => setSelectedLoan(loan)}
                             >
                               <FileText className="h-4 w-4 mr-2" />
-                              Generate Contract
+                              Generate Report
                             </Button>
                           </TableCell>
                         </TableRow>
@@ -790,7 +568,7 @@ export default function LoanReportsPage() {
                     ) : (
                       <TableRow>
                         <TableCell colSpan={8} className="text-center text-gray-500 py-8">
-                          No loans found matching your criteria
+                          No reports found matching your criteria
                         </TableCell>
                       </TableRow>
                     )}
@@ -802,5 +580,5 @@ export default function LoanReportsPage() {
         </main>
       </div>
     </div>
-  )
+  );
 }

@@ -18,13 +18,18 @@ import { Calendar as CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-
+import HybridWebView from "../hybridwebview/HybridWebView.js";
 Chart.register(...registerables, ChartDataLabels);
 
 interface Loan {
   loan_status: string;
   loan_type: string;
   createdAt: string;
+}
+
+interface DateRangePayload {
+  startDate: string;
+  endDate: string;
 }
 
 const DashboardPage = () => {
@@ -37,10 +42,34 @@ const DashboardPage = () => {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [branches, setBranches] = useState<string[]>([]);
   const [selectedBranch, setSelectedBranch] = useState<string>("all");
+  
   const [dateRange, setDateRange] = useState<DateRange | undefined>({
     from: addDays(new Date(), -30),
     to: new Date(),
   });
+
+  // Handle date range changes and send to .NET
+  const handleDateRangeChange = (range: DateRange | undefined) => {
+    setDateRange(range);
+    
+    if (range?.from && range?.to) {
+      const dateRangePayload: DateRangePayload = {
+        startDate: range.from.toISOString(),
+        endDate: range.to.toISOString()
+      };
+      
+      console.log("Sending date range to .NET:", dateRangePayload);
+      
+      if (typeof HybridWebView !== 'undefined') {
+        HybridWebView.SendInvokeMessageToDotNet(
+          "sendDashboardDates", 
+          JSON.stringify(dateRangePayload)
+        );
+      } else {
+        console.warn("HybridWebView not available - would send:", dateRangePayload);
+      }
+    }
+  };
 
   // Vibrant color palette
   const chartColors = {
@@ -137,127 +166,161 @@ const DashboardPage = () => {
     }]
   });
 
-  // HybridWebView integration for receiving dashboard loan data from .NET or parent
+  // HybridWebView integration for receiving dashboard data from .NET
   useEffect(() => {
-    (window as any).globalSetDashboardLoans = (dataFromDotNet: any, branchList?: string[]) => {
-      let loansJson = [];
+    (window as any).globalSetDashboard = (dataFromDotNet: any) => {
+      console.log("✅ Received dashboard data from .NET:", dataFromDotNet);
+      
+      let dashboardData;
       if (typeof dataFromDotNet === 'string') {
         try {
-          loansJson = JSON.parse(dataFromDotNet);
+          dashboardData = JSON.parse(dataFromDotNet);
         } catch (e) {
-          console.error("Error parsing JSON string for dashboard loans:", e);
+          console.error("Error parsing JSON string from .NET:", e);
           return;
         }
-      } else if (Array.isArray(dataFromDotNet)) {
-        loansJson = dataFromDotNet;
+      } else if (typeof dataFromDotNet === 'object') {
+        dashboardData = dataFromDotNet;
       } else {
-        console.error("Received dashboard data of unexpected type:", typeof dataFromDotNet);
+        console.error("Received data of unexpected type from .NET:", typeof dataFromDotNet);
         return;
       }
 
-      // Optionally map/transform data if needed (assume already in Loan[] shape)
-      setLoans(loansJson);
-      setBranches(branchList || []);
-
       // Update status cards
-      const approvedCount = loansJson.filter((item: any) => item.loan_status === "Approved").length;
-      const declinedCount = loansJson.filter((item: any) => item.loan_status === "Disapproved" || item.loan_status === "Declined").length;
-      const pendingCount = loansJson.filter((item: any) => item.loan_status === "Pending").length;
       setCards([
-        ["Approved", approvedCount],
-        ["Declined", declinedCount],
-        ["Pending", pendingCount]
+        ["Approved", dashboardData.ApprovedLoansCount],
+        ["Declined", dashboardData.DeclinedLoansCount],
+        ["Pending", dashboardData.PendingLoansCount]
       ]);
-      countByType(loansJson);
-      countByMonth(loansJson);
-    };
-    // Optionally: request data from .NET/parent here
-    // HybridWebView.SendInvokeMessageToDotNet("getDashboardLoans");
-  }, []);
 
-  const countByMonth = (loanData: Loan[]) => {
-    const monthNames = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December'
-    ];
-    
-    // Get current month and go back 5 months
-    const currentDate = new Date();
-    const monthsToShow = 6;
-    const monthCounts: Record<string, number> = {};
-    
-    // Initialize recent months with 0
-    for (let i = monthsToShow - 1; i >= 0; i--) {
-      const date = new Date();
-      date.setMonth(currentDate.getMonth() - i);
-      monthCounts[monthNames[date.getMonth()]] = 0;
-    }
-    
-    // Count loans per month
-    loanData.forEach(loan => {
-      const month = monthNames[new Date(loan.createdAt).getMonth()];
-      if (monthCounts.hasOwnProperty(month)) {
-        monthCounts[month]++;
-      }
-    });
-    
-    // Convert to arrays for chart
-    const labels = Object.keys(monthCounts);
-    const data = Object.values(monthCounts);
-    
-    setSalesData({
-      labels,
-      datasets: [{
-        ...salesData.datasets[0],
-        data
-      }]
-    });
-  };
+      // Update branches filter
+      setBranches(dashboardData.AvailableBranches || []);
+      setSelectedBranch(dashboardData.SelectedBranch || "all");
 
-  const countByType = (loanData: Loan[]) => {
-    const types = ["Personal", "Business", "Auto", "Mortgage", "Education"];
-    const colors = [
-      chartColors.red,
-      chartColors.green,
-      chartColors.blue,
-      chartColors.orange,
-      chartColors.purple
-    ];
-    
-    const typeCounts: Record<string, number> = {};
-    
-    // Initialize all types with 0
-    types.forEach(type => {
-      typeCounts[type] = 0;
-    });
-    
-    // Count approved loans by type
-    loanData
-      .filter(loan => loan.loan_status === "Approved")
-      .forEach(loan => {
-        typeCounts[loan.loan_type]++;
+      // Update date range
+      setDateRange({
+        from: new Date(dashboardData.DateRangeStart),
+        to: new Date(dashboardData.DateRangeEnd)
       });
-    
-    // Convert to arrays for chart
-    const labels = types;
-    const data = types.map(type => typeCounts[type]);
-    
-    setLoansData({
-      labels,
-      datasets: [{
-        ...loansData.datasets[0],
-        data,
-        backgroundColor: colors,
-        borderColor: colors.map(color => color.replace('0.7', '1'))
-      }]
-    });
-  };
 
-  useEffect(() => {
-    if (loans.length > 0) {
+      // Prepare chart data
+      const monthlyLabels = dashboardData.MonthlyApplications?.map((item: any) => item.key) || [];
+      const monthlyData = dashboardData.MonthlyApplications?.map((item: any) => item.value) || [];
+
+      const loanTypeLabels = dashboardData.LoanTypesDistribution?.map((item: any) => item.key) || [];
+      const loanTypeData = dashboardData.LoanTypesDistribution?.map((item: any) => item.value) || [];
+
+      const factorsLabels = dashboardData.ApprovalFactorsDistribution?.map((item: any) => item.key) || [];
+      const factorsData = dashboardData.ApprovalFactorsDistribution?.map((item: any) => item.value) || [];
+
+      // Update chart data states
+      setSalesData({
+        labels: monthlyLabels,
+        datasets: [{
+          ...salesData.datasets[0],
+          data: monthlyData
+        }]
+      });
+
+      setLoansData({
+        labels: loanTypeLabels,
+        datasets: [{
+          ...loansData.datasets[0],
+          data: loanTypeData,
+          backgroundColor: [
+            chartColors.red,
+            chartColors.green,
+            chartColors.blue,
+            chartColors.orange,
+            chartColors.purple
+          ],
+          borderColor: [
+            borderColors.red,
+            borderColors.green,
+            borderColors.blue,
+            borderColors.orange,
+            borderColors.purple
+          ]
+        }]
+      });
+
+      setFactorsData({
+        labels: factorsLabels.length > 0 ? factorsLabels : ['Credit Score', 'Income', 'Employment', 'Debt Ratio', 'Loan Amount', 'Collateral'],
+        datasets: [{
+          ...factorsData.datasets[0],
+          data: factorsData.length > 0 ? factorsData : [35, 25, 20, 10, 7, 3],
+          backgroundColor: [
+            chartColors.red,
+            chartColors.orange,
+            chartColors.yellow,
+            chartColors.green,
+            chartColors.blue,
+            chartColors.purple
+          ],
+          borderColor: [
+            borderColors.red,
+            borderColors.orange,
+            borderColors.yellow,
+            borderColors.green,
+            borderColors.blue,
+            borderColors.purple
+          ]
+        }]
+      });
+
+      // Initialize charts with new data
       initCharts();
+    };
+
+    // Request dashboard data from .NET
+    if (typeof HybridWebView !== 'undefined') {
+      HybridWebView.SendInvokeMessageToDotNet("getDashboardData");
+    } else {
+      // Fallback to sample data if not in HybridWebView context
+      const sampleData = {
+        ApprovedLoansCount: 125,
+        DeclinedLoansCount: 42,
+        PendingLoansCount: 33,
+        MonthlyApplications: [
+          { key: "January", value: 45 },
+          { key: "February", value: 52 },
+          { key: "March", value: 68 },
+          { key: "April", value: 72 },
+          { key: "May", value: 65 },
+          { key: "June", value: 58 }
+        ],
+        LoanTypesDistribution: [
+          { key: "Personal", value: 85 },
+          { key: "Business", value: 45 },
+          { key: "Auto", value: 30 },
+          { key: "Mortgage", value: 20 },
+          { key: "Education", value: 10 }
+        ],
+        ApprovalFactorsDistribution: [
+          { key: "Credit Score", value: 35 },
+          { key: "Income", value: 25 },
+          { key: "Employment", value: 20 },
+          { key: "Debt Ratio", value: 10 },
+          { key: "Loan Amount", value: 7 },
+          { key: "Collateral", value: 3 }
+        ],
+        AvailableBranches: ["Main Branch", "Downtown", "Westside", "Eastside", "North Branch"],
+        SelectedBranch: "All Branches",
+        DateRangeStart: new Date(new Date().setMonth(new Date().getMonth() - 6)).toISOString(),
+        DateRangeEnd: new Date().toISOString(),
+        RecentActivities: [
+          "New loan application from John Doe",
+          "Loan #L-10025 approved",
+          "Loan #L-10018 disbursed",
+          "Payment received for loan #L-10012"
+        ]
+      };
+     
     }
-  }, [loans, salesData, loansData, factorsData]);
+
+      HybridWebView.SendInvokeMessageToDotNet("getDashboardInfo");
+
+  }, []);
 
   const initCharts = () => {
     // Destroy existing charts to prevent memory leaks
@@ -423,7 +486,6 @@ const DashboardPage = () => {
 
   return (
     <div className="flex min-h-screen w-full bg-gray-50">
-
       {/* Main Content */}
       <div className="flex flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b border-gray-200 bg-white px-6">
@@ -491,7 +553,7 @@ const DashboardPage = () => {
                     mode="range"
                     defaultMonth={dateRange?.from}
                     selected={dateRange}
-                    onSelect={setDateRange}
+                    onSelect={handleDateRangeChange}
                     numberOfMonths={2}
                   />
                 </PopoverContent>
