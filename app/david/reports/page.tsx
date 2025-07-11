@@ -184,61 +184,7 @@ export default function LoanReportsPage() {
       setReports(mappedReports);
     };
 
-    // Request report data from .NET
-    if (typeof HybridWebView !== 'undefined') {
-      HybridWebView.SendInvokeMessageToDotNet("getReports");
-    } else {
-      console.warn("HybridWebView not available - using sample data");
-      // Fallback sample data with credit score
-      const sampleData = [
-        {
-          LoanId: "LN001",
-          MemberId: 1,
-          MemberFullName: "Juan Dela Cruz",
-          ProductType: "Personal Loan",
-          PrincipalAmount: 50000,
-          InterestRate: 0.12,
-          InstallmentAmount: 4500,
-          PayFrequency: "Monthly",
-          TermMonths: 12,
-          LoanStatus: "Pending",
-          DateGranted: "2025-05-15T00:00:00",
-          ProcessedBy: "Maria Santos",
-          CreditScore: 85, // Raw credit score from .NET
-          MemberAddress: "123 Main St, Manila",
-          MemberContact: "09123456789",
-          MemberEmail: "juan.delacruz@example.com",
-          MemberBirthdate: "1985-03-15T00:00:00",
-          MemberOccupation: "Architect",
-          CoMakers: [
-            { Status: "Active" },
-            { Status: "Inactive" }
-          ],
-          PreviousLoans: [
-            {
-              LoanId: "PL001",
-              PrincipalAmount: 20000,
-              DateGranted: "2023-01-10T00:00:00",
-              LoanStatus: "Closed",
-              ProductType: "Personal Loan"
-            }
-          ],
-          LedgerEntries: [],
-          PaymentHistory: [
-            { OnTime: true, Amount: 2000, Date: "2023-02-10" },
-            { OnTime: true, Amount: 2000, Date: "2023-03-10" }
-          ],
-          MemberFinancialData: {
-            MonthlyIncome: 50000,
-            DebtToIncomeRatio: 0.35,
-            SavingsBalance: 100000
-          }
-        }
-      ];
-      (window as any).globalSetReportsPage(sampleData);
-    }
-
-      HybridWebView.SendInvokeMessageToDotNet("SendDatabaseLoansPageReportToJSgetLoans");
+      HybridWebView.SendInvokeMessageToDotNet("getPageReportToJS");
   }, []);
 
   // Credit score calculation function
