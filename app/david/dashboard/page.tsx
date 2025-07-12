@@ -193,9 +193,44 @@ const DashboardPage = () => {
         ["Pending", dashboardData.PendingLoansCount]
       ]);
 
-      // Update branches filter
-      setBranches(dashboardData.AvailableBranches || []);
-      setSelectedBranch(dashboardData.SelectedBranch || "all");
+  const countByMonth = (loanData: Loan[]) => {
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    
+    // Get current month and go back five (5) months
+    const currentDate = new Date();
+    const monthsToShow = 6;
+    const monthCounts: Record<string, number> = {};
+    
+    // Initialize recent months with 0
+    for (let i = monthsToShow - 1; i >= 0; i--) {
+      const date = new Date();
+      date.setMonth(currentDate.getMonth() - i);
+      monthCounts[monthNames[date.getMonth()]] = 0;
+    }
+    
+    // Count loans per month
+    loanData.forEach(loan => {
+      const month = monthNames[new Date(loan.createdAt).getMonth()];
+      if (monthCounts.hasOwnProperty(month)) {
+        monthCounts[month]++;
+      }
+    });
+    
+    // Convert to arrays for chart
+    const labels = Object.keys(monthCounts);
+    const data = Object.values(monthCounts);
+    
+    setSalesData({
+      labels,
+      datasets: [{
+        ...salesData.datasets[0],
+        data
+      }]
+    });
+  };
 
       // Update date range
       setDateRange({
