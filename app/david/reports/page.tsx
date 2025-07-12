@@ -130,6 +130,7 @@ export default function LoanReportsPage() {
   const [fullReport, setFullReport] = useState<MemberReport | null>(null);
   const pathname = usePathname();
   const reportRef = useRef<HTMLDivElement>(null);
+  const hasRequestedReport = useRef(false);
 
   // Effect for initial report list
   useEffect(() => {
@@ -162,22 +163,17 @@ export default function LoanReportsPage() {
       };
 
       const mappedReports = reportsJson.map((reportData: any) => {
-        // Calculate credit score (0-100 range)
         let creditScore = reportData.CreditScore || 0;
         
-        // If credit score isn't provided, calculate a basic one
         if (!reportData.CreditScore) {
-          // Base score (50 is average)
           let calculatedScore = 50;
           
-          // Adjust based on loan status
           if (reportData.LoanStatus === "Active" || reportData.LoanStatus === "Approved") {
             calculatedScore += 10;
           } else if (reportData.LoanStatus === "Defaulted") {
             calculatedScore -= 20;
           }
           
-          // Adjust based on payment history
           if (reportData.PaymentHistory?.length > 0) {
             const totalPayments = reportData.PaymentHistory.length;
             const onTimePayments = reportData.PaymentHistory.filter((p: any) => p.Status === "Completed").length;
@@ -187,7 +183,6 @@ export default function LoanReportsPage() {
             calculatedScore -= (latePayments * 3);
           }
           
-          // Adjust based on previous loans
           if (reportData.PreviousLoans?.length > 0) {
             const successfulLoans = reportData.PreviousLoans.filter((l: any) => 
               l.LoanStatus === "Closed" || l.LoanStatus === "Paid"
@@ -196,7 +191,6 @@ export default function LoanReportsPage() {
             calculatedScore += (successfulLoans * 3);
           }
           
-          // Cap between 0 and 100
           creditScore = Math.max(0, Math.min(100, calculatedScore));
         }
 
@@ -248,7 +242,6 @@ export default function LoanReportsPage() {
       setReports(mappedReports);
     };
 
-    // Initialize HybridWebView communication
     HybridWebView.SendInvokeMessageToDotNet("getPageReportToJS");
 
     return () => {
@@ -266,7 +259,6 @@ export default function LoanReportsPage() {
           ? JSON.parse(dataFromDotNet) 
           : dataFromDotNet;
 
-        // Map education level to text
         const educationLevels = [
           "Elementary",
           "High School",
@@ -275,7 +267,6 @@ export default function LoanReportsPage() {
           "Postgraduate"
         ];
 
-        // Map civil status to text
         const civilStatuses = [
           "Single",
           "Married",
@@ -283,7 +274,6 @@ export default function LoanReportsPage() {
           "Separated"
         ];
 
-        // Map membership status to text
         const membershipStatuses = [
           "Active",
           "Inactive",
@@ -300,20 +290,16 @@ export default function LoanReportsPage() {
         };
 
         const calculateCreditScore = (data: any) => {
-          let score = 50; // Base score
+          let score = 50;
           
-          // Adjust based on income
           if (data.MonthlyIncome > 50000) score += 10;
           else if (data.MonthlyIncome > 30000) score += 5;
           
-          // Adjust based on dependents
           if (data.Dependents === 0) score += 5;
           else if (data.Dependents > 3) score -= 5;
           
-          // Adjust based on savings
           if (data.SavingsBalance > 10000) score += 5;
           
-          // Cap between 0 and 100
           return Math.max(0, Math.min(100, score));
         };
 
@@ -377,7 +363,6 @@ export default function LoanReportsPage() {
 
         setFullReport(formattedReport);
         
-        // Convert main loan to LoanReport format if it exists
         if (reportData.MainLoan) {
           const calculateMonthlyPayment = (loan: any) => {
             if (!loan.amount || !loan.InterestRate || !loan.duration) return 0;
@@ -398,41 +383,46 @@ export default function LoanReportsPage() {
             return nextDate.toISOString().split('T')[0];
           };
 
-          setSelectedLoan({
-            id: reportData.MainLoan.id.toString(),
-            clientName: reportData.FullName,
-            clientId: reportData.MemberId,
-            type: reportData.MainLoan.type,
-            purpose: reportData.MainLoan.purpose || "Not specified",
-            amount: reportData.MainLoan.amount,
-            applicationDate: reportData.MainLoan.applicationDate?.split('T')[0] || "Unknown",
-            duration: reportData.MainLoan.duration,
-            status: reportData.MainLoan.status,
-            interestRate: `${(reportData.MainLoan.InterestRate * 100).toFixed(2)}%`,
-            remainingBalance: reportData.MainLoan.remainingBalance || reportData.MainLoan.amount,
-            nextPayment: calculateNextPaymentDate(reportData.MainLoan),
-            validatedBy: reportData.MainLoan.validatedBy || "Loan Officer",
-            creditScore: formattedReport.CreditScore,
-            coApplicantNumber: reportData.CoMadeLoans?.length || 0,
-            guarantorNumber: reportData.CoMadeLoans?.filter((c: any) => c.Status === "Active").length || 0,
-            clientAddress: reportData.Address,
-            clientContact: reportData.Contact,
-            clientEmail: reportData.Email,
-            clientBirthdate: reportData.DateOfBirth?.split('T')[0] || "Unknown",
-            clientOccupation: formattedReport.MemberFinancialProfile?.Occupation || "Not specified",
-            previousLoans: reportData.Loans
-              ?.filter((l: any) => l.id !== reportData.MainLoan?.id)
-              ?.map((loan: any) => ({
-                id: loan.id.toString(),
-                amount: loan.amount,
-                date: loan.applicationDate?.split('T')[0],
-                status: loan.status,
-                type: loan.type
-              })) || [],
-            paymentHistory: [], // Will be populated if available
-            monthlyPayment: calculateMonthlyPayment(reportData.MainLoan),
-            collateralType: "Unsecured", // Update if available in payload
-            paymentFrequency: "Monthly" // Update if available in payload
+          setSelectedLoan(prev => {
+            if (prev && prev.id === reportData.MainLoan.id.toString()) {
+              return prev; // Don't update if it's the same loan
+            }
+            return {
+              id: reportData.MainLoan.id.toString(),
+              clientName: reportData.FullName,
+              clientId: reportData.MemberId,
+              type: reportData.MainLoan.type,
+              purpose: reportData.MainLoan.purpose || "Not specified",
+              amount: reportData.MainLoan.amount,
+              applicationDate: reportData.MainLoan.applicationDate?.split('T')[0] || "Unknown",
+              duration: reportData.MainLoan.duration,
+              status: reportData.MainLoan.status,
+              interestRate: `${(reportData.MainLoan.InterestRate * 100).toFixed(2)}%`,
+              remainingBalance: reportData.MainLoan.remainingBalance || reportData.MainLoan.amount,
+              nextPayment: calculateNextPaymentDate(reportData.MainLoan),
+              validatedBy: reportData.MainLoan.validatedBy || "Loan Officer",
+              creditScore: formattedReport.CreditScore,
+              coApplicantNumber: reportData.CoMadeLoans?.length || 0,
+              guarantorNumber: reportData.CoMadeLoans?.filter((c: any) => c.Status === "Active").length || 0,
+              clientAddress: reportData.Address,
+              clientContact: reportData.Contact,
+              clientEmail: reportData.Email,
+              clientBirthdate: reportData.DateOfBirth?.split('T')[0] || "Unknown",
+              clientOccupation: formattedReport.MemberFinancialProfile?.Occupation || "Not specified",
+              previousLoans: reportData.Loans
+                ?.filter((l: any) => l.id !== reportData.MainLoan?.id)
+                ?.map((loan: any) => ({
+                  id: loan.id.toString(),
+                  amount: loan.amount,
+                  date: loan.applicationDate?.split('T')[0],
+                  status: loan.status,
+                  type: loan.type
+                })) || [],
+              paymentHistory: [],
+              monthlyPayment: calculateMonthlyPayment(reportData.MainLoan),
+              collateralType: "Unsecured",
+              paymentFrequency: "Monthly"
+            };
           });
         }
       } catch (error) {
@@ -447,11 +437,11 @@ export default function LoanReportsPage() {
 
   useEffect(() => {
     const generateFullReport = () => {
-      if (!selectedLoan) return;
+      if (!selectedLoan || hasRequestedReport.current) return;
       
       console.log("📤 Generating report from frontend...");
+      hasRequestedReport.current = true;
 
-      // Prepare payload
       const payload = {
         MemberId: selectedLoan.clientId,
         LoanId: parseInt(selectedLoan.id)
@@ -459,7 +449,6 @@ export default function LoanReportsPage() {
 
       console.log("Data report sent: ", payload);
 
-      // Send message
       HybridWebView.SendInvokeMessageToDotNet(
         "getPageReportFullToJS",
         payload
@@ -467,6 +456,10 @@ export default function LoanReportsPage() {
     };
 
     generateFullReport();
+
+    return () => {
+      hasRequestedReport.current = false;
+    };
   }, [selectedLoan]);
 
   const handlePrint = useReactToPrint({
@@ -484,6 +477,13 @@ export default function LoanReportsPage() {
   const handleGenerateReport = (loan: LoanReport) => {
     console.log("📤 Setting loan for report generation...");
     setSelectedLoan(loan);
+    setFullReport(null); // Reset full report when generating a new one
+  };
+
+  const handleCloseDialog = () => {
+    setSelectedLoan(null);
+    setFullReport(null);
+    hasRequestedReport.current = false;
   };
 
   const filteredLoans = reports.filter(loan => {
@@ -520,7 +520,7 @@ export default function LoanReportsPage() {
 
     return (
       <Dialog open={true} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-4xl">
+        <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <div className="flex justify-between items-center">
               <div>
@@ -544,6 +544,57 @@ export default function LoanReportsPage() {
           </DialogHeader>
           
           <div ref={reportRef} className="p-4 bg-white">
+            {/* Credit Score Section - Moved to top */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <h2 className="text-lg font-semibold mb-3">Credit Summary</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <div className="flex items-center gap-4">
+                    <div className={`text-4xl font-bold ${creditScoreColor}`}>
+                      {loan.creditScore}
+                    </div>
+                    <div className="w-full">
+                      <div className="text-sm font-medium mb-1">
+                        {creditScoreLabel} Credit Score
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2.5">
+                        <div 
+                          className={`h-2.5 rounded-full ${creditScoreColor.replace('text', 'bg')}`}
+                          style={{ width: `${loan.creditScore}%` }}
+                        ></div>
+                      </div>
+                      <div className="flex justify-between text-xs text-gray-500 mt-1">
+                        <span>0 (Poor)</span>
+                        <span>100 (Excellent)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-2 bg-white rounded border">
+                    <div className="text-xs text-gray-500">Member Since</div>
+                    <div className="font-medium">{fullReport?.MembershipDate || 'N/A'}</div>
+                  </div>
+                  <div className="p-2 bg-white rounded border">
+                    <div className="text-xs text-gray-500">Total Loans</div>
+                    <div className="font-medium">{fullReport?.Loans?.length || 0}</div>
+                  </div>
+                  <div className="p-2 bg-white rounded border">
+                    <div className="text-xs text-gray-500">Active Loans</div>
+                    <div className="font-medium">
+                      {fullReport?.Loans?.filter((l: any) => l.status === "Active").length || 0}
+                    </div>
+                  </div>
+                  <div className="p-2 bg-white rounded border">
+                    <div className="text-xs text-gray-500">Payment History</div>
+                    <div className="font-medium">
+                      {loan.paymentHistory?.length || 0} records
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Client Information Section */}
             <div className="mb-6 border-b pb-4">
               <h2 className="text-lg font-semibold mb-3">Client Information</h2>
@@ -624,31 +675,6 @@ export default function LoanReportsPage() {
                   <p><strong>Guarantors:</strong> {loan.guarantorNumber}</p>
                 </div>
               </div>
-            </div>
-
-            {/* Credit Score Section */}
-            <div className="mb-6 p-3 bg-gray-50 rounded">
-              <h2 className="text-lg font-semibold mb-2">Credit Score</h2>
-              <div className="flex items-center gap-4">
-                <div className={`text-3xl font-bold ${creditScoreColor}`}>
-                  {loan.creditScore}
-                </div>
-                <div className="w-full">
-                  <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className={`h-3 rounded-full ${creditScoreColor.replace('text', 'bg')}`}
-                      style={{ width: `${loan.creditScore}%` }}
-                    ></div>
-                  </div>
-                  <div className="flex justify-between text-xs text-gray-500 mt-1">
-                    <span>0 (Poor)</span>
-                    <span>100 (Excellent)</span>
-                  </div>
-                </div>
-              </div>
-              <p className="mt-1 text-sm">
-                <strong>Rating:</strong> <span className={creditScoreColor}>{creditScoreLabel}</span>
-              </p>
             </div>
 
             {/* Payment History Section */}
@@ -748,7 +774,7 @@ export default function LoanReportsPage() {
 
         <main className="flex-1 p-4">
           {selectedLoan ? (
-            <LoanReportDialog loan={selectedLoan} onClose={() => setSelectedLoan(null)} />
+            <LoanReportDialog loan={selectedLoan} onClose={handleCloseDialog} />
           ) : (
             <Card className="shadow-sm border-gray-200">
               <CardHeader>
