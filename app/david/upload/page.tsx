@@ -5,33 +5,55 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { FileText, UploadCloud, X, CheckCircle2, AlertCircle } from "lucide-react"
+import { FileText, UploadCloud, X, CheckCircle2, AlertCircle, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { ChevronDown } from "lucide-react"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Progress } from "@/components/ui/progress"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
+
+type Match = {
+  id: number
+  newRecord: Record<string, string>
+  existingRecord: Record<string, string>
+  confidence: number
+  matchReasons: string[]
+}
 
 export default function UploadPage() {
   const [clientFile, setClientFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<"success" | "error" | null>(null)
 
+  // Name matching state
+  const [potentialMatches, setPotentialMatches] = useState<Match[] | null>(null)
+  const [currentMatchIdx, setCurrentMatchIdx] = useState(0)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false)
+  const [pendingAction, setPendingAction] = useState<"merge" | "not-duplicate" | null>(null)
+  const [decidedMatches, setDecidedMatches] = useState<number[]>([])
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] || null
     setClientFile(file)
     setUploadStatus(null)
+    setPotentialMatches(null)
+    setDecidedMatches([])
+    setCurrentMatchIdx(0)
   }
 
   const uploadFile = async () => {
     if (!clientFile) return
     setIsUploading(true)
     setUploadStatus(null)
+    setPotentialMatches(null)
+    setDecidedMatches([])
+    setCurrentMatchIdx(0)
 
     try {
-      // Read file as ArrayBuffer
       const fileBuffer = await clientFile.arrayBuffer()
-      
       const response = await fetch("http://localhost:5000/upload_clientinfo", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/octet-stream",
           "X-File-Name": encodeURIComponent(clientFile.name),
           "X-File-Type": clientFile.type
@@ -44,7 +66,17 @@ export default function UploadPage() {
         throw new Error(`Upload failed: ${response.status} ${errorText}`)
       }
 
-      setUploadStatus("success")
+      // Expecting JSON: { matches: Match[] }
+      const data = await response.json()
+      if (data.matches && Array.isArray(data.matches) && data.matches.length > 0) {
+        setPotentialMatches(data.matches)
+        setIsDialogOpen(true)
+        setCurrentMatchIdx(0)
+        setUploadStatus("success")
+      } else {
+        setPotentialMatches(null)
+        setUploadStatus("success")
+      }
     } catch (error) {
       console.error("Upload error:", error)
       setUploadStatus("error")
@@ -56,6 +88,57 @@ export default function UploadPage() {
   const removeFile = () => {
     setClientFile(null)
     setUploadStatus(null)
+    setPotentialMatches(null)
+    setDecidedMatches([])
+    setCurrentMatchIdx(0)
+  }
+
+  // Name matching UI logic
+  const currentMatch = potentialMatches && potentialMatches[currentMatchIdx]
+  const undecidedMatches = potentialMatches?.filter(m => !decidedMatches.includes(m.id)) || []
+  const totalMatches = potentialMatches?.length || 0
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false)
+  }
+
+  const showConfirmation = (action: "merge" | "not-duplicate") => {
+    setPendingAction(action)
+    setIsConfirmDialogOpen(true)
+  }
+
+  const handleConfirmMatch = async (isDuplicate: boolean) => {
+    if (!potentialMatches || !currentMatch) return
+    // Optionally, send decision to backend here
+    // await fetch(...)
+    setDecidedMatches(prev => [...prev, currentMatch.id])
+    setIsConfirmDialogOpen(false)
+
+    // Move to next undecided match
+    const nextIdx = potentialMatches.findIndex(
+      (m, idx) => !decidedMatches.includes(m.id) && idx !== currentMatchIdx
+    )
+    if (nextIdx !== -1) {
+      setCurrentMatchIdx(nextIdx)
+    } else {
+      setIsDialogOpen(false)
+    }
+  }
+
+  const navigateMatch = (direction: "prev" | "next") => {
+    if (!potentialMatches) return
+    const undecided = potentialMatches.filter(m => !decidedMatches.includes(m.id))
+    if (undecided.length <= 1) return
+    const currentUndecidedIdx = undecided.findIndex(m => m.id === currentMatch?.id)
+    let newIdx
+    if (direction === "prev") {
+      newIdx = currentUndecidedIdx > 0 ? currentUndecidedIdx - 1 : undecided.length - 1
+    } else {
+      newIdx = currentUndecidedIdx < undecided.length - 1 ? currentUndecidedIdx + 1 : 0
+    }
+    const newMatchId = undecided[newIdx].id
+    const matchIdxInAll = potentialMatches.findIndex(m => m.id === newMatchId)
+    setCurrentMatchIdx(matchIdxInAll)
   }
 
   return (
@@ -142,7 +225,7 @@ export default function UploadPage() {
                     </div>
                   )}
 
-                  {uploadStatus === "success" && (
+                  {uploadStatus === "success" && !potentialMatches && (
                     <div className="flex items-center gap-2 p-3 bg-green-50 text-green-700 rounded-lg">
                       <CheckCircle2 className="h-5 w-5" />
                       <p>Member data uploaded successfully!</p>
@@ -169,6 +252,129 @@ export default function UploadPage() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Name Matching Dialog */}
+          <Dialog open={isDialogOpen && !!currentMatch} onOpenChange={handleDialogClose}>
+            <DialogContent className="sm:max-w-2xl">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                  <span>Potential Duplicate Member Found</span>
+                </DialogTitle>
+                <DialogDescription>
+                  {`Reviewing match ${undecidedMatches.findIndex(m => m.id === currentMatch?.id) + 1} of ${undecidedMatches.length} (${totalMatches} total)`}
+                </DialogDescription>
+              </DialogHeader>
+
+              {currentMatch && (
+                <div className="space-y-4">
+                  {/* Navigation Controls */}
+                  <div className="flex justify-between items-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={undecidedMatches.length <= 1}
+                      onClick={() => navigateMatch("prev")}
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-medium">Confidence:</span>
+                      <Progress value={currentMatch.confidence} className="h-2 w-32" />
+                      <span className="text-sm font-medium">{currentMatch.confidence}%</span>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      disabled={undecidedMatches.length <= 1}
+                      onClick={() => navigateMatch("next")}
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
+                  </div>
+
+                  {/* Match Reasons */}
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Match Reasons:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {currentMatch.matchReasons.map((reason, i) => (
+                        <span key={i} className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">
+                          {reason}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Comparison Table */}
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-[150px]">Field</TableHead>
+                        <TableHead>New Applicant</TableHead>
+                        <TableHead>Existing Member</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {Object.keys(currentMatch.newRecord).map((key) => (
+                        <TableRow key={key}>
+                          <TableCell className="font-medium capitalize">
+                            {key.replace(/([A-Z])/g, ' $1').trim()}
+                          </TableCell>
+                          <TableCell>{currentMatch.newRecord[key]}</TableCell>
+                          <TableCell>{currentMatch.existingRecord[key]}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+
+              <DialogFooter className="gap-2 sm:gap-0">
+                <Button
+                  variant="outline"
+                  onClick={() => showConfirmation("not-duplicate")}
+                >
+                  Not a Duplicate
+                </Button>
+                <Button
+                  onClick={() => showConfirmation("merge")}
+                >
+                  Merge Records
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          {/* Confirmation Dialog */}
+          <Dialog open={isConfirmDialogOpen} onOpenChange={setIsConfirmDialogOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <AlertTriangle className="h-5 w-5 text-yellow-600" />
+                  <span>Confirm Your Decision</span>
+                </DialogTitle>
+              </DialogHeader>
+              <div className="py-4">
+                {pendingAction === "merge" ? (
+                  <p>Are you sure these records belong to the same person? This will merge the new applicant with the existing member.</p>
+                ) : (
+                  <p>Are you sure these records are for different people? This will keep them as separate records.</p>
+                )}
+              </div>
+              <DialogFooter className="gap-2 sm:gap-0">
+                <DialogClose asChild>
+                  <Button variant="outline">
+                    No, Go Back
+                  </Button>
+                </DialogClose>
+                <Button
+                  onClick={() => pendingAction && handleConfirmMatch(pendingAction === "merge")}
+                >
+                  Yes, Confirm
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </main>
       </div>
     </div>
