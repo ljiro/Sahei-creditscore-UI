@@ -264,19 +264,19 @@ export default function UploadPage() {
           {/* Upload Card */}
           <Card className="shadow-sm border-gray-200 max-w-2xl mx-auto">
             <CardHeader>
-              <CardTitle className="text-xl text-gray-800">Upload Data Files</CardTitle>
+              <CardTitle className="text-xl text-gray-800">Upload CARCC Data File</CardTitle>
               <CardDescription className="text-gray-500">
-                Upload Excel (.xlsx) files to import members and loans data
+                Ensure the file is in .xlsx format and contains the required data structure.  
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
                 {/* Members Upload Section */}
                 <div className="space-y-4 border-b border-gray-200 pb-6">
-                  <h3 className="font-medium text-gray-800">Members Data</h3>
+                  <h3 className="font-medium text-gray-800">CARCC Data</h3>
                   <div className="grid w-full items-center gap-1.5">
                     <Label htmlFor="client-file" className="text-gray-700">
-                      Select Members Excel File
+                      Select CARCC Excel File
                     </Label>
                     <Input 
                       id="client-file" 
@@ -347,7 +347,7 @@ export default function UploadPage() {
                 </div>
 
                 {/* Loans Upload Section */}
-                <div className="space-y-4">
+                {/* <div className="space-y-4">
                   <h3 className="font-medium text-gray-800">Loans Data</h3>
                   <div className="grid w-full items-center gap-1.5">
                     <Label htmlFor="loan-file" className="text-gray-700">
@@ -419,9 +419,9 @@ export default function UploadPage() {
                       <p>Error uploading loan data. Please try again.</p>
                     </div>
                   )}
-                </div>
+                </div> */}
 
-                <div className="border-t border-gray-200 pt-4">
+                <div>
                   <h3 className="font-medium text-gray-700 mb-2">Upload Guidelines:</h3>
                   <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
                     <li>Only .xlsx files are accepted</li>
