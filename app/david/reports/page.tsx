@@ -117,6 +117,9 @@ const statusStyles = {
   Declined: "bg-red-100 text-red-800 hover:bg-red-100 border-red-200",
   Disbursed: "bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200",
   Paid: "bg-purple-100 text-purple-800 hover:bg-purple-100 border-purple-200",
+  Active: "bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200",
+  Closed: "bg-gray-100 text-gray-800 hover:bg-gray-100 border-gray-200",
+  Defaulted: "bg-red-100 text-red-800 hover:bg-red-100 border-red-200",
 };
 
 export default function LoanReportsPage() {
@@ -149,11 +152,13 @@ export default function LoanReportsPage() {
       }
 
       const loanStatusMap: Record<string, string> = {
-        "Active": "Disbursed",
+        "Active": "Active",
         "Pending": "Pending",
-        "Closed": "Paid",
-        "Defaulted": "Declined",
-        "Approved": "Approved"
+        "Closed": "Closed",
+        "Defaulted": "Defaulted",
+        "Approved": "Approved",
+        "Disbursed": "Disbursed",
+        "Paid": "Paid"
       };
 
       const mappedReports = reportsJson.map((reportData: any) => {
@@ -244,9 +249,7 @@ export default function LoanReportsPage() {
     };
 
     // Initialize HybridWebView communication
-
-     HybridWebView.SendInvokeMessageToDotNet("getPageReportToJS");
-
+    HybridWebView.SendInvokeMessageToDotNet("getPageReportToJS");
 
     return () => {
       (window as any).globalSetReportsPage = undefined;
@@ -263,34 +266,107 @@ export default function LoanReportsPage() {
           ? JSON.parse(dataFromDotNet) 
           : dataFromDotNet;
 
+        // Map education level to text
+        const educationLevels = [
+          "Elementary",
+          "High School",
+          "Vocational",
+          "College",
+          "Postgraduate"
+        ];
+
+        // Map civil status to text
+        const civilStatuses = [
+          "Single",
+          "Married",
+          "Widowed",
+          "Separated"
+        ];
+
+        // Map membership status to text
+        const membershipStatuses = [
+          "Active",
+          "Inactive",
+          "Suspended",
+          "Terminated"
+        ];
+
+        const calculateAge = (birthdate: string) => {
+          if (!birthdate) return 0;
+          const birthDate = new Date(birthdate);
+          const diff = Date.now() - birthDate.getTime();
+          const ageDate = new Date(diff);
+          return Math.abs(ageDate.getUTCFullYear() - 1970);
+        };
+
+        const calculateCreditScore = (data: any) => {
+          let score = 50; // Base score
+          
+          // Adjust based on income
+          if (data.MonthlyIncome > 50000) score += 10;
+          else if (data.MonthlyIncome > 30000) score += 5;
+          
+          // Adjust based on dependents
+          if (data.Dependents === 0) score += 5;
+          else if (data.Dependents > 3) score -= 5;
+          
+          // Adjust based on savings
+          if (data.SavingsBalance > 10000) score += 5;
+          
+          // Cap between 0 and 100
+          return Math.max(0, Math.min(100, score));
+        };
+
         const formattedReport: MemberReport = {
           MemberId: reportData.MemberId,
           FirstName: reportData.FirstName,
-          MiddleName: reportData.MiddleName,
+          MiddleName: reportData.MiddleName || "",
           LastName: reportData.LastName,
           FullName: reportData.FullName,
-          Suffix: reportData.Suffix,
-          Gender: reportData.Gender,
-          DateOfBirth: reportData.DateOfBirth,
+          Suffix: reportData.Suffix || "",
+          Gender: reportData.Gender || "Not specified",
+          DateOfBirth: reportData.DateOfBirth?.split('T')[0] || "Unknown",
           Contact: reportData.Contact,
           Address: reportData.Address,
           Email: reportData.Email,
-          Nationality: reportData.Nationality,
-          EducationLevel: reportData.EducationLevel,
-          CivilStatus: reportData.CivilStatus,
-          Dependents: reportData.Dependents,
-          MonthlyIncome: reportData.MonthlyIncome,
-          SavingsBalance: reportData.SavingsBalance,
-          MonthlyExpenses: reportData.MonthlyExpenses,
-          MembershipStatus: reportData.MembershipStatus,
-          CreditScore: reportData.CreditScore || 50, // Default to 50 if not provided
-          MembershipDate: reportData.MembershipDate,
-          ClosureReason: reportData.ClosureReason,
-          PmsStatus: reportData.PmsStatus,
-          CreatedAt: reportData.CreatedAt,
-          UpdatedAt: reportData.UpdatedAt,
-          Loans: reportData.Loans || [],
-          MemberFinancialProfile: reportData.MemberFinancialProfile || {},
+          Nationality: reportData.Nationality || "Not specified",
+          EducationLevel: typeof reportData.EducationLevel === 'number' 
+            ? educationLevels[reportData.EducationLevel] || "Not specified"
+            : reportData.EducationLevel || "Not specified",
+          CivilStatus: typeof reportData.CivilStatus === 'number'
+            ? civilStatuses[reportData.CivilStatus] || "Not specified"
+            : reportData.CivilStatus || "Not specified",
+          Dependents: reportData.Dependents || 0,
+          MonthlyIncome: reportData.MonthlyIncome || 0,
+          SavingsBalance: reportData.SavingsBalance || 0,
+          MonthlyExpenses: reportData.MonthlyExpenses || 0,
+          MembershipStatus: typeof reportData.MembershipStatus === 'number'
+            ? membershipStatuses[reportData.MembershipStatus] || "Unknown"
+            : reportData.MembershipStatus || "Unknown",
+          CreditScore: reportData.CreditScore || calculateCreditScore(reportData),
+          MembershipDate: reportData.MembershipDate?.split('T')[0] || "Unknown",
+          ClosureReason: reportData.ClosureReason || "N/A",
+          PmsStatus: reportData.PmsStatus || "N/A",
+          CreatedAt: reportData.CreatedAt?.split('T')[0] || "Unknown",
+          UpdatedAt: reportData.UpdatedAt?.split('T')[0] || "Unknown",
+          Loans: reportData.Loans?.map((loan: any) => ({
+            id: loan.id.toString(),
+            type: loan.type,
+            amount: loan.amount,
+            date: loan.applicationDate?.split('T')[0],
+            status: loan.status,
+            interestRate: loan.InterestRate,
+            purpose: loan.purpose || "Not specified",
+            duration: loan.duration,
+            validatedBy: loan.validatedBy || "N/A"
+          })) || [],
+          MemberFinancialProfile: reportData.MemberFinancialProfile || {
+            Occupation: "Not specified",
+            Employer: "Not specified",
+            YearsEmployed: 0,
+            BusinessType: "N/A",
+            BusinessYears: 0
+          },
           Addresses: reportData.Addresses || [],
           ContactInfos: reportData.ContactInfos || [],
           MemberShares: reportData.MemberShares || [],
@@ -300,7 +376,65 @@ export default function LoanReportsPage() {
         };
 
         setFullReport(formattedReport);
-        setSelectedLoan(convertToLoanReport(formattedReport));
+        
+        // Convert main loan to LoanReport format if it exists
+        if (reportData.MainLoan) {
+          const calculateMonthlyPayment = (loan: any) => {
+            if (!loan.amount || !loan.InterestRate || !loan.duration) return 0;
+            
+            const months = parseInt(loan.duration.split(' ')[0]) || 12;
+            const principal = loan.amount;
+            const monthlyRate = loan.InterestRate / 12;
+            
+            return principal * monthlyRate / (1 - Math.pow(1 + monthlyRate, -months));
+          };
+
+          const calculateNextPaymentDate = (loan: any) => {
+            if (!loan.applicationDate) return new Date().toISOString().split('T')[0];
+            
+            const appDate = new Date(loan.applicationDate);
+            const nextDate = new Date(appDate);
+            nextDate.setMonth(nextDate.getMonth() + 1);
+            return nextDate.toISOString().split('T')[0];
+          };
+
+          setSelectedLoan({
+            id: reportData.MainLoan.id.toString(),
+            clientName: reportData.FullName,
+            clientId: reportData.MemberId,
+            type: reportData.MainLoan.type,
+            purpose: reportData.MainLoan.purpose || "Not specified",
+            amount: reportData.MainLoan.amount,
+            applicationDate: reportData.MainLoan.applicationDate?.split('T')[0] || "Unknown",
+            duration: reportData.MainLoan.duration,
+            status: reportData.MainLoan.status,
+            interestRate: `${(reportData.MainLoan.InterestRate * 100).toFixed(2)}%`,
+            remainingBalance: reportData.MainLoan.remainingBalance || reportData.MainLoan.amount,
+            nextPayment: calculateNextPaymentDate(reportData.MainLoan),
+            validatedBy: reportData.MainLoan.validatedBy || "Loan Officer",
+            creditScore: formattedReport.CreditScore,
+            coApplicantNumber: reportData.CoMadeLoans?.length || 0,
+            guarantorNumber: reportData.CoMadeLoans?.filter((c: any) => c.Status === "Active").length || 0,
+            clientAddress: reportData.Address,
+            clientContact: reportData.Contact,
+            clientEmail: reportData.Email,
+            clientBirthdate: reportData.DateOfBirth?.split('T')[0] || "Unknown",
+            clientOccupation: formattedReport.MemberFinancialProfile?.Occupation || "Not specified",
+            previousLoans: reportData.Loans
+              ?.filter((l: any) => l.id !== reportData.MainLoan?.id)
+              ?.map((loan: any) => ({
+                id: loan.id.toString(),
+                amount: loan.amount,
+                date: loan.applicationDate?.split('T')[0],
+                status: loan.status,
+                type: loan.type
+              })) || [],
+            paymentHistory: [], // Will be populated if available
+            monthlyPayment: calculateMonthlyPayment(reportData.MainLoan),
+            collateralType: "Unsecured", // Update if available in payload
+            paymentFrequency: "Monthly" // Update if available in payload
+          });
+        }
       } catch (error) {
         console.error("Error processing full report data:", error);
       }
@@ -311,87 +445,29 @@ export default function LoanReportsPage() {
     };
   }, []);
 
-   
   useEffect(() => {
-  const generateFullReport = () => {
-    if (!selectedLoan) return;
-    
-    console.log("📤 Generating report from frontend...");
+    const generateFullReport = () => {
+      if (!selectedLoan) return;
+      
+      console.log("📤 Generating report from frontend...");
 
-    // Prepare payload
-    const payload = {
-      MemberId: selectedLoan.clientId,
-      LoanId: parseInt(selectedLoan.id) // Ensure this matches .NET's expected type
-    };
+      // Prepare payload
+      const payload = {
+        MemberId: selectedLoan.clientId,
+        LoanId: parseInt(selectedLoan.id)
+      };
 
-    console.log("Data report sent: ", payload);
+      console.log("Data report sent: ", payload);
 
-    // Send message (with null check)
-
+      // Send message
       HybridWebView.SendInvokeMessageToDotNet(
         "getPageReportFullToJS",
         payload
       );
-  
-  };
-
-  generateFullReport();
-}, [selectedLoan]); // Only runs when selectedLoan changes
-
-
-
-  const convertToLoanReport = (memberData: MemberReport): LoanReport => {
-    const primaryLoan = memberData.LoanAccounts?.[0] || {};
-    const paymentHistory = memberData.Loans?.flatMap(loan => 
-      loan.Payments?.map((payment: any) => ({
-        id: `PAY-${payment.PaymentId}`,
-        date: payment.PaymentDate?.split('T')[0] || '',
-        amount: payment.Amount,
-        principal: payment.PrincipalAmount,
-        interest: payment.InterestAmount,
-        remainingBalance: payment.RemainingBalance,
-        status: payment.Status,
-        method: payment.PaymentMethod
-      })) || []
-    ) || [];
-
-    return {
-      id: primaryLoan.LoanId || 'N/A',
-      clientName: memberData.FullName,
-      clientId: memberData.MemberId,
-      type: primaryLoan.LoanType || 'Unknown',
-      purpose: primaryLoan.Purpose || 'Not Specified',
-      amount: primaryLoan.PrincipalAmount || 0,
-      applicationDate: primaryLoan.ApplicationDate?.split('T')[0] || new Date().toISOString().split('T')[0],
-      duration: `${primaryLoan.TermMonths || 0} months`,
-      status: primaryLoan.LoanStatus || 'Pending',
-      interestRate: `${((primaryLoan.InterestRate || 0) * 100).toFixed(2)}%`,
-      remainingBalance: primaryLoan.RemainingBalance || 0,
-      nextPayment: paymentHistory.length > 0 
-        ? new Date(new Date(paymentHistory[paymentHistory.length-1].date).getTime() + 30*24*60*60*1000).toISOString().split('T')[0] 
-        : new Date().toISOString().split('T')[0],
-      validatedBy: primaryLoan.ApprovedBy || 'Loan Officer',
-      creditScore: memberData.CreditScore || 50,
-      coApplicantNumber: memberData.CoMadeLoans?.length || 0,
-      guarantorNumber: memberData.CoMadeLoans?.filter((c: any) => c.Status === 'Active').length || 0,
-      clientAddress: memberData.Address,
-      clientContact: memberData.Contact,
-      clientEmail: memberData.Email,
-      clientBirthdate: memberData.DateOfBirth?.split('T')[0] || 'Unknown',
-      clientOccupation: memberData.MemberFinancialProfile?.Occupation || 'Occupation Not Available',
-      previousLoans: memberData.LoanAccounts?.map((loan: any) => ({
-        id: loan.LoanId,
-        amount: loan.PrincipalAmount,
-        date: loan.ApplicationDate?.split('T')[0] || '',
-        status: loan.LoanStatus,
-        type: loan.LoanType
-      })) || [],
-      paymentHistory,
-      monthlyPayment: primaryLoan.MonthlyPayment,
-      collateralType: primaryLoan.CollateralType || 'Unsecured',
-      paymentFrequency: primaryLoan.PaymentFrequency
     };
-  };
+
+    generateFullReport();
+  }, [selectedLoan]);
 
   const handlePrint = useReactToPrint({
     content: () => reportRef.current,
@@ -405,12 +481,10 @@ export default function LoanReportsPage() {
     documentTitle: `Loan_Report_${selectedLoan?.id || 'N/A'}_${selectedLoan?.clientName.replace(/\s+/g, '_') || 'Report'}`
   });
 
-   const handleGenerateReport = (loan: LoanReport) => {
+  const handleGenerateReport = (loan: LoanReport) => {
     console.log("📤 Setting loan for report generation...");
     setSelectedLoan(loan);
-
   };
-
 
   const filteredLoans = reports.filter(loan => {
     const searchTextLower = searchText.toLowerCase();
@@ -436,6 +510,14 @@ export default function LoanReportsPage() {
     const creditScoreColor = getCreditScoreColor(loan.creditScore);
     const creditScoreLabel = getCreditScoreLabel(loan.creditScore);
     
+    const calculateAge = (birthdate: string) => {
+      if (!birthdate) return 0;
+      const birthDate = new Date(birthdate);
+      const diff = Date.now() - birthDate.getTime();
+      const ageDate = new Date(diff);
+      return Math.abs(ageDate.getUTCFullYear() - 1970);
+    };
+
     return (
       <Dialog open={true} onOpenChange={onClose}>
         <DialogContent className="sm:max-w-4xl">
@@ -462,26 +544,89 @@ export default function LoanReportsPage() {
           </DialogHeader>
           
           <div ref={reportRef} className="p-4 bg-white">
-            <div className="mb-6">
+            {/* Client Information Section */}
+            <div className="mb-6 border-b pb-4">
               <h2 className="text-lg font-semibold mb-3">Client Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <p><strong>Full Name:</strong> {loan.clientName}</p>
-                  <p><strong>Member ID:</strong> {loan.clientId}</p>
-                  {fullReport && <p><strong>Date of Birth:</strong> {fullReport.DateOfBirth}</p>}
+                  <p><strong>Full Name:</strong> {fullReport?.FullName}</p>
+                  <p><strong>Member ID:</strong> {fullReport?.MemberId}</p>
+                  <p><strong>Date of Birth:</strong> {fullReport?.DateOfBirth}</p>
+                  <p><strong>Age:</strong> {fullReport?.DateOfBirth ? calculateAge(fullReport.DateOfBirth) : 'N/A'}</p>
+                  <p><strong>Gender:</strong> {fullReport?.Gender}</p>
                 </div>
                 <div>
-                  <p><strong>Contact:</strong> {loan.clientContact}</p>
-                  <p><strong>Email:</strong> {loan.clientEmail}</p>
-                  {fullReport && <p><strong>Occupation:</strong> {fullReport.MemberFinancialProfile?.Occupation}</p>}
+                  <p><strong>Contact:</strong> {fullReport?.Contact}</p>
+                  <p><strong>Email:</strong> {fullReport?.Email}</p>
+                  <p><strong>Address:</strong> {fullReport?.Address}</p>
+                  <p><strong>Nationality:</strong> {fullReport?.Nationality}</p>
                 </div>
                 <div>
-                  <p><strong>Address:</strong> {loan.clientAddress}</p>
-                  {fullReport && <p><strong>Nationality:</strong> {fullReport.Nationality}</p>}
+                  <p><strong>Civil Status:</strong> {fullReport?.CivilStatus}</p>
+                  <p><strong>Dependents:</strong> {fullReport?.Dependents}</p>
+                  <p><strong>Education Level:</strong> {fullReport?.EducationLevel}</p>
+                  <p><strong>Member Since:</strong> {fullReport?.MembershipDate}</p>
                 </div>
               </div>
             </div>
 
+            {/* Financial Profile Section */}
+            {fullReport && (
+              <div className="mb-6 border-b pb-4">
+                <h2 className="text-lg font-semibold mb-3">Financial Profile</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <p><strong>Monthly Income:</strong> ₱{fullReport.MonthlyIncome?.toLocaleString()}</p>
+                    <p><strong>Monthly Expenses:</strong> ₱{fullReport.MonthlyExpenses?.toLocaleString()}</p>
+                    <p><strong>Disposable Income:</strong> ₱{(fullReport.MonthlyIncome - fullReport.MonthlyExpenses)?.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p><strong>Savings Balance:</strong> ₱{fullReport.SavingsBalance?.toLocaleString()}</p>
+                    <p><strong>Occupation:</strong> {fullReport.MemberFinancialProfile?.Occupation || 'N/A'}</p>
+                    <p><strong>Employer:</strong> {fullReport.MemberFinancialProfile?.Employer || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <p><strong>Membership Status:</strong> {fullReport.MembershipStatus}</p>
+                    <p><strong>Credit Score:</strong> {fullReport.CreditScore} ({getCreditScoreLabel(fullReport.CreditScore)})</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Current Loan Details Section */}
+            <div className="mb-6 border-b pb-4">
+              <h2 className="text-lg font-semibold mb-3">Current Loan Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p><strong>Loan ID:</strong> {loan.id}</p>
+                  <p><strong>Type:</strong> {loan.type}</p>
+                  <p><strong>Purpose:</strong> {loan.purpose}</p>
+                  <p><strong>Amount:</strong> ₱{loan.amount.toLocaleString()}</p>
+                  <p><strong>Date Applied:</strong> {loan.applicationDate}</p>
+                </div>
+                <div>
+                  <p><strong>Interest Rate:</strong> {loan.interestRate}</p>
+                  <p><strong>Monthly Payment:</strong> ₱{loan.monthlyPayment?.toLocaleString()}</p>
+                  <p><strong>Remaining Balance:</strong> ₱{loan.remainingBalance.toLocaleString()}</p>
+                  <p><strong>Status:</strong> <Badge className={statusStyles[loan.status as keyof typeof statusStyles]}>{loan.status}</Badge></p>
+                  <p><strong>Validated By:</strong> {loan.validatedBy}</p>
+                </div>
+              </div>
+              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p><strong>Duration:</strong> {loan.duration}</p>
+                  <p><strong>Payment Frequency:</strong> {loan.paymentFrequency || 'Monthly'}</p>
+                  <p><strong>Next Payment Due:</strong> {loan.nextPayment}</p>
+                </div>
+                <div>
+                  <p><strong>Collateral Type:</strong> {loan.collateralType || 'Unsecured'}</p>
+                  <p><strong>Co-applicants:</strong> {loan.coApplicantNumber}</p>
+                  <p><strong>Guarantors:</strong> {loan.guarantorNumber}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Credit Score Section */}
             <div className="mb-6 p-3 bg-gray-50 rounded">
               <h2 className="text-lg font-semibold mb-2">Credit Score</h2>
               <div className="flex items-center gap-4">
@@ -504,34 +649,9 @@ export default function LoanReportsPage() {
               <p className="mt-1 text-sm">
                 <strong>Rating:</strong> <span className={creditScoreColor}>{creditScoreLabel}</span>
               </p>
-              {fullReport && (
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <p><strong>Monthly Income:</strong> ₱{fullReport.MonthlyIncome?.toLocaleString()}</p>
-                  <p><strong>Monthly Expenses:</strong> ₱{fullReport.MonthlyExpenses?.toLocaleString()}</p>
-                  <p><strong>Savings Balance:</strong> ₱{fullReport.SavingsBalance?.toLocaleString()}</p>
-                  <p><strong>Dependents:</strong> {fullReport.Dependents}</p>
-                </div>
-              )}
             </div>
 
-            <div className="mb-6">
-              <h2 className="text-lg font-semibold mb-3">Current Loan Details</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p><strong>Loan ID:</strong> {loan.id}</p>
-                  <p><strong>Type:</strong> {loan.type}</p>
-                  <p><strong>Purpose:</strong> {loan.purpose}</p>
-                  <p><strong>Amount:</strong> ₱{loan.amount.toLocaleString()}</p>
-                </div>
-                <div>
-                  <p><strong>Interest Rate:</strong> {loan.interestRate}</p>
-                  <p><strong>Monthly Payment:</strong> ₱{loan.monthlyPayment?.toLocaleString()}</p>
-                  <p><strong>Status:</strong> <Badge className={statusStyles[loan.status as keyof typeof statusStyles]}>{loan.status}</Badge></p>
-                  <p><strong>Collateral:</strong> {loan.collateralType}</p>
-                </div>
-              </div>
-            </div>
-
+            {/* Payment History Section */}
             {loan.paymentHistory && loan.paymentHistory.length > 0 && (
               <div className="mb-6">
                 <h2 className="text-lg font-semibold mb-3">Payment History</h2>
@@ -543,6 +663,8 @@ export default function LoanReportsPage() {
                         <TableHead>Amount</TableHead>
                         <TableHead>Principal</TableHead>
                         <TableHead>Interest</TableHead>
+                        <TableHead>Remaining</TableHead>
+                        <TableHead>Method</TableHead>
                         <TableHead>Status</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -553,6 +675,8 @@ export default function LoanReportsPage() {
                           <TableCell>₱{payment.amount.toLocaleString()}</TableCell>
                           <TableCell>₱{payment.principal.toLocaleString()}</TableCell>
                           <TableCell>₱{payment.interest.toLocaleString()}</TableCell>
+                          <TableCell>₱{payment.remainingBalance.toLocaleString()}</TableCell>
+                          <TableCell>{payment.method}</TableCell>
                           <TableCell>
                             <Badge variant="outline" className="border-green-200 text-green-800">
                               {payment.status}
@@ -566,9 +690,10 @@ export default function LoanReportsPage() {
               </div>
             )}
 
-            {fullReport?.LoanAccounts && fullReport.LoanAccounts.length > 1 && (
+            {/* Previous Loans Section */}
+            {fullReport?.Loans && fullReport.Loans.length > 1 && (
               <div className="mb-6">
-                <h2 className="text-lg font-semibold mb-3">Other Loans</h2>
+                <h2 className="text-lg font-semibold mb-3">Previous Loans</h2>
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
@@ -576,19 +701,21 @@ export default function LoanReportsPage() {
                         <TableHead>Loan ID</TableHead>
                         <TableHead>Type</TableHead>
                         <TableHead>Amount</TableHead>
+                        <TableHead>Date</TableHead>
                         <TableHead>Status</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {fullReport.LoanAccounts.filter((la: any) => la.LoanId !== loan.id)
-                        .slice(0, 3).map((loanAcc: any) => (
-                        <TableRow key={loanAcc.LoanId}>
-                          <TableCell>{loanAcc.LoanId}</TableCell>
-                          <TableCell>{loanAcc.LoanType}</TableCell>
-                          <TableCell>₱{loanAcc.PrincipalAmount?.toLocaleString()}</TableCell>
+                      {fullReport.Loans.filter((l: any) => l.id !== loan.id)
+                        .slice(0, 3).map((prevLoan: any) => (
+                        <TableRow key={prevLoan.id}>
+                          <TableCell>{prevLoan.id}</TableCell>
+                          <TableCell>{prevLoan.type}</TableCell>
+                          <TableCell>₱{prevLoan.amount?.toLocaleString()}</TableCell>
+                          <TableCell>{prevLoan.date}</TableCell>
                           <TableCell>
-                            <Badge className={statusStyles[loanAcc.LoanStatus as keyof typeof statusStyles] || 'bg-gray-100'}>
-                              {loanAcc.LoanStatus}
+                            <Badge className={statusStyles[prevLoan.status as keyof typeof statusStyles] || 'bg-gray-100'}>
+                              {prevLoan.status}
                             </Badge>
                           </TableCell>
                         </TableRow>
@@ -649,6 +776,9 @@ export default function LoanReportsPage() {
                       <SelectItem value="Declined">Declined</SelectItem>
                       <SelectItem value="Disbursed">Disbursed</SelectItem>
                       <SelectItem value="Paid">Paid</SelectItem>
+                      <SelectItem value="Active">Active</SelectItem>
+                      <SelectItem value="Closed">Closed</SelectItem>
+                      <SelectItem value="Defaulted">Defaulted</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
