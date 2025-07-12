@@ -1,36 +1,35 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { useState, useEffect, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog"
-import { ChevronDown, UploadCloud, FileText, Search, Shield, User, Users2, UserCog, ListChecks, Cog, LogOut, Book, Download } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useReactToPrint } from 'react-to-print'
-import { useRef } from 'react'
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { BarChart2 } from "lucide-react";
+} from "@/components/ui/dialog";
+import { ChevronDown, FileText, Search, Printer } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useReactToPrint } from 'react-to-print';
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { usePathname } from 'next/navigation';
 import HybridWebView from "../hybridwebview/HybridWebView.js";
-const statusStyles = {
-  Approved: "bg-green-100 text-green-800 hover:bg-green-100 border-green-200",
-  Pending: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200",
-  Declined: "bg-red-100 text-red-800 hover:bg-red-100 border-red-200",
-  Disbursed: "bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200",
-  Paid: "bg-purple-100 text-purple-800 hover:bg-purple-100 border-purple-200",
-};
+
+declare global {
+  interface Window {
+    HybridWebView?: {
+      SendInvokeMessageToDotNet?: (method: string, payload: any) => void;
+    };
+    globalSetReportsPage?: (data: any) => void;
+    globalSetFullReport?: (data: any) => void;
+  }
+}
 
 interface LoanReport {
   id: string;
@@ -76,14 +75,60 @@ interface LoanReport {
   paymentFrequency?: string;
 }
 
+interface MemberReport {
+  MemberId: number;
+  FirstName: string;
+  MiddleName: string;
+  LastName: string;
+  FullName: string;
+  Suffix: string;
+  Gender: string;
+  DateOfBirth: string;
+  Contact: string;
+  Address: string;
+  Email: string;
+  Nationality: string;
+  EducationLevel: string;
+  CivilStatus: string;
+  Dependents: number;
+  MonthlyIncome: number;
+  SavingsBalance: number;
+  MonthlyExpenses: number;
+  MembershipStatus: string;
+  CreditScore: number;
+  MembershipDate: string;
+  ClosureReason: string;
+  PmsStatus: string;
+  CreatedAt: string;
+  UpdatedAt: string;
+  Loans: any[];
+  MemberFinancialProfile: any;
+  Addresses: any[];
+  ContactInfos: any[];
+  MemberShares: any[];
+  LoanAccounts: any[];
+  MemberIdCards: any[];
+  CoMadeLoans: any[];
+}
+
+const statusStyles = {
+  Approved: "bg-green-100 text-green-800 hover:bg-green-100 border-green-200",
+  Pending: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200",
+  Declined: "bg-red-100 text-red-800 hover:bg-red-100 border-red-200",
+  Disbursed: "bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200",
+  Paid: "bg-purple-100 text-purple-800 hover:bg-purple-100 border-purple-200",
+};
+
 export default function LoanReportsPage() {
-  const pathname = usePathname();
   const [searchText, setSearchText] = useState("");
   const [selectedLoan, setSelectedLoan] = useState<LoanReport | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [reports, setReports] = useState<LoanReport[]>([]);
+  const [fullReport, setFullReport] = useState<MemberReport | null>(null);
+  const pathname = usePathname();
+  const reportRef = useRef<HTMLDivElement>(null);
 
-  // HybridWebView integration for receiving report data from .NET
+  // Effect for initial report list
   useEffect(() => {
     (window as any).globalSetReportsPage = (dataFromDotNet: any) => {
       console.log("✅ Received report data from .NET:", dataFromDotNet);
@@ -111,43 +156,44 @@ export default function LoanReportsPage() {
         "Approved": "Approved"
       };
 
-      const paymentStatusMap: Record<string, string> = {
-        "Paid": "Paid",
-        "Pending": "Pending",
-        "Overdue": "Overdue"
-      };
-
       const mappedReports = reportsJson.map((reportData: any) => {
-        // Process payment history
-        const payments = reportData.LedgerEntries
-          ?.filter((entry: any) => entry.Type === "Payment")
-          .map((payment: any, index: number) => ({
-            id: `PAY${reportData.LoanId}-${index}`,
-            date: payment.TransactionDate.split('T')[0],
-            amount: payment.Credit,
-            principal: payment.Credit * 0.9, // Assuming 10% interest
-            interest: payment.Credit * 0.1,
-            remainingBalance: payment.RunningBalance,
-            status: paymentStatusMap["Paid"] || "Paid",
-            method: payment.Notes?.includes('bank') ? 'Bank Transfer' : 'Cash'
-          })) || [];
-
-        // Process previous loans (simplified for example)
-        const previousLoans = reportData.PreviousLoans?.map((loan: any) => ({
-          id: loan.LoanId,
-          amount: loan.PrincipalAmount,
-          date: loan.DateGranted.split('T')[0],
-          status: loanStatusMap[loan.LoanStatus] || "Closed",
-          type: loan.ProductType
-        })) || [];
+        // Calculate credit score (0-100 range)
+        let creditScore = reportData.CreditScore || 0;
         
-        // Calculate credit score based on your business rules
-        const creditScore = calculateCreditScore(
-          reportData.CreditScore,
-          reportData.PaymentHistory,
-          reportData.LoanHistory,
-          reportData.MemberFinancialData
-        );
+        // If credit score isn't provided, calculate a basic one
+        if (!reportData.CreditScore) {
+          // Base score (50 is average)
+          let calculatedScore = 50;
+          
+          // Adjust based on loan status
+          if (reportData.LoanStatus === "Active" || reportData.LoanStatus === "Approved") {
+            calculatedScore += 10;
+          } else if (reportData.LoanStatus === "Defaulted") {
+            calculatedScore -= 20;
+          }
+          
+          // Adjust based on payment history
+          if (reportData.PaymentHistory?.length > 0) {
+            const totalPayments = reportData.PaymentHistory.length;
+            const onTimePayments = reportData.PaymentHistory.filter((p: any) => p.Status === "Completed").length;
+            const latePayments = reportData.PaymentHistory.filter((p: any) => p.Status === "Late").length;
+            
+            calculatedScore += (onTimePayments * 2);
+            calculatedScore -= (latePayments * 3);
+          }
+          
+          // Adjust based on previous loans
+          if (reportData.PreviousLoans?.length > 0) {
+            const successfulLoans = reportData.PreviousLoans.filter((l: any) => 
+              l.LoanStatus === "Closed" || l.LoanStatus === "Paid"
+            ).length;
+            
+            calculatedScore += (successfulLoans * 3);
+          }
+          
+          // Cap between 0 and 100
+          creditScore = Math.max(0, Math.min(100, calculatedScore));
+        }
 
         return {
           id: reportData.LoanId,
@@ -160,12 +206,10 @@ export default function LoanReportsPage() {
           duration: `${reportData.TermMonths || 0} months`,
           status: loanStatusMap[reportData.LoanStatus] || "Pending",
           interestRate: `${((reportData.InterestRate || 0) * 100).toFixed(2)}%`,
-          remainingBalance: reportData.LedgerEntries?.slice(-1)[0]?.RunningBalance || reportData.PrincipalAmount || 0,
-          nextPayment: payments.length > 0 ? 
-            new Date(new Date(payments[payments.length-1].date).getTime() + 30*24*60*60*1000).toISOString().split('T')[0] : 
-            new Date(new Date(reportData.DateGranted || new Date()).getTime() + 30*24*60*60*1000).toISOString().split('T')[0],
+          remainingBalance: reportData.RemainingBalance || reportData.PrincipalAmount || 0,
+          nextPayment: reportData.NextPaymentDate?.split('T')[0] || new Date().toISOString().split('T')[0],
           validatedBy: reportData.ProcessedBy || "Loan Officer",
-          creditScore: creditScore, // Using calculated credit score
+          creditScore: creditScore,
           coApplicantNumber: reportData.CoMakers?.length || 0,
           guarantorNumber: reportData.CoMakers?.filter((c: any) => c.Status === "Active").length || 0,
           clientAddress: reportData.MemberAddress || "Address Not Available",
@@ -173,202 +217,387 @@ export default function LoanReportsPage() {
           clientEmail: reportData.MemberEmail || "Email Not Available",
           clientBirthdate: reportData.MemberBirthdate?.split('T')[0] || "Unknown",
           clientOccupation: reportData.MemberOccupation || "Occupation Not Available",
-          previousLoans,
-          paymentHistory: payments,
-          monthlyPayment: reportData.InstallmentAmount,
-          collateralType: reportData.CoMakers?.length > 0 ? "Secured" : "Unsecured",
-          paymentFrequency: reportData.PayFrequency
-        } as LoanReport;
+          previousLoans: reportData.PreviousLoans?.map((loan: any) => ({
+            id: loan.LoanId,
+            amount: loan.PrincipalAmount,
+            date: loan.DateGranted?.split('T')[0],
+            status: loanStatusMap[loan.LoanStatus] || "Closed",
+            type: loan.ProductType
+          })) || [],
+          paymentHistory: reportData.PaymentHistory?.map((payment: any) => ({
+            id: `PAY-${payment.PaymentId}`,
+            date: payment.PaymentDate?.split('T')[0],
+            amount: payment.Amount,
+            principal: payment.PrincipalAmount,
+            interest: payment.InterestAmount,
+            remainingBalance: payment.RemainingBalance,
+            status: payment.Status,
+            method: payment.PaymentMethod
+          })) || [],
+          monthlyPayment: reportData.MonthlyPayment,
+          collateralType: reportData.CollateralType || "Unsecured",
+          paymentFrequency: reportData.PaymentFrequency
+        };
       });
 
       setReports(mappedReports);
     };
 
-      HybridWebView.SendInvokeMessageToDotNet("getPageReportToJS");
+    // Initialize HybridWebView communication
+
+     HybridWebView.SendInvokeMessageToDotNet("getPageReportToJS");
+
+
+    return () => {
+      (window as any).globalSetReportsPage = undefined;
+    };
   }, []);
 
-  // Credit score calculation function
-  function calculateCreditScore(
-    baseScore: number,
-    paymentHistory: any[],
-    loanHistory: any[],
-    financialData: any
-  ): number {
-    // Base score from .NET (0-100 scale)
-    let score = baseScore || 50; // Default to 50 if not provided
+  // Effect for full detailed report
+  useEffect(() => {
+    window.globalSetFullReport = (dataFromDotNet: any) => {
+      console.log("✅ Received FULL report data from .NET:", dataFromDotNet);
+      
+      try {
+        const reportData = typeof dataFromDotNet === 'string' 
+          ? JSON.parse(dataFromDotNet) 
+          : dataFromDotNet;
 
-    // Adjust based on payment history (35% weight)
-    const paymentScore = calculatePaymentHistoryScore(paymentHistory);
-    score = score * 0.65 + paymentScore * 0.35;
+        const formattedReport: MemberReport = {
+          MemberId: reportData.MemberId,
+          FirstName: reportData.FirstName,
+          MiddleName: reportData.MiddleName,
+          LastName: reportData.LastName,
+          FullName: reportData.FullName,
+          Suffix: reportData.Suffix,
+          Gender: reportData.Gender,
+          DateOfBirth: reportData.DateOfBirth,
+          Contact: reportData.Contact,
+          Address: reportData.Address,
+          Email: reportData.Email,
+          Nationality: reportData.Nationality,
+          EducationLevel: reportData.EducationLevel,
+          CivilStatus: reportData.CivilStatus,
+          Dependents: reportData.Dependents,
+          MonthlyIncome: reportData.MonthlyIncome,
+          SavingsBalance: reportData.SavingsBalance,
+          MonthlyExpenses: reportData.MonthlyExpenses,
+          MembershipStatus: reportData.MembershipStatus,
+          CreditScore: reportData.CreditScore || 50, // Default to 50 if not provided
+          MembershipDate: reportData.MembershipDate,
+          ClosureReason: reportData.ClosureReason,
+          PmsStatus: reportData.PmsStatus,
+          CreatedAt: reportData.CreatedAt,
+          UpdatedAt: reportData.UpdatedAt,
+          Loans: reportData.Loans || [],
+          MemberFinancialProfile: reportData.MemberFinancialProfile || {},
+          Addresses: reportData.Addresses || [],
+          ContactInfos: reportData.ContactInfos || [],
+          MemberShares: reportData.MemberShares || [],
+          LoanAccounts: reportData.LoanAccounts || [],
+          MemberIdCards: reportData.MemberIdCards || [],
+          CoMadeLoans: reportData.CoMadeLoans || []
+        };
 
-    // Adjust based on loan history (20% weight)
-    const loanScore = calculateLoanHistoryScore(loanHistory);
-    score = score * 0.80 + loanScore * 0.20;
+        setFullReport(formattedReport);
+        setSelectedLoan(convertToLoanReport(formattedReport));
+      } catch (error) {
+        console.error("Error processing full report data:", error);
+      }
+    };
 
-    // Adjust based on financial data (15% weight)
-    const financialScore = calculateFinancialDataScore(financialData);
-    score = score * 0.85 + financialScore * 0.15;
+    return () => {
+      window.globalSetFullReport = undefined;
+    };
+  }, []);
 
-    // Ensure score is between 0-100
-    return Math.min(Math.max(Math.round(score), 100));
-  }
+   
+  useEffect(() => {
+  const generateFullReport = () => {
+    if (!selectedLoan) return;
+    
+    console.log("📤 Generating report from frontend...");
 
-  function calculatePaymentHistoryScore(payments: any[]): number {
-    if (!payments || payments.length === 0) return 70; // Neutral score for no history
-    
-    const onTimePayments = payments.filter(p => p.OnTime).length;
-    const onTimePercentage = onTimePayments / payments.length;
-    
-    if (onTimePercentage >= 0.95) return 100; // Excellent
-    if (onTimePercentage >= 0.85) return 85;  // Good
-    if (onTimePercentage >= 0.70) return 70;  // Fair
-    return 50; // Poor
-  }
+    // Prepare payload
+    const payload = {
+      MemberId: selectedLoan.clientId,
+      LoanId: parseInt(selectedLoan.id) // Ensure this matches .NET's expected type
+    };
 
-  function calculateLoanHistoryScore(loans: any[]): number {
-    if (!loans || loans.length === 0) return 75; // Neutral score for no history
-    
-    const paidLoans = loans.filter(l => l.Status === "Closed" || l.Status === "Paid").length;
-    const paidPercentage = paidLoans / loans.length;
-    
-    if (paidPercentage >= 0.90) return 100; // Excellent
-    if (paidPercentage >= 0.75) return 85;  // Good
-    if (paidPercentage >= 0.50) return 70;  // Fair
-    return 50; // Poor
-  }
+    console.log("Data report sent: ", payload);
 
-  function calculateFinancialDataScore(data: any): number {
-    if (!data) return 70; // Neutral score for no data
-    
-    let score = 70;
-    
-    // Income adjustment
-    if (data.MonthlyIncome > 50000) score += 10;
-    else if (data.MonthlyIncome > 30000) score += 5;
-    
-    // Debt-to-income adjustment
-    if (data.DebtToIncomeRatio < 0.3) score += 10;
-    else if (data.DebtToIncomeRatio < 0.5) score += 5;
-    else if (data.DebtToIncomeRatio > 0.8) score -= 15;
-    
-    // Savings adjustment
-    if (data.SavingsBalance > 100000) score += 5;
-    
-    return Math.min(Math.max(score, 30), 100);
-  }
-const filteredLoans = reports.filter(loan => {
+    // Send message (with null check)
+
+      HybridWebView.SendInvokeMessageToDotNet(
+        "getPageReportFullToJS",
+        payload
+      );
+  
+  };
+
+  generateFullReport();
+}, [selectedLoan]); // Only runs when selectedLoan changes
+
+
+
+  const convertToLoanReport = (memberData: MemberReport): LoanReport => {
+    const primaryLoan = memberData.LoanAccounts?.[0] || {};
+    const paymentHistory = memberData.Loans?.flatMap(loan => 
+      loan.Payments?.map((payment: any) => ({
+        id: `PAY-${payment.PaymentId}`,
+        date: payment.PaymentDate?.split('T')[0] || '',
+        amount: payment.Amount,
+        principal: payment.PrincipalAmount,
+        interest: payment.InterestAmount,
+        remainingBalance: payment.RemainingBalance,
+        status: payment.Status,
+        method: payment.PaymentMethod
+      })) || []
+    ) || [];
+
+    return {
+      id: primaryLoan.LoanId || 'N/A',
+      clientName: memberData.FullName,
+      clientId: memberData.MemberId,
+      type: primaryLoan.LoanType || 'Unknown',
+      purpose: primaryLoan.Purpose || 'Not Specified',
+      amount: primaryLoan.PrincipalAmount || 0,
+      applicationDate: primaryLoan.ApplicationDate?.split('T')[0] || new Date().toISOString().split('T')[0],
+      duration: `${primaryLoan.TermMonths || 0} months`,
+      status: primaryLoan.LoanStatus || 'Pending',
+      interestRate: `${((primaryLoan.InterestRate || 0) * 100).toFixed(2)}%`,
+      remainingBalance: primaryLoan.RemainingBalance || 0,
+      nextPayment: paymentHistory.length > 0 
+        ? new Date(new Date(paymentHistory[paymentHistory.length-1].date).getTime() + 30*24*60*60*1000).toISOString().split('T')[0] 
+        : new Date().toISOString().split('T')[0],
+      validatedBy: primaryLoan.ApprovedBy || 'Loan Officer',
+      creditScore: memberData.CreditScore || 50,
+      coApplicantNumber: memberData.CoMadeLoans?.length || 0,
+      guarantorNumber: memberData.CoMadeLoans?.filter((c: any) => c.Status === 'Active').length || 0,
+      clientAddress: memberData.Address,
+      clientContact: memberData.Contact,
+      clientEmail: memberData.Email,
+      clientBirthdate: memberData.DateOfBirth?.split('T')[0] || 'Unknown',
+      clientOccupation: memberData.MemberFinancialProfile?.Occupation || 'Occupation Not Available',
+      previousLoans: memberData.LoanAccounts?.map((loan: any) => ({
+        id: loan.LoanId,
+        amount: loan.PrincipalAmount,
+        date: loan.ApplicationDate?.split('T')[0] || '',
+        status: loan.LoanStatus,
+        type: loan.LoanType
+      })) || [],
+      paymentHistory,
+      monthlyPayment: primaryLoan.MonthlyPayment,
+      collateralType: primaryLoan.CollateralType || 'Unsecured',
+      paymentFrequency: primaryLoan.PaymentFrequency
+    };
+  };
+
+  const handlePrint = useReactToPrint({
+    content: () => reportRef.current,
+    pageStyle: `
+      @page { size: A4; margin: 20mm; }
+      @media print {
+        body { color: #000; background: #fff; }
+        .no-print { display: none !important; }
+      }
+    `,
+    documentTitle: `Loan_Report_${selectedLoan?.id || 'N/A'}_${selectedLoan?.clientName.replace(/\s+/g, '_') || 'Report'}`
+  });
+
+   const handleGenerateReport = (loan: LoanReport) => {
+    console.log("📤 Setting loan for report generation...");
+    setSelectedLoan(loan);
+
+  };
+
+
+  const filteredLoans = reports.filter(loan => {
     const searchTextLower = searchText.toLowerCase();
     const matchesSearch = 
-        loan.id.toString().toLowerCase().includes(searchTextLower) ||
-        loan.clientName.toLowerCase().includes(searchTextLower);
+      loan.id.toString().toLowerCase().includes(searchTextLower) ||
+      loan.clientName.toLowerCase().includes(searchTextLower);
     const matchesStatus = statusFilter === "All" ? true : loan.status === statusFilter;
     return matchesSearch && matchesStatus;
-});
+  });
 
-  function LoanContract({ loan, onClose }: { loan: LoanReport, onClose: () => void }) {
-    const contractRef = useRef<HTMLDivElement>(null);
+  const getCreditScoreColor = (score: number) => {
+    return score >= 80 ? "text-green-600" :
+           score >= 60 ? "text-yellow-600" : "text-red-600";
+  };
 
-    const handlePrint = useReactToPrint({
-      content: () => contractRef.current,
-      pageStyle: `
-        @page {
-          size: A4;
-          margin: 20mm;
-        }
-        @media print {
-          body {
-            color: #000;
-            background: #fff;
-          }
-          .no-print {
-            display: none;
-          }
-        }
-      `,
-      documentTitle: `Credit_Report_${loan.id}_${loan.clientName.replace(/\s+/g, '_')}`
-    });
+  const getCreditScoreLabel = (score: number) => {
+    return score >= 80 ? "Excellent" :
+           score >= 60 ? "Good" : 
+           score >= 40 ? "Fair" : "Poor";
+  };
 
-    // Credit score visualization
-    const creditScoreColor = loan.creditScore >= 80 ? "text-green-600" :
-                           loan.creditScore >= 60 ? "text-yellow-600" : "text-red-600";
+  function LoanReportDialog({ loan, onClose }: { loan: LoanReport, onClose: () => void }) {
+    const creditScoreColor = getCreditScoreColor(loan.creditScore);
+    const creditScoreLabel = getCreditScoreLabel(loan.creditScore);
     
-    const creditScoreLabel = loan.creditScore >= 80 ? "Excellent" :
-                           loan.creditScore >= 60 ? "Good" : "Fair";
-
     return (
       <Dialog open={true} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-6xl bg-white rounded-lg h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
-            <div className="flex justify-between items-center sticky top-0 bg-white py-2 z-10">
+            <div className="flex justify-between items-center">
               <div>
-                <DialogTitle className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                  <FileText className="h-6 w-6" />
-                  Credit Report for {loan.clientName}
+                <DialogTitle className="text-xl font-bold text-gray-800">
+                  Loan Report for {loan.clientName}
                 </DialogTitle>
                 <DialogDescription className="text-gray-500">
-                  Comprehensive credit history and current loan status
+                  Detailed credit report and loan information
                 </DialogDescription>
               </div>
               <div className="flex gap-2 no-print">
-                <Button 
-                  variant="outline" 
-                  onClick={onClose}
-                  className="text-gray-700 border-gray-200 hover:bg-gray-100"
-                >
+                <Button variant="outline" onClick={onClose}>
                   Close
                 </Button>
-                <Button 
-                  onClick={handlePrint}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Generate PDF
+                <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700">
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print Report
                 </Button>
               </div>
             </div>
           </DialogHeader>
           
-          <div 
-            ref={contractRef} 
-            className="bg-white p-8 border border-gray-200 rounded-lg shadow-none"
-            style={{ minHeight: '297mm' }}
-          >
-            {/* Credit Score Section */}
-            <div className="mb-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
-              <h2 className="text-xl font-semibold mb-4">CREDIT SCORE SUMMARY</h2>
-              <div className="flex items-center justify-between">
+          <div ref={reportRef} className="p-4 bg-white">
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold mb-3">Client Information</h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <h3 className="text-lg font-medium">Overall Credit Rating</h3>
-                  <p className="text-gray-600">Based on payment history, credit utilization, and financial stability</p>
+                  <p><strong>Full Name:</strong> {loan.clientName}</p>
+                  <p><strong>Member ID:</strong> {loan.clientId}</p>
+                  {fullReport && <p><strong>Date of Birth:</strong> {fullReport.DateOfBirth}</p>}
                 </div>
-                <div className="text-center">
-                  <div className={`text-4xl font-bold ${creditScoreColor}`}>
-                    {loan.creditScore}
-                  </div>
-                  <div className={`text-sm font-medium ${creditScoreColor}`}>
-                    {creditScoreLabel}
-                  </div>
+                <div>
+                  <p><strong>Contact:</strong> {loan.clientContact}</p>
+                  <p><strong>Email:</strong> {loan.clientEmail}</p>
+                  {fullReport && <p><strong>Occupation:</strong> {fullReport.MemberFinancialProfile?.Occupation}</p>}
                 </div>
-              </div>
-              <div className="mt-4">
-                <div className="w-full bg-gray-200 rounded-full h-4">
-                  <div 
-                    className={`h-4 rounded-full ${
-                      loan.creditScore >= 80 ? "bg-green-500" :
-                      loan.creditScore >= 60 ? "bg-yellow-500" : "bg-red-500"
-                    }`}
-                    style={{ width: `${loan.creditScore}%` }}
-                  ></div>
-                </div>
-                <div className="flex justify-between text-xs text-gray-500 mt-1">
-                  <span>300 (Poor)</span>
-                  <span>850 (Excellent)</span>
+                <div>
+                  <p><strong>Address:</strong> {loan.clientAddress}</p>
+                  {fullReport && <p><strong>Nationality:</strong> {fullReport.Nationality}</p>}
                 </div>
               </div>
             </div>
 
-            {/* Rest of your report content */}
-            {/* ... [keep all your existing report sections] */}
+            <div className="mb-6 p-3 bg-gray-50 rounded">
+              <h2 className="text-lg font-semibold mb-2">Credit Score</h2>
+              <div className="flex items-center gap-4">
+                <div className={`text-3xl font-bold ${creditScoreColor}`}>
+                  {loan.creditScore}
+                </div>
+                <div className="w-full">
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div 
+                      className={`h-3 rounded-full ${creditScoreColor.replace('text', 'bg')}`}
+                      style={{ width: `${loan.creditScore}%` }}
+                    ></div>
+                  </div>
+                  <div className="flex justify-between text-xs text-gray-500 mt-1">
+                    <span>0 (Poor)</span>
+                    <span>100 (Excellent)</span>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-1 text-sm">
+                <strong>Rating:</strong> <span className={creditScoreColor}>{creditScoreLabel}</span>
+              </p>
+              {fullReport && (
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <p><strong>Monthly Income:</strong> ₱{fullReport.MonthlyIncome?.toLocaleString()}</p>
+                  <p><strong>Monthly Expenses:</strong> ₱{fullReport.MonthlyExpenses?.toLocaleString()}</p>
+                  <p><strong>Savings Balance:</strong> ₱{fullReport.SavingsBalance?.toLocaleString()}</p>
+                  <p><strong>Dependents:</strong> {fullReport.Dependents}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold mb-3">Current Loan Details</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <p><strong>Loan ID:</strong> {loan.id}</p>
+                  <p><strong>Type:</strong> {loan.type}</p>
+                  <p><strong>Purpose:</strong> {loan.purpose}</p>
+                  <p><strong>Amount:</strong> ₱{loan.amount.toLocaleString()}</p>
+                </div>
+                <div>
+                  <p><strong>Interest Rate:</strong> {loan.interestRate}</p>
+                  <p><strong>Monthly Payment:</strong> ₱{loan.monthlyPayment?.toLocaleString()}</p>
+                  <p><strong>Status:</strong> <Badge className={statusStyles[loan.status as keyof typeof statusStyles]}>{loan.status}</Badge></p>
+                  <p><strong>Collateral:</strong> {loan.collateralType}</p>
+                </div>
+              </div>
+            </div>
+
+            {loan.paymentHistory && loan.paymentHistory.length > 0 && (
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold mb-3">Payment History</h2>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Principal</TableHead>
+                        <TableHead>Interest</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {loan.paymentHistory.slice(0, 5).map(payment => (
+                        <TableRow key={payment.id}>
+                          <TableCell>{payment.date}</TableCell>
+                          <TableCell>₱{payment.amount.toLocaleString()}</TableCell>
+                          <TableCell>₱{payment.principal.toLocaleString()}</TableCell>
+                          <TableCell>₱{payment.interest.toLocaleString()}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="border-green-200 text-green-800">
+                              {payment.status}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
+
+            {fullReport?.LoanAccounts && fullReport.LoanAccounts.length > 1 && (
+              <div className="mb-6">
+                <h2 className="text-lg font-semibold mb-3">Other Loans</h2>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Loan ID</TableHead>
+                        <TableHead>Type</TableHead>
+                        <TableHead>Amount</TableHead>
+                        <TableHead>Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {fullReport.LoanAccounts.filter((la: any) => la.LoanId !== loan.id)
+                        .slice(0, 3).map((loanAcc: any) => (
+                        <TableRow key={loanAcc.LoanId}>
+                          <TableCell>{loanAcc.LoanId}</TableCell>
+                          <TableCell>{loanAcc.LoanType}</TableCell>
+                          <TableCell>₱{loanAcc.PrincipalAmount?.toLocaleString()}</TableCell>
+                          <TableCell>
+                            <Badge className={statusStyles[loanAcc.LoanStatus as keyof typeof statusStyles] || 'bg-gray-100'}>
+                              {loanAcc.LoanStatus}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -377,50 +606,40 @@ const filteredLoans = reports.filter(loan => {
 
   return (
     <div className="flex min-h-screen w-full bg-gray-50">
-      {/* Main Content */}
       <div className="flex flex-1 flex-col">
-        {/* Header */}
         <header className="flex items-center justify-between border-b border-gray-200 bg-white px-6 py-4">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-800">Credit Reports</h1>
-            <p className="text-gray-500">Generate and view detailed credit reports</p>
+            <h1 className="text-xl font-semibold text-gray-800">Loan Reports</h1>
+            <p className="text-gray-500">Generate and print loan reports</p>
           </div>
-          <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
-            <div className="h-9 w-9 rounded-full bg-gray-300 flex items-center justify-center">
-              <span className="text-sm font-medium text-gray-700">DL</span>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-800">David Lee</p>
-              <p className="text-xs text-gray-500">IT Administrator</p>
-            </div>
-            <ChevronDown className="h-4 w-4 text-gray-500 cursor-pointer" />
+          <div className="flex items-center gap-2">
+            <Avatar className="h-8 w-8">
+              <AvatarFallback>SC</AvatarFallback>
+            </Avatar>
           </div>
         </header>
 
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4">
           {selectedLoan ? (
-            <LoanContract loan={selectedLoan} onClose={() => setSelectedLoan(null)} />
+            <LoanReportDialog loan={selectedLoan} onClose={() => setSelectedLoan(null)} />
           ) : (
             <Card className="shadow-sm border-gray-200">
               <CardHeader>
                 <div className="flex justify-between items-center">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-xl text-gray-800">Loan Reports ({filteredLoans.length})</CardTitle>
-                  </div>
+                  <CardTitle className="text-lg text-gray-800">Loan Reports ({filteredLoans.length})</CardTitle>
                 </div>
-
-                <div className="flex items-center gap-4 mt-4">
-                  <div className="relative flex-1 max-w-sm">
+                <div className="flex flex-col sm:flex-row gap-3 mt-3">
+                  <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input
-                      placeholder="Search Reports..."
+                      placeholder="Search reports..."
                       value={searchText}
                       onChange={(e) => setSearchText(e.target.value)}
                       className="pl-10"
                     />
                   </div>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-40">
+                    <SelectTrigger className="w-[180px]">
                       <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -437,84 +656,61 @@ const filteredLoans = reports.filter(loan => {
               <CardContent>
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-gray-200 hover:bg-gray-50">
-                      <TableHead className="text-gray-600 font-medium">LOAN ID</TableHead>
-                      <TableHead className="text-gray-600 font-medium">CLIENT</TableHead>
-                      <TableHead className="text-gray-600 font-medium">CREDIT SCORE</TableHead>
-                      <TableHead className="text-gray-600 font-medium">TYPE</TableHead>
-                      <TableHead className="text-gray-600 font-medium">AMOUNT</TableHead>
-                      <TableHead className="text-gray-600 font-medium">DATE</TableHead>
-                      <TableHead className="text-gray-600 font-medium">STATUS</TableHead>
-                      <TableHead className="text-gray-600 font-medium">ACTIONS</TableHead>
+                    <TableRow>
+                      <TableHead>Loan ID</TableHead>
+                      <TableHead>Client</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Credit Score</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredLoans.length > 0 ? (
-                      filteredLoans.map((loan) => (
-                        <TableRow key={loan.id} className="border-gray-200 hover:bg-gray-50">
-                          <TableCell className="font-medium text-gray-800">{loan.id}</TableCell>
-                          <TableCell className="text-gray-700">
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-8 w-8">
-                                <AvatarFallback className="bg-blue-100 text-blue-800">
-                                  {loan.clientName.split(" ").map(n => n[0]).join("")}
+                      filteredLoans.map(loan => (
+                        <TableRow key={loan.id}>
+                          <TableCell className="font-medium">{loan.id}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Avatar className="h-6 w-6">
+                                <AvatarFallback>
+                                  {loan.clientName.split(' ').map(n => n[0]).join('')}
                                 </AvatarFallback>
                               </Avatar>
                               <span>{loan.clientName}</span>
                             </div>
                           </TableCell>
+                          <TableCell>₱{loan.amount.toLocaleString()}</TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              <div className="w-16 bg-gray-200 rounded-full h-2">
-                                <div 
-                                  className={`h-2 rounded-full ${
-                                    loan.creditScore >= 80 ? "bg-green-500" :
-                                    loan.creditScore >= 60 ? "bg-yellow-500" : "bg-red-500"
-                                  }`}
-                                  style={{ width: `${loan.creditScore}%` }}
-                                ></div>
-                              </div>
-                              <span className={`text-sm font-medium ${
-                                loan.creditScore >= 80 ? "text-green-600" :
-                                loan.creditScore >= 60 ? "text-yellow-600" : "text-red-600"
-                              }`}>
+                              <div className={`font-medium ${getCreditScoreColor(loan.creditScore)}`}>
                                 {loan.creditScore}
-                              </span>
+                              </div>
+                              <div className="hidden sm:block text-xs text-gray-500">
+                                {getCreditScoreLabel(loan.creditScore)}
+                              </div>
                             </div>
                           </TableCell>
-                          <TableCell className="text-gray-700">
-                            <Badge variant="outline" className="border-gray-200 text-gray-600">
-                              {loan.type}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-gray-700 font-medium">₱{loan.amount.toLocaleString()}</TableCell>
-                          <TableCell className="text-gray-500">{loan.applicationDate}</TableCell>
                           <TableCell>
-                            <Badge 
-                              className={`flex items-center gap-1 ${statusStyles[loan.status as keyof typeof statusStyles] || 'bg-gray-100 text-gray-800 border-gray-200'}`}
-                            >
-                              <svg className="h-2 w-2 fill-current" viewBox="0 0 8 8">
-                                <circle cx="4" cy="4" r="3" />
-                              </svg>
+                            <Badge className={statusStyles[loan.status as keyof typeof statusStyles]}>
                               {loan.status}
                             </Badge>
                           </TableCell>
                           <TableCell>
                             <Button 
                               variant="outline" 
-                              size="sm" 
-                              className="text-blue-600 border-blue-200 hover:bg-blue-50"
-                              onClick={() => setSelectedLoan(loan)}
+                              size="sm"
+                              onClick={() => handleGenerateReport(loan)}
                             >
-                              <FileText className="h-4 w-4 mr-2" />
-                              Generate Report
+                              <FileText className="h-3 w-3 mr-1" />
+                              Generate
                             </Button>
                           </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={8} className="text-center text-gray-500 py-8">
+                        <TableCell colSpan={6} className="text-center py-6 text-gray-500">
                           No reports found matching your criteria
                         </TableCell>
                       </TableRow>
