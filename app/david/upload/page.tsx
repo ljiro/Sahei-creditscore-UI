@@ -123,19 +123,27 @@ export default function UploadPage() {
   }
 
   const handleConfirmMatch = async (isDuplicate: boolean) => {
-    if (!potentialMatches || !currentMatch) return
-    
-    setDecidedMatches(prev => [...prev, currentMatch.id])
-    setIsConfirmDialogOpen(false)
+    if (!potentialMatches || !currentMatch) return;
+
+    // Notify backend of the user's decision
+    if (window.HybridWebView && window.HybridWebView.SendInvokeMessageToDotNet) {
+      window.HybridWebView.SendInvokeMessageToDotNet("resolveNameMatch", {
+        matchId: currentMatch.id,
+        decision: isDuplicate ? "merge" : "not-duplicate"
+      });
+    }
+
+    setDecidedMatches(prev => [...prev, currentMatch.id]);
+    setIsConfirmDialogOpen(false);
 
     const nextIdx = potentialMatches.findIndex(
       (m, idx) => !decidedMatches.includes(m.id) && idx !== currentMatchIdx
-    )
-    
+    );
+
     if (nextIdx !== -1) {
-      setCurrentMatchIdx(nextIdx)
+      setCurrentMatchIdx(nextIdx);
     } else {
-      setIsDialogOpen(false)
+      setIsDialogOpen(false);
     }
   }
 
