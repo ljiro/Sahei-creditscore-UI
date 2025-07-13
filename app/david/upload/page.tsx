@@ -117,31 +117,15 @@ export default function UploadPage() {
     if (!clientFile) return;
     setIsUploadingClient(true);
     setUploadStatus({ ...uploadStatus, client: null });
-    await uploadFile(clientFile, "client");
-
-    // try {
-    //   // Send file to .NET backend for processing and name matching
-    //   // backend should process the file, check for duplicates, and call window.globalSetPotentialMatches with results
-    //   if (window.HybridWebView && window.HybridWebView.SendInvokeMessageToDotNet) {
-    //     // Read file as base64 or ArrayBuffer (depending on backend expectation)
-    //     const reader = new FileReader();
-    //     reader.onload = function (e) {
-    //       const fileData = e.target?.result;
-    //       // Send file data to .NET backend (may need to adjust the message and payload format)
-    //       window.HybridWebView?.SendInvokeMessageToDotNet?.("uploadMembersFile", {
-    //         fileName: clientFile.name,
-    //         fileData: fileData // base64 or ArrayBuffer
-    //       });
-    //     };
-    //     reader.readAsDataURL(clientFile); // or readAsArrayBuffer(clientFile)
-    //   }
-    //   setUploadStatus(prev => ({ ...prev, client: "success" }));
-    // } catch (error) {
-    //   console.error('Client upload error:', error)
-    //   setUploadStatus(prev => ({ ...prev, client: "error" }))
-    // } finally {
-    //   setIsUploadingClient(false)
-    // }
+    try {
+      await uploadFile(clientFile, "client");
+      setUploadStatus(prev => ({ ...prev, client: "success" }));
+    } catch (error) {
+      console.error('Client upload error:', error);
+      setUploadStatus(prev => ({ ...prev, client: "error" }));
+    } finally {
+      setIsUploadingClient(false);
+    }
   }
 
   const handleLoanUpload = async () => {
@@ -162,15 +146,17 @@ export default function UploadPage() {
     }
   }
 
-  // Receive potential matches from .NET backend
-  // This function will be called by .NET after processing the uploaded file
-  // The payload should be an array of match objects (same shape as before)
+  // Receive potential matches from .NET backend (decoupled from upload)
   React.useEffect(() => {
     (window as any).globalSetPotentialMatches = (matches: any[]) => {
       setPotentialMatches(matches);
       setCurrentMatchId(matches[0]?.id || null);
       setDecidedMatches([]);
       setIsDialogOpen(matches.length > 0);
+    };
+    // Optional: cleanup
+    return () => {
+      (window as any).globalSetPotentialMatches = undefined;
     };
   }, []);
 
