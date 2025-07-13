@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,6 +12,17 @@ import { Progress } from "@/components/ui/progress"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import HybridWebView from "../hybridwebview/HybridWebView.js";
+
+// --- Add global type for name matching callback ---
+declare global {
+  interface Window {
+    HybridWebView?: {
+      SendInvokeMessageToDotNet?: (method: string, payload: any) => void;
+      InvokePrint?: (htmlContent: string) => void;
+    };
+    globalSetPotentialMatches?: (matches: Match[]) => void;
+  }
+}
 
 type Match = {
   id: number
@@ -42,6 +53,19 @@ export default function UploadPage() {
   const [pendingAction, setPendingAction] = useState<"merge" | "not-duplicate" | null>(null)
   const [decidedMatches, setDecidedMatches] = useState<number[]>([])
 
+  // Listen for backend notification for name matching (decoupled from upload)
+  useEffect(() => {
+    window.globalSetPotentialMatches = (matches: Match[]) => {
+      setPotentialMatches(matches)
+      setCurrentMatchIdx(0)
+      setIsDialogOpen(true)
+      setDecidedMatches([])
+    }
+    return () => {
+      window.globalSetPotentialMatches = undefined
+    }
+  }, [])
+
   // File handlers
   const handleClientFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setClientFile(e.target.files?.[0] || null)
@@ -63,7 +87,7 @@ export default function UploadPage() {
   const removeLoanFile = () => setLoanFile(null)
   const removeAdditionalFile = () => setAdditionalFile(null)
 
-  // Upload files to backend
+  // Upload files to backend (no name matching logic here)
   const uploadFiles = async () => {
     const requiredFiles = uploadMode === "proposed" 
       ? [clientFile, loanFile] 
@@ -87,20 +111,12 @@ export default function UploadPage() {
         formData.append("additionalFile", additionalFile);
       }
 
-      console.log("form data ", formData)
-      // Add headers for binary data
-      const response = await fetch("http://localhost:5000/upload_combined", {
+      await fetch("http://localhost:5000/upload_combined", {
         method: "POST",
         body: formData
       });
 
-      if (!response.ok) throw new Error("Upload failed");
-      
-      const data = await response.json();
-      if (data.matches?.length > 0) {
-        setPotentialMatches(data.matches);
-        setIsDialogOpen(true);
-      }
+      // Do not handle matches here, just show upload status
       setUploadStatus("success");
     } catch (error) {
       console.error("Upload error:", error);
