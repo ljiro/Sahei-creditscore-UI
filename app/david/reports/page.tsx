@@ -18,13 +18,13 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useReactToPrint } from 'react-to-print';
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { usePathname } from 'next/navigation';
 import HybridWebView from "../hybridwebview/HybridWebView.js";
 
 declare global {
   interface Window {
     HybridWebView?: {
       SendInvokeMessageToDotNet?: (method: string, payload: any) => void;
+      InvokePrint?: (htmlContent: string) => void;
     };
     globalSetReportsPage?: (data: any) => void;
     globalSetFullReport?: (data: any) => void;
@@ -122,13 +122,68 @@ const statusStyles = {
   Defaulted: "bg-red-100 text-red-800 hover:bg-red-100 border-red-200",
 };
 
+// Add print styles as a constant
+const printStyles = `
+  @page {
+    size: A4;
+    margin: 15mm;
+  }
+  @media print {
+    body {
+      color: #000;
+      background: #fff;
+      font-size: 12pt;
+    }
+    .no-print {
+      display: none !important;
+    }
+    .print-section {
+      page-break-after: always;
+      padding: 10px;
+    }
+    .print-section:last-child {
+      page-break-after: auto;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      page-break-inside: avoid;
+    }
+    th, td {
+      padding: 4px;
+      border: 1px solid #ddd;
+    }
+    h1, h2, h3 {
+      page-break-after: avoid;
+    }
+    .credit-score-header {
+      page-break-before: always;
+    }
+    .print-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+    .print-footer {
+      margin-top: 20px;
+      padding-top: 10px;
+      border-top: 1px solid #ddd;
+      text-align: center;
+      font-size: 10pt;
+    }
+  }
+`;
+
 export default function LoanReportsPage() {
   const [searchText, setSearchText] = useState("");
   const [selectedLoan, setSelectedLoan] = useState<LoanReport | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [reports, setReports] = useState<LoanReport[]>([]);
   const [fullReport, setFullReport] = useState<MemberReport | null>(null);
-  const pathname = usePathname();
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [printMode, setPrintMode] = useState<'detailed'|'condensed'>('detailed');
   const reportRef = useRef<HTMLDivElement>(null);
   const hasRequestedReport = useRef(false);
 
@@ -462,22 +517,130 @@ export default function LoanReportsPage() {
     };
   }, [selectedLoan]);
 
-  const handlePrint = useReactToPrint({
-    content: () => reportRef.current,
-    pageStyle: `
-      @page { size: A4; margin: 20mm; }
-      @media print {
-        body { color: #000; background: #fff; }
-        .no-print { display: none !important; }
+  const handlePrint = () => {
+    if (!reportRef.current) return;
+    
+    setIsPrinting(true);
+    
+    try {
+      // Create a print-specific version of the content
+      const printWindow = window.open('', '_blank');
+      if (!printWindow) {
+        throw new Error('Could not open print window');
       }
-    `,
-    documentTitle: `Loan_Report_${selectedLoan?.id || 'N/A'}_${selectedLoan?.clientName.replace(/\s+/g, '_') || 'Report'}`
-  });
+
+      // Clone the report content
+      const printContent = reportRef.current.cloneNode(true) as HTMLElement;
+      
+      // Add print-specific classes and structure
+      const sections = [
+        { selector: '.credit-score-section', className: 'credit-score-header' },
+        { selector: '.client-info-section', className: 'print-section' },
+        { selector: '.financial-profile-section', className: 'print-section' },
+        { selector: '.loan-details-section', className: 'print-section' },
+        { selector: '.payment-history-section', className: 'print-section' },
+        { selector: '.previous-loans-section', className: 'print-section' }
+      ];
+
+      sections.forEach(({ selector, className }) => {
+        const element = printContent.querySelector(selector);
+        if (element) {
+          element.classList.add(className);
+        }
+      });
+
+      // Handle large tables
+      printContent.querySelectorAll('table').forEach(table => {
+        const rows = table.rows;
+        for (let i = 0; i < rows.length; i++) {
+          if (i > 0 && i % 30 === 0) { // Break every 30 rows
+            rows[i].classList.add('page-break-before');
+          }
+        }
+      });
+
+      // Handle print mode (detailed/condensed)
+      if (printMode === 'condensed') {
+        printContent.querySelectorAll('.detail-row').forEach(el => {
+          el.classList.add('hidden-print');
+        });
+      }
+
+      // Add print header and footer
+      const header = document.createElement('div');
+      header.className = 'print-header';
+      header.innerHTML = `
+        <h1>Loan Report - ${selectedLoan?.clientName || 'Report'}</h1>
+        <div>Generated on ${new Date().toLocaleDateString()}</div>
+      `;
+
+      const footer = document.createElement('div');
+      footer.className = 'print-footer';
+      footer.innerHTML = `
+        <div>Confidential - For internal use only</div>
+        <div>Page <span class="page-number"></span></div>
+      `;
+
+      printContent.insertBefore(header, printContent.firstChild);
+      printContent.appendChild(footer);
+
+      // Prepare the HTML for printing
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Loan Report - ${selectedLoan?.clientName || 'Report'}</title>
+            <style>${printStyles}</style>
+          </head>
+          <body>
+            <div class="print-container">
+              ${printContent.innerHTML}
+            </div>
+            <script>
+              // Update page numbers
+              const pageNumbers = document.querySelectorAll('.page-number');
+              for (let i = 0; i < pageNumbers.length; i++) {
+                pageNumbers[i].textContent = (i + 1);
+              }
+              
+              setTimeout(() => {
+                window.print();
+                window.close();
+              }, 200);
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+
+      // For Hybrid WebView environment
+      if (window.HybridWebView?.InvokePrint) {
+        const htmlContent = `
+          <html>
+            <head>
+              <style>${printStyles}</style>
+            </head>
+            <body>
+              <div class="print-container">
+                ${printContent.innerHTML}
+              </div>
+            </body>
+          </html>
+        `;
+        window.HybridWebView.InvokePrint(htmlContent);
+      }
+    } catch (error) {
+      console.error("Error during printing:", error);
+      // Fallback to basic window.print() if other methods fail
+      window.print();
+    } finally {
+      setIsPrinting(false);
+    }
+  };
 
   const handleGenerateReport = (loan: LoanReport) => {
     console.log("📤 Setting loan for report generation...");
     setSelectedLoan(loan);
-    setFullReport(null); // Reset full report when generating a new one
+    setFullReport(null);
   };
 
   const handleCloseDialog = () => {
@@ -535,17 +698,30 @@ export default function LoanReportsPage() {
                 <Button variant="outline" onClick={onClose}>
                   Close
                 </Button>
-                <Button onClick={handlePrint} className="bg-blue-600 hover:bg-blue-700">
+                <Select value={printMode} onValueChange={setPrintMode}>
+                  <SelectTrigger className="w-[120px]">
+                    <SelectValue placeholder="Print Mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="detailed">Detailed</SelectItem>
+                    <SelectItem value="condensed">Condensed</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button 
+                  onClick={handlePrint} 
+                  className="bg-blue-600 hover:bg-blue-700"
+                  disabled={isPrinting}
+                >
                   <Printer className="h-4 w-4 mr-2" />
-                  Print Report
+                  {isPrinting ? "Printing..." : "Print Report"}
                 </Button>
               </div>
             </div>
           </DialogHeader>
           
           <div ref={reportRef} className="p-4 bg-white">
-            {/* Credit Score Section - Moved to top */}
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+            {/* Credit Score Section */}
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200 credit-score-section">
               <h2 className="text-lg font-semibold mb-3">Credit Summary</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
@@ -596,7 +772,7 @@ export default function LoanReportsPage() {
             </div>
 
             {/* Client Information Section */}
-            <div className="mb-6 border-b pb-4">
+            <div className="mb-6 border-b pb-4 client-info-section">
               <h2 className="text-lg font-semibold mb-3">Client Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
@@ -623,7 +799,7 @@ export default function LoanReportsPage() {
 
             {/* Financial Profile Section */}
             {fullReport && (
-              <div className="mb-6 border-b pb-4">
+              <div className="mb-6 border-b pb-4 financial-profile-section">
                 <h2 className="text-lg font-semibold mb-3">Financial Profile</h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
@@ -645,7 +821,7 @@ export default function LoanReportsPage() {
             )}
 
             {/* Current Loan Details Section */}
-            <div className="mb-6 border-b pb-4">
+            <div className="mb-6 border-b pb-4 loan-details-section">
               <h2 className="text-lg font-semibold mb-3">Current Loan Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -679,7 +855,7 @@ export default function LoanReportsPage() {
 
             {/* Payment History Section */}
             {loan.paymentHistory && loan.paymentHistory.length > 0 && (
-              <div className="mb-6">
+              <div className="mb-6 payment-history-section">
                 <h2 className="text-lg font-semibold mb-3">Payment History</h2>
                 <div className="overflow-x-auto">
                   <Table>
@@ -718,7 +894,7 @@ export default function LoanReportsPage() {
 
             {/* Previous Loans Section */}
             {fullReport?.Loans && fullReport.Loans.length > 1 && (
-              <div className="mb-6">
+              <div className="mb-6 previous-loans-section">
                 <h2 className="text-lg font-semibold mb-3">Previous Loans</h2>
                 <div className="overflow-x-auto">
                   <Table>
