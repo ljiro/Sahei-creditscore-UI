@@ -168,23 +168,31 @@ export default function UploadPage() {
 
   // Handle match confirmation
   const handleConfirmMatch = (isDuplicate: boolean) => {
-    if (!potentialMatches || currentMatchId === null) return
-    
+    if (!potentialMatches || currentMatchId === null) return;
+
+    // Notify backend of the user's decision
+    if (window.HybridWebView && window.HybridWebView.SendInvokeMessageToDotNet) {
+      window.HybridWebView.SendInvokeMessageToDotNet("resolveNameMatch", {
+        matchId: currentMatchId,
+        decision: isDuplicate ? "merge" : "not-duplicate"
+      });
+    }
+
     // Add current match to decided matches
-    setDecidedMatches(prev => [...prev, currentMatchId])
-    
+    setDecidedMatches(prev => [...prev, currentMatchId]);
+
     // Find next undecided match
     const nextMatch = potentialMatches.find(
       match => !decidedMatches.includes(match.id) && match.id !== currentMatchId
-    )
-    
+    );
+
     if (nextMatch) {
-      setCurrentMatchId(nextMatch.id)
+      setCurrentMatchId(nextMatch.id);
     } else {
-      setIsDialogOpen(false)
+      setIsDialogOpen(false);
     }
-    
-    setIsConfirmDialogOpen(false)
+
+    setIsConfirmDialogOpen(false);
   }
 
   // Show confirmation dialog
