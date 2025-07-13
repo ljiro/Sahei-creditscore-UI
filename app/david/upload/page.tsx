@@ -10,6 +10,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Progress } from "@/components/ui/progress"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import HybridWebView from "../hybridwebview/HybridWebView.js";
 
 type Match = {
   id: number
@@ -19,8 +21,16 @@ type Match = {
   matchReasons: string[]
 }
 
+type UploadMode = "proposed" | "current"
+
 export default function UploadPage() {
+  // Upload mode state
+  const [uploadMode, setUploadMode] = useState<UploadMode>("proposed")
+
+  // File upload state
   const [clientFile, setClientFile] = useState<File | null>(null)
+  const [loanFile, setLoanFile] = useState<File | null>(null)
+  const [additionalFile, setAdditionalFile] = useState<File | null>(null)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadStatus, setUploadStatus] = useState<"success" | "error" | null>(null)
 
@@ -32,75 +42,80 @@ export default function UploadPage() {
   const [pendingAction, setPendingAction] = useState<"merge" | "not-duplicate" | null>(null)
   const [decidedMatches, setDecidedMatches] = useState<number[]>([])
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null
-    setClientFile(file)
+  // File handlers
+  const handleClientFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setClientFile(e.target.files?.[0] || null)
     setUploadStatus(null)
-    setPotentialMatches(null)
-    setDecidedMatches([])
-    setCurrentMatchIdx(0)
   }
 
-  const uploadFile = async () => {
-    if (!clientFile) return
-    setIsUploading(true)
+  const handleLoanFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setLoanFile(e.target.files?.[0] || null)
     setUploadStatus(null)
-    setPotentialMatches(null)
-    setDecidedMatches([])
-    setCurrentMatchIdx(0)
+  }
+
+  const handleAdditionalFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setAdditionalFile(e.target.files?.[0] || null)
+    setUploadStatus(null)
+  }
+
+  // File removal handlers
+  const removeClientFile = () => setClientFile(null)
+  const removeLoanFile = () => setLoanFile(null)
+  const removeAdditionalFile = () => setAdditionalFile(null)
+
+  // Upload files to backend
+  const uploadFiles = async () => {
+    const requiredFiles = uploadMode === "proposed" 
+      ? [clientFile, loanFile] 
+      : [clientFile, loanFile, additionalFile];
+    
+    if (requiredFiles.some(file => !file)) {
+      setUploadStatus("error");
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadStatus(null);
 
     try {
-      const fileBuffer = await clientFile.arrayBuffer()
-      const response = await fetch("http://localhost:5000/upload_clientinfo", {
+      const formData = new FormData();
+      formData.append("mode", uploadMode);
+      formData.append("clientFile", clientFile!);
+      formData.append("loanFile", loanFile!);
+      
+      if (uploadMode === "current" && additionalFile) {
+        formData.append("additionalFile", additionalFile);
+      }
+
+      console.log("form data ", formData)
+      // Add headers for binary data
+      const response = await fetch("http://localhost:5000/upload_combined", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/octet-stream",
-          "X-File-Name": encodeURIComponent(clientFile.name),
-          "X-File-Type": clientFile.type
-        },
-        body: fileBuffer
-      })
+        body: formData
+      });
 
-      if (!response.ok) {
-        const errorText = await response.text()
-        throw new Error(`Upload failed: ${response.status} ${errorText}`)
+      if (!response.ok) throw new Error("Upload failed");
+      
+      const data = await response.json();
+      if (data.matches?.length > 0) {
+        setPotentialMatches(data.matches);
+        setIsDialogOpen(true);
       }
-
-      // Expecting JSON: { matches: Match[] }
-      const data = await response.json()
-      if (data.matches && Array.isArray(data.matches) && data.matches.length > 0) {
-        setPotentialMatches(data.matches)
-        setIsDialogOpen(true)
-        setCurrentMatchIdx(0)
-        setUploadStatus("success")
-      } else {
-        setPotentialMatches(null)
-        setUploadStatus("success")
-      }
+      setUploadStatus("success");
     } catch (error) {
-      console.error("Upload error:", error)
-      setUploadStatus("error")
+      console.error("Upload error:", error);
+      setUploadStatus("error");
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
     }
-  }
+  };
 
-  const removeFile = () => {
-    setClientFile(null)
-    setUploadStatus(null)
-    setPotentialMatches(null)
-    setDecidedMatches([])
-    setCurrentMatchIdx(0)
-  }
-
-  // Name matching UI logic
-  const currentMatch = potentialMatches && potentialMatches[currentMatchIdx]
+  // Name matching logic
+  const currentMatch = potentialMatches?.[currentMatchIdx]
   const undecidedMatches = potentialMatches?.filter(m => !decidedMatches.includes(m.id)) || []
   const totalMatches = potentialMatches?.length || 0
 
-  const handleDialogClose = () => {
-    setIsDialogOpen(false)
-  }
+  const handleDialogClose = () => setIsDialogOpen(false)
 
   const showConfirmation = (action: "merge" | "not-duplicate") => {
     setPendingAction(action)
@@ -109,15 +124,14 @@ export default function UploadPage() {
 
   const handleConfirmMatch = async (isDuplicate: boolean) => {
     if (!potentialMatches || !currentMatch) return
-    // Optionally, send decision to backend here
-    // await fetch(...)
+    
     setDecidedMatches(prev => [...prev, currentMatch.id])
     setIsConfirmDialogOpen(false)
 
-    // Move to next undecided match
     const nextIdx = potentialMatches.findIndex(
       (m, idx) => !decidedMatches.includes(m.id) && idx !== currentMatchIdx
     )
+    
     if (nextIdx !== -1) {
       setCurrentMatchIdx(nextIdx)
     } else {
@@ -129,16 +143,13 @@ export default function UploadPage() {
     if (!potentialMatches) return
     const undecided = potentialMatches.filter(m => !decidedMatches.includes(m.id))
     if (undecided.length <= 1) return
+    
     const currentUndecidedIdx = undecided.findIndex(m => m.id === currentMatch?.id)
-    let newIdx
-    if (direction === "prev") {
-      newIdx = currentUndecidedIdx > 0 ? currentUndecidedIdx - 1 : undecided.length - 1
-    } else {
-      newIdx = currentUndecidedIdx < undecided.length - 1 ? currentUndecidedIdx + 1 : 0
-    }
-    const newMatchId = undecided[newIdx].id
-    const matchIdxInAll = potentialMatches.findIndex(m => m.id === newMatchId)
-    setCurrentMatchIdx(matchIdxInAll)
+    let newIdx = direction === "prev"
+      ? currentUndecidedIdx > 0 ? currentUndecidedIdx - 1 : undecided.length - 1
+      : currentUndecidedIdx < undecided.length - 1 ? currentUndecidedIdx + 1 : 0
+    
+    setCurrentMatchIdx(potentialMatches.findIndex(m => m.id === undecided[newIdx].id))
   }
 
   return (
@@ -166,80 +177,173 @@ export default function UploadPage() {
             <CardHeader>
               <CardTitle className="text-xl text-gray-800">Upload Member Data</CardTitle>
               <CardDescription className="text-gray-500">
-                Upload Excel (.xlsx) file to import members data
+                {uploadMode === "proposed" 
+                  ? "Upload client and loan files for proposed members" 
+                  : "Upload client, loan, and additional files for current members"}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="font-medium text-gray-800">Members Data</h3>
-                  <div className="grid w-full items-center gap-1.5">
-                    <Label htmlFor="client-file" className="text-gray-700">
-                      Select Members Excel File
-                    </Label>
-                    <Input
-                      id="client-file"
-                      type="file"
-                      accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                      onChange={handleFileChange}
-                      className="border-gray-300"
-                    />
-                  </div>
+                {/* Mode Toggle */}
+                <div className="space-y-2">
+                  <Label className="text-gray-700">Upload Mode</Label>
+                  <ToggleGroup 
+                    type="single" 
+                    value={uploadMode}
+                    onValueChange={(value) => {
+                      if (value) {
+                        setUploadMode(value as UploadMode)
+                        setClientFile(null)
+                        setLoanFile(null)
+                        setAdditionalFile(null)
+                        setUploadStatus(null)
+                      }
+                    }}
+                  >
+                    <ToggleGroupItem value="proposed" className="px-4">
+                      Proposed
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="current" className="px-4">
+                      Current
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
 
+                {/* Client File Input */}
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="client-file" className="text-gray-700">
+                    Clients Excel File
+                  </Label>
+                  <Input
+                    id="client-file"
+                    type="file"
+                    accept=".xlsx"
+                    onChange={handleClientFileChange}
+                  />
                   {clientFile && (
-                    <div className="space-y-4">
-                      <div className="border border-gray-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <FileText className="h-5 w-5 text-blue-500" />
-                            <div>
-                              <p className="font-medium text-gray-800">{clientFile.name}</p>
-                              <p className="text-sm text-gray-500">{(clientFile.size / 1024).toFixed(2)} KB</p>
-                            </div>
-                          </div>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-500 hover:text-gray-700" onClick={removeFile}>
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
+                    <div className="flex items-center gap-2 mt-2 p-2 border rounded">
+                      <FileText className="h-4 w-4 text-blue-500" />
+                      <div className="flex-1">
+                        <p className="text-sm">{clientFile.name}</p>
+                        <p className="text-xs text-gray-500">{(clientFile.size / 1024).toFixed(2)} KB</p>
                       </div>
-                      <Button
-                        onClick={uploadFile}
-                        disabled={!clientFile || isUploading}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6" 
+                        onClick={removeClientFile}
                       >
-                        {isUploading ? (
-                          <>
-                            <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Uploading...
-                          </>
-                        ) : (
-                          <>
-                            <UploadCloud className="h-4 w-4 mr-2" />
-                            Upload Member Data
-                          </>
-                        )}
+                        <X className="h-3 w-3" />
                       </Button>
-                    </div>
-                  )}
-
-                  {uploadStatus === "success" && !potentialMatches && (
-                    <div className="flex items-center gap-2 p-3 bg-green-50 text-green-700 rounded-lg">
-                      <CheckCircle2 className="h-5 w-5" />
-                      <p>Member data uploaded successfully!</p>
-                    </div>
-                  )}
-
-                  {uploadStatus === "error" && (
-                    <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg">
-                      <AlertCircle className="h-5 w-5" />
-                      <p>Error uploading member data. Please try again.</p>
                     </div>
                   )}
                 </div>
 
+                {/* Loan File Input */}
+                <div className="grid w-full items-center gap-1.5">
+                  <Label htmlFor="loan-file" className="text-gray-700">
+                    Loans Excel File
+                  </Label>
+                  <Input
+                    id="loan-file"
+                    type="file"
+                    accept=".xlsx"
+                    onChange={handleLoanFileChange}
+                  />
+                  {loanFile && (
+                    <div className="flex items-center gap-2 mt-2 p-2 border rounded">
+                      <FileText className="h-4 w-4 text-blue-500" />
+                      <div className="flex-1">
+                        <p className="text-sm">{loanFile.name}</p>
+                        <p className="text-xs text-gray-500">{(loanFile.size / 1024).toFixed(2)} KB</p>
+                      </div>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-6 w-6" 
+                        onClick={removeLoanFile}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Additional File Input (Current mode only) */}
+                {uploadMode === "current" && (
+                  <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="additional-file" className="text-gray-700">
+                      Additional Data File
+                    </Label>
+                    <Input
+                      id="additional-file"
+                      type="file"
+                      accept=".xlsx"
+                      onChange={handleAdditionalFileChange}
+                    />
+                    {additionalFile && (
+                      <div className="flex items-center gap-2 mt-2 p-2 border rounded">
+                        <FileText className="h-4 w-4 text-blue-500" />
+                        <div className="flex-1">
+                          <p className="text-sm">{additionalFile.name}</p>
+                          <p className="text-xs text-gray-500">{(additionalFile.size / 1024).toFixed(2)} KB</p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6" 
+                          onClick={removeAdditionalFile}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Upload Button */}
+                <Button
+                  onClick={uploadFiles}
+                  disabled={
+                    isUploading || 
+                    (uploadMode === "proposed" 
+                      ? !clientFile || !loanFile 
+                      : !clientFile || !loanFile || !additionalFile)
+                  }
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {isUploading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <UploadCloud className="h-4 w-4 mr-2" />
+                      Upload {uploadMode === "proposed" ? "Proposed" : "Current"} Data
+                    </>
+                  )}
+                </Button>
+
+                {/* Upload Status */}
+                {uploadStatus === "success" && (
+                  <div className="flex items-center gap-2 p-3 bg-green-50 text-green-700 rounded-lg">
+                    <CheckCircle2 className="h-5 w-5" />
+                    <p>Data uploaded successfully!</p>
+                  </div>
+                )}
+
+                {uploadStatus === "error" && (
+                  <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg">
+                    <AlertCircle className="h-5 w-5" />
+                    <p>Error uploading data. Please try again.</p>
+                  </div>
+                )}
+
+                {/* Upload Guidelines */}
                 <div className="border-t border-gray-200 pt-4">
                   <h3 className="font-medium text-gray-700 mb-2">Upload Guidelines:</h3>
                   <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
@@ -247,6 +351,9 @@ export default function UploadPage() {
                     <li>Maximum file size: 5MB</li>
                     <li>Ensure data follows the required format</li>
                     <li>First row should contain column headers</li>
+                    {uploadMode === "current" && (
+                      <li>Additional file must contain supplementary member data</li>
+                    )}
                   </ul>
                 </div>
               </div>

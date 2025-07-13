@@ -51,6 +51,7 @@ import {
   Eye,
   Loader2,
 } from "lucide-react"
+import { useRef } from "react";
 import HybridWebView from "../hybridwebview/HybridWebView.js";
 
 const statusStyles = {
@@ -851,8 +852,10 @@ export default function LoansPage() {
   const [searchText, setSearchText] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("All")
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null)
+  const [updateLoan, setUpdateLoan] = useState<Loan | null>(null)
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
   const [editingLoan, setEditingLoan] = useState<Loan | null>(null)
+  const hasRequestedUpdate = useRef<boolean>(false);
 
 
    // HybridWebView integration for receiving loan data from .NET
@@ -939,9 +942,85 @@ export default function LoansPage() {
     HybridWebView.SendInvokeMessageToDotNet("getLoans");
 
   }, []);
+useEffect(() => {
+  // Complete frontend to PostgreSQL enum mapping
+  const statusMap: Record<string, string> = {
+    Approved: "Active",
+    Pending: "Pending",
+    Declined: "Rejected",
+    Disbursed: "Active",
+    Paid: "Paid Off",
+    Defaulted: "Defaulted",
+    InArrears: "In Arrears"  // Added this missing mapping
+  };
 
+  // Helper function to safely map status with fallback
+  const mapStatus = (status: string): string => {
+    const mappedStatus = statusMap[status];
+    if (!mappedStatus) {
+      console.warn(`⚠️ Unknown status "${status}" - sending as-is`);
+      return status;
+    }
+    return mappedStatus;
+  };
 
+  const sendLoanUpdate = () => {
+    if (!updateLoan || hasRequestedUpdate.current) return;
+    
+    console.log("📤 Sending loan update to backend...");
+    hasRequestedUpdate.current = true;
 
+    // Prepare payload with safe status mapping
+    const payload = {
+      MemberId: String(updateLoan.clientId),
+      LoanId: Number(updateLoan.id),
+      UpdateData: {
+        Status: mapStatus(updateLoan.status), // Use safe mapping function
+        Amount: parseFloat(updateLoan.amount.toFixed(2)),
+        InterestRate: parseFloat(updateLoan.interestRate.replace('%', '')),
+        LoanType: updateLoan.type,
+        Purpose: updateLoan.purpose,
+        PaymentFrequency: updateLoan.paymentFrequency,
+        CollateralType: updateLoan.collateralType || '',
+        Duration: updateLoan.duration
+      }
+    };
+
+    console.log("Update payload:", payload);
+
+    try {
+      if (!isValidPayload(payload)) {
+        throw new Error("Invalid update payload");
+      }
+
+      HybridWebView.SendInvokeMessageToDotNet("updateLoan", payload);
+    } catch (error) {
+      console.error("❌ Failed to send loan update:", error);
+      hasRequestedUpdate.current = false;
+    }
+  };
+
+  const isValidPayload = (payload: any): boolean => {
+    if (!payload || !payload.UpdateData) return false;
+    
+    // Validate basic types
+    const validations = [
+      typeof payload.MemberId === 'string',
+      typeof payload.LoanId === 'number',
+      typeof payload.UpdateData.Amount === 'number',
+      typeof payload.UpdateData.Status === 'string'
+    ];
+
+    // Additional validations can be added here
+    return validations.every(Boolean);
+  };
+
+  sendLoanUpdate();
+
+  return () => {
+    hasRequestedUpdate.current = false;
+  };
+}, [updateLoan]);
 
 const filteredLoans = loans.filter((loan) => {
     const searchTextLower = searchText.toLowerCase();
@@ -968,15 +1047,18 @@ const filteredLoans = loans.filter((loan) => {
    
 
   const handleUpdateLoan = (updatedLoan: Loan) => {
-    setLoans((prev) => prev.map((loan) => (loan.id === updatedLoan.id ? updatedLoan : loan)))
-    setEditingLoan(null)
-    setSelectedLoan(updatedLoan)
-
-    toast({
-      title: "Success",
-      description: `Loan ${updatedLoan.id} has been updated successfully.`,
-    })
-  }
+  setLoans(prev => prev.map(loan => 
+    loan.id === updatedLoan.id ? updatedLoan : loan
+  ));
+  setEditingLoan(null);
+  setSelectedLoan(updatedLoan);
+  setUpdateLoan(updatedLoan); // This will trigger the useEffect
+  
+  toast({
+    title: "Success",
+    description: `Loan ${updatedLoan.id} has been updated successfully.`,
+  });
+};
 
   const handleDeleteLoan = (loanId: number) => {
     const loanToDelete = loans.find((l) => l.id === loanId)
@@ -1017,7 +1099,7 @@ const filteredLoans = loans.filter((loan) => {
 
   const handleEditLoan = (loan: Loan) => {
     setEditingLoan(loan)
-    HybridWebView.SendInvokeMessageToDotNet("updateLoan", loan);
+    
     setSelectedLoan(null)
   }
 
