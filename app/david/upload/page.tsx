@@ -1,8 +1,5 @@
 "use client"
 
-// Extend the Window interface to include HybridWeb
-
-
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,6 +12,7 @@ import { Progress } from "@/components/ui/progress"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import HybridWebView from "../hybridwebview/HybridWebView.js";
+
 type Match = {
   id: number
   newRecord: Record<string, string>
@@ -67,83 +65,50 @@ export default function UploadPage() {
 
   // Upload files to backend
   const uploadFiles = async () => {
-  const requiredFiles = uploadMode === "proposed" 
-    ? [clientFile, loanFile] 
-    : [clientFile, loanFile, additionalFile];
-  
-  if (requiredFiles.some(file => !file)) {
-    setUploadStatus("error");
-    return;
-  }
+    const requiredFiles = uploadMode === "proposed" 
+      ? [clientFile, loanFile] 
+      : [clientFile, loanFile, additionalFile];
+    
+    if (requiredFiles.some(file => !file)) {
+      setUploadStatus("error");
+      return;
+    }
 
-  setIsUploading(true);
-  setUploadStatus(null);
+    setIsUploading(true);
+    setUploadStatus(null);
 
-  // File upload handler for client file
-  const handleClientUpload = async () => {
-    if (!clientFile) return;
-    setIsUploadingClient(true);
-    setUploadStatus({ ...uploadStatus, client: null });
     try {
-      await uploadFile(clientFile, "client");
-      setUploadStatus(prev => ({ ...prev, client: "success" }));
-    } catch (error) {
-      console.error('Client upload error:', error);
-      setUploadStatus(prev => ({ ...prev, client: "error" }));
-    } finally {
-      setIsUploadingClient(false);
-    }
+      const formData = new FormData();
+      formData.append("mode", uploadMode);
+      formData.append("clientFile", clientFile!);
+      formData.append("loanFile", loanFile!);
+      
+      if (uploadMode === "current" && additionalFile) {
+        formData.append("additionalFile", additionalFile);
+      }
 
-
-  // Receive potential matches from .NET backend (decoupled from upload)
-  React.useEffect(() => {
-    (window as any).globalSetPotentialMatches = (matches: any[]) => {
-      setPotentialMatches(matches);
-      setCurrentMatchId(matches[0]?.id || null);
-      setDecidedMatches([]);
-      setIsDialogOpen(matches.length > 0);
-    };
-    // Optional: cleanup
-    return () => {
-      (window as any).globalSetPotentialMatches = undefined;
-    };
-  }, []);
-
-  // Get current match data
-  const getCurrentMatch = () => {
-    if (!potentialMatches || currentMatchId === null) return null
-    return potentialMatches.find(match => match.id === currentMatchId)
-  }
-
-  // Handle match confirmation
-  const handleConfirmMatch = (isDuplicate: boolean) => {
-    if (!potentialMatches || currentMatchId === null) return;
-
-    // Notify backend of the user's decision
-    if (window.HybridWebView && window.HybridWebView.SendInvokeMessageToDotNet) {
-      window.HybridWebView.SendInvokeMessageToDotNet("resolveNameMatch", {
-        matchId: currentMatchId,
-        decision: isDuplicate ? "merge" : "not-duplicate"
+      console.log("form data ", formData)
+      // Add headers for binary data
+      const response = await fetch("http://localhost:5000/upload_combined", {
+        method: "POST",
+        body: formData
       });
+
+      if (!response.ok) throw new Error("Upload failed");
+      
+      const data = await response.json();
+      if (data.matches?.length > 0) {
+        setPotentialMatches(data.matches);
+        setIsDialogOpen(true);
+      }
+      setUploadStatus("success");
+    } catch (error) {
+      console.error("Upload error:", error);
+      setUploadStatus("error");
+    } finally {
+      setIsUploading(false);
     }
-
-    // Add current match to decided matches
-    setDecidedMatches(prev => [...prev, currentMatchId]);
-
-    // Find next undecided match
-    const nextMatch = potentialMatches.find(
-      match => !decidedMatches.includes(match.id) && match.id !== currentMatchId
-    );
-
-    if (nextMatch) {
-      setCurrentMatchId(nextMatch.id);
-    } else {
-      setIsDialogOpen(false);
-    }
-
-    setIsConfirmDialogOpen(false);
-  }
-};
+  };
 
   // Name matching logic
   const currentMatch = potentialMatches?.[currentMatchIdx]
@@ -209,28 +174,39 @@ export default function UploadPage() {
         <main className="flex-1 p-6">
           <Card className="shadow-sm border-gray-200 max-w-2xl mx-auto">
             <CardHeader>
-              <CardTitle className="text-xl text-gray-800">Upload CARCC Excel Files</CardTitle>
+              <CardTitle className="text-xl text-gray-800">Upload Member Data</CardTitle>
               <CardDescription className="text-gray-500">
-                Ensure the file is in .xlsx format and contains the required data structure.  
+                {uploadMode === "proposed" 
+                  ? "Upload client and loan files for proposed members" 
+                  : "Upload client, loan, and additional files for current members"}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                {/* CARCC Upload Section */}
-                <div className="space-y-4 border-b border-gray-200 pb-6">
-                  <h3 className="font-medium text-gray-800">CARCC Data</h3>
-                  <div className="grid w-full items-center gap-1.5">
-                    <Label htmlFor="client-file" className="text-gray-700">
-                      Select CARCC Excel File
-                    </Label>
-                    <Input 
-                      id="client-file" 
-                      type="file" 
-                      accept=".xlsx, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                      onChange={handleClientFileChange}
-                      className="border-gray-300"
-                    />
-                  </div>
+                {/* Mode Toggle */}
+                <div className="space-y-2">
+                  <Label className="text-gray-700">Upload Mode</Label>
+                  <ToggleGroup 
+                    type="single" 
+                    value={uploadMode}
+                    onValueChange={(value) => {
+                      if (value) {
+                        setUploadMode(value as UploadMode)
+                        setClientFile(null)
+                        setLoanFile(null)
+                        setAdditionalFile(null)
+                        setUploadStatus(null)
+                      }
+                    }}
+                  >
+                    <ToggleGroupItem value="proposed" className="px-4">
+                      Proposed
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="current" className="px-4">
+                      Current
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
 
                 {/* Client File Input */}
                 <div className="grid w-full items-center gap-1.5">
@@ -292,9 +268,8 @@ export default function UploadPage() {
                   )}
                 </div>
 
-                {/* Loans Upload Section */}
-                {/* <div className="space-y-4">
-                  <h3 className="font-medium text-gray-800">Loans Data</h3>
+                {/* Additional File Input (Current mode only) */}
+                {uploadMode === "current" && (
                   <div className="grid w-full items-center gap-1.5">
                     <Label htmlFor="additional-file" className="text-gray-700">
                       Additional Data File
@@ -359,16 +334,16 @@ export default function UploadPage() {
                     <p>Data uploaded successfully!</p>
                   </div>
                 )}
-                  {uploadStatus.loan === "error" && (
-                    <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg">
-                      <AlertCircle className="h-5 w-5" />
-                      <p>Error uploading loan data. Please try again.</p>
-                    </div>
-                  )}
-                </div> */}
 
-                {/* <div className="border-t border-gray-200 pt-4"> */}
-                <div>
+                {uploadStatus === "error" && (
+                  <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg">
+                    <AlertCircle className="h-5 w-5" />
+                    <p>Error uploading data. Please try again.</p>
+                  </div>
+                )}
+
+                {/* Upload Guidelines */}
+                <div className="border-t border-gray-200 pt-4">
                   <h3 className="font-medium text-gray-700 mb-2">Upload Guidelines:</h3>
                   <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
                     <li>Only .xlsx files are accepted</li>
