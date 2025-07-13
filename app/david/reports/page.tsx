@@ -122,7 +122,6 @@ const statusStyles = {
   Defaulted: "bg-red-100 text-red-800 hover:bg-red-100 border-red-200",
 };
 
-// Add print styles as a constant
 const printStyles = `
   @page {
     size: A4;
@@ -137,27 +136,9 @@ const printStyles = `
     .no-print {
       display: none !important;
     }
-    .print-section {
-      page-break-after: always;
-      padding: 10px;
-    }
-    .print-section:last-child {
-      page-break-after: auto;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      page-break-inside: avoid;
-    }
-    th, td {
-      padding: 4px;
-      border: 1px solid #ddd;
-    }
-    h1, h2, h3 {
-      page-break-after: avoid;
-    }
-    .credit-score-header {
-      page-break-before: always;
+    .print-container {
+      padding: 0;
+      max-width: 100%;
     }
     .print-header {
       display: flex;
@@ -172,6 +153,103 @@ const printStyles = `
       border-top: 1px solid #ddd;
       text-align: center;
       font-size: 10pt;
+    }
+    .print-section {
+      margin-bottom: 1.5rem;
+      page-break-inside: avoid;
+    }
+    .print-section:last-child {
+      margin-bottom: 0;
+    }
+    .print-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 1rem;
+    }
+    .print-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      background: #fff;
+    }
+    .print-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      page-break-inside: avoid;
+    }
+    .print-table th, 
+    .print-table td {
+      padding: 0.5rem;
+      border: 1px solid #e2e8f0;
+      text-align: left;
+    }
+    .print-table th {
+      background-color: #f8fafc;
+      font-weight: 600;
+    }
+    .print-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: #1e293b;
+    }
+    .print-subtitle {
+      font-size: 1.25rem;
+      font-weight: 500;
+      margin: 1rem 0 0.5rem;
+      color: #334155;
+    }
+    .print-badge {
+      display: inline-block;
+      padding: 0.25rem 0.5rem;
+      border-radius: 0.25rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .print-avoid-break {
+      page-break-inside: avoid;
+    }
+    .credit-score-box {
+      border: 2px solid #000;
+      border-radius: 0.5rem;
+      padding: 1rem;
+      text-align: center;
+      margin-bottom: 1rem;
+      background: #f8fafc;
+    }
+    .credit-score-value {
+      font-size: 2.5rem;
+      font-weight: 700;
+      margin: 0.5rem 0;
+    }
+    .credit-score-label {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .credit-score-range {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.75rem;
+      color: #64748b;
+    }
+    .credit-score-bar {
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      margin: 0.5rem 0;
+      overflow: hidden;
+    }
+    .credit-score-progress {
+      height: 100%;
+    }
+    .double-column {
+      column-count: 2;
+      column-gap: 2rem;
+    }
+    @page :first {
+      margin-top: 0;
     }
   }
 `;
@@ -523,7 +601,6 @@ export default function LoanReportsPage() {
     setIsPrinting(true);
     
     try {
-      // Create a print-specific version of the content
       const printWindow = window.open('', '_blank');
       if (!printWindow) {
         throw new Error('Could not open print window');
@@ -534,55 +611,66 @@ export default function LoanReportsPage() {
       
       // Add print-specific classes and structure
       const sections = [
-        { selector: '.credit-score-section', className: 'credit-score-header' },
-        { selector: '.client-info-section', className: 'print-section' },
-        { selector: '.financial-profile-section', className: 'print-section' },
-        { selector: '.loan-details-section', className: 'print-section' },
-        { selector: '.payment-history-section', className: 'print-section' },
-        { selector: '.previous-loans-section', className: 'print-section' }
+        { selector: '.credit-score-section', className: 'print-section print-card' },
+        { selector: '.client-info-section', className: 'print-section double-column' },
+        { selector: '.financial-profile-section', className: 'print-section double-column' },
+        { selector: '.loan-details-section', className: 'print-section print-card' },
+        { selector: '.payment-history-section', className: 'print-section print-avoid-break' },
+        { selector: '.previous-loans-section', className: 'print-section print-avoid-break' }
       ];
 
       sections.forEach(({ selector, className }) => {
         const element = printContent.querySelector(selector);
         if (element) {
-          element.classList.add(className);
+          element.classList.add(...className.split(' '));
         }
       });
 
-      // Handle large tables
-      printContent.querySelectorAll('table').forEach(table => {
-        const rows = table.rows;
-        for (let i = 0; i < rows.length; i++) {
-          if (i > 0 && i % 30 === 0) { // Break every 30 rows
-            rows[i].classList.add('page-break-before');
-          }
-        }
-      });
-
-      // Handle print mode (detailed/condensed)
-      if (printMode === 'condensed') {
-        printContent.querySelectorAll('.detail-row').forEach(el => {
-          el.classList.add('hidden-print');
-        });
+      // Enhance credit score display for print
+      const creditScoreElement = printContent.querySelector('.credit-score-display');
+      if (creditScoreElement) {
+        creditScoreElement.innerHTML = `
+          <div class="credit-score-box">
+            <div class="credit-score-label">Credit Score</div>
+            <div class="credit-score-value ${getCreditScoreColor(selectedLoan?.creditScore || 0)}">
+              ${selectedLoan?.creditScore || 0}
+            </div>
+            <div class="credit-score-label">
+              ${getCreditScoreLabel(selectedLoan?.creditScore || 0)}
+            </div>
+            <div class="credit-score-bar">
+              <div class="credit-score-progress ${getCreditScoreColor(selectedLoan?.creditScore || 0).replace('text', 'bg')}" 
+                   style="width: ${selectedLoan?.creditScore || 0}%"></div>
+            </div>
+            <div class="credit-score-range">
+              <span>0 (Poor)</span>
+              <span>100 (Excellent)</span>
+            </div>
+          </div>
+        `;
       }
 
-      // Add print header and footer
+      // Create print header
       const header = document.createElement('div');
       header.className = 'print-header';
       header.innerHTML = `
-        <h1>Loan Report - ${selectedLoan?.clientName || 'Report'}</h1>
-        <div>Generated on ${new Date().toLocaleDateString()}</div>
+        <div>
+          <h1 class="print-title">Loan Report - ${selectedLoan?.clientName || 'Report'}</h1>
+          <div>Generated on ${new Date().toLocaleDateString()}</div>
+        </div>
+        <div>
+          <div>Member ID: ${selectedLoan?.clientId || 'N/A'}</div>
+          <div>Loan ID: ${selectedLoan?.id || 'N/A'}</div>
+        </div>
       `;
 
+      // Create print footer
       const footer = document.createElement('div');
       footer.className = 'print-footer';
       footer.innerHTML = `
         <div>Confidential - For internal use only</div>
         <div>Page <span class="page-number"></span></div>
       `;
-
-      printContent.insertBefore(header, printContent.firstChild);
-      printContent.appendChild(footer);
 
       // Prepare the HTML for printing
       printWindow.document.write(`
@@ -593,7 +681,9 @@ export default function LoanReportsPage() {
           </head>
           <body>
             <div class="print-container">
+              ${header.outerHTML}
               ${printContent.innerHTML}
+              ${footer.outerHTML}
             </div>
             <script>
               // Update page numbers
@@ -621,7 +711,9 @@ export default function LoanReportsPage() {
             </head>
             <body>
               <div class="print-container">
+                ${header.outerHTML}
                 ${printContent.innerHTML}
+                ${footer.outerHTML}
               </div>
             </body>
           </html>
@@ -698,15 +790,6 @@ export default function LoanReportsPage() {
                 <Button variant="outline" onClick={onClose}>
                   Close
                 </Button>
-                <Select value={printMode} onValueChange={setPrintMode}>
-                  <SelectTrigger className="w-[120px]">
-                    <SelectValue placeholder="Print Mode" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="detailed">Detailed</SelectItem>
-                    <SelectItem value="condensed">Condensed</SelectItem>
-                  </SelectContent>
-                </Select>
                 <Button 
                   onClick={handlePrint} 
                   className="bg-blue-600 hover:bg-blue-700"
@@ -724,7 +807,7 @@ export default function LoanReportsPage() {
             <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200 credit-score-section">
               <h2 className="text-lg font-semibold mb-3">Credit Summary</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+                <div className="credit-score-display">
                   <div className="flex items-center gap-4">
                     <div className={`text-4xl font-bold ${creditScoreColor}`}>
                       {loan.creditScore}
