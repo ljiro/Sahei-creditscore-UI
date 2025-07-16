@@ -341,7 +341,7 @@ export default function LoanReportsPage() {
           remainingBalance: reportData.RemainingBalance || reportData.PrincipalAmount || 0,
           nextPayment: reportData.NextPaymentDate?.split('T')[0] || new Date().toISOString().split('T')[0],
           validatedBy: reportData.ProcessedBy || "Loan Officer",
-          creditScore: creditScore,
+          creditScore: reportData.CreditScore,
           coApplicantNumber: reportData.CoMakers?.length || 0,
           guarantorNumber: reportData.CoMakers?.filter((c: any) => c.Status === "Active").length || 0,
           clientAddress: reportData.MemberAddress || "Address Not Available",
