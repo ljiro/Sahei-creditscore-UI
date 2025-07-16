@@ -1,17 +1,28 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { FileText, UploadCloud, X, CheckCircle2, AlertCircle, AlertTriangle, ChevronLeft, ChevronRight } from "lucide-react"
+import { FileText, UploadCloud, X, CheckCircle2, AlertCircle, AlertTriangle, ChevronLeft, ChevronRight, ChevronDown } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Progress } from "@/components/ui/progress"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import HybridWebView from "../hybridwebview/HybridWebView.js";
+
+// --- Add global type for name matching callback ---
+declare global {
+  interface Window {
+    HybridWebView?: {
+      SendInvokeMessageToDotNet?: (method: string, payload: any) => void;
+      InvokePrint?: (htmlContent: string) => void;
+    };
+    globalSetPotentialMatches?: (matches: Match[]) => void;
+  }
+}
 
 type Match = {
   id: number
@@ -42,6 +53,19 @@ export default function UploadPage() {
   const [pendingAction, setPendingAction] = useState<"merge" | "not-duplicate" | null>(null)
   const [decidedMatches, setDecidedMatches] = useState<number[]>([])
 
+  // Listen for backend notification for name matching (decoupled from upload)
+  useEffect(() => {
+    window.globalSetPotentialMatches = (matches: Match[]) => {
+      setPotentialMatches(matches)
+      setCurrentMatchIdx(0)
+      setIsDialogOpen(true)
+      setDecidedMatches([])
+    }
+    return () => {
+      window.globalSetPotentialMatches = undefined
+    }
+  }, [])
+
   // File handlers
   const handleClientFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setClientFile(e.target.files?.[0] || null)
@@ -63,7 +87,7 @@ export default function UploadPage() {
   const removeLoanFile = () => setLoanFile(null)
   const removeAdditionalFile = () => setAdditionalFile(null)
 
-  // Upload files to backend
+  // Upload files to backend (no name matching logic here)
   const uploadFiles = async () => {
     const requiredFiles = uploadMode === "proposed" 
       ? [clientFile, loanFile] 
@@ -87,20 +111,12 @@ export default function UploadPage() {
         formData.append("additionalFile", additionalFile);
       }
 
-      console.log("form data ", formData)
-      // Add headers for binary data
-      const response = await fetch("http://localhost:5000/upload_combined", {
+      await fetch("http://localhost:5000/upload_combined", {
         method: "POST",
         body: formData
       });
 
-      if (!response.ok) throw new Error("Upload failed");
-      
-      const data = await response.json();
-      if (data.matches?.length > 0) {
-        setPotentialMatches(data.matches);
-        setIsDialogOpen(true);
-      }
+      // Do not handle matches here, just show upload status
       setUploadStatus("success");
     } catch (error) {
       console.error("Upload error:", error);
@@ -123,19 +139,27 @@ export default function UploadPage() {
   }
 
   const handleConfirmMatch = async (isDuplicate: boolean) => {
-    if (!potentialMatches || !currentMatch) return
-    
-    setDecidedMatches(prev => [...prev, currentMatch.id])
-    setIsConfirmDialogOpen(false)
+    if (!potentialMatches || !currentMatch) return;
+
+    // Notify backend of the user's decision
+    if (window.HybridWebView && window.HybridWebView.SendInvokeMessageToDotNet) {
+      window.HybridWebView.SendInvokeMessageToDotNet("resolveNameMatch", {
+        matchId: currentMatch.id,
+        decision: isDuplicate ? "merge" : "not-duplicate"
+      });
+    }
+
+    setDecidedMatches(prev => [...prev, currentMatch.id]);
+    setIsConfirmDialogOpen(false);
 
     const nextIdx = potentialMatches.findIndex(
       (m, idx) => !decidedMatches.includes(m.id) && idx !== currentMatchIdx
-    )
-    
+    );
+
     if (nextIdx !== -1) {
-      setCurrentMatchIdx(nextIdx)
+      setCurrentMatchIdx(nextIdx);
     } else {
-      setIsDialogOpen(false)
+      setIsDialogOpen(false);
     }
   }
 
@@ -167,6 +191,7 @@ export default function UploadPage() {
                 <p className="text-sm font-medium text-gray-800">David Lee</p>
                 <p className="text-xs text-gray-500">IT Administrator</p>
               </div>
+              <ChevronDown className="h-4 w-4 text-gray-400 cursor-pointer" />
             </div>
           </div>
         </header>
@@ -347,7 +372,7 @@ export default function UploadPage() {
                   <h3 className="font-medium text-gray-700 mb-2">Upload Guidelines:</h3>
                   <ul className="text-sm text-gray-600 space-y-1 list-disc pl-5">
                     <li>Only .xlsx files are accepted</li>
-                    <li>Maximum file size: 5MB per file</li>
+                    <li>Maximum file size: 5MB</li>
                     <li>Ensure data follows the required format</li>
                     <li>First row should contain column headers</li>
                     {uploadMode === "current" && (
