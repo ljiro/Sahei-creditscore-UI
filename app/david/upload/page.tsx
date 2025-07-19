@@ -1,15 +1,25 @@
 "use client"
 
-// Extend the Window interface to include HybridWebView
+// --- Add global type for name matching callback ---
 declare global {
   interface Window {
     HybridWebView?: {
-      SendInvokeMessageToDotNet?: (method: string, payload: any) => void
-    }
+      SendInvokeMessageToDotNet?: (method: string, payload: any) => void;
+      InvokePrint?: (htmlContent: string) => void;
+    };
+    globalSetPotentialMatches?: (matches: Match[]) => void;
   }
 }
 
-import { useState } from "react"
+type Match = {
+  id: number
+  newRecord: Record<string, string>
+  existingRecord: Record<string, string>
+  confidence: number
+  matchReasons: string[]
+}
+
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -48,14 +58,8 @@ export default function UploadPage() {
   }>({ client: null, loan: null })
 
   // Name matching state
-  const [potentialMatches, setPotentialMatches] = useState<Array<{
-    id: number
-    newRecord: Record<string, string>
-    existingRecord: Record<string, string>
-    confidence: number
-    matchReasons: string[]
-  }> | null>(null)
-  const [currentMatchId, setCurrentMatchId] = useState<number | null>(null)
+  const [potentialMatches, setPotentialMatches] = useState<Match[] | null>(null)
+  const [currentMatchIdx, setCurrentMatchIdx] = useState(0)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false)
   const [pendingAction, setPendingAction] = useState<"merge" | "not-duplicate" | null>(null)
@@ -118,30 +122,6 @@ export default function UploadPage() {
     setIsUploadingClient(true);
     setUploadStatus({ ...uploadStatus, client: null });
     await uploadFile(clientFile, "client");
-
-    // try {
-    //   // Send file to .NET backend for processing and name matching
-    //   // backend should process the file, check for duplicates, and call window.globalSetPotentialMatches with results
-    //   if (window.HybridWebView && window.HybridWebView.SendInvokeMessageToDotNet) {
-    //     // Read file as base64 or ArrayBuffer (depending on backend expectation)
-    //     const reader = new FileReader();
-    //     reader.onload = function (e) {
-    //       const fileData = e.target?.result;
-    //       // Send file data to .NET backend (may need to adjust the message and payload format)
-    //       window.HybridWebView?.SendInvokeMessageToDotNet?.("uploadMembersFile", {
-    //         fileName: clientFile.name,
-    //         fileData: fileData // base64 or ArrayBuffer
-    //       });
-    //     };
-    //     reader.readAsDataURL(clientFile); // or readAsArrayBuffer(clientFile)
-    //   }
-    //   setUploadStatus(prev => ({ ...prev, client: "success" }));
-    // } catch (error) {
-    //   console.error('Client upload error:', error)
-    //   setUploadStatus(prev => ({ ...prev, client: "error" }))
-    // } finally {
-    //   setIsUploadingClient(false)
-    // }
   }
 
   const handleLoanUpload = async () => {
@@ -162,85 +142,68 @@ export default function UploadPage() {
     }
   }
 
-  // Receive potential matches from .NET backend
-  // This function will be called by .NET after processing the uploaded file
-  // The payload should be an array of match objects (same shape as before)
-  React.useEffect(() => {
-    (window as any).globalSetPotentialMatches = (matches: any[]) => {
-      setPotentialMatches(matches);
-      setCurrentMatchId(matches[0]?.id || null);
-      setDecidedMatches([]);
-      setIsDialogOpen(matches.length > 0);
-    };
-  }, []);
-
-  // Get current match data
-  const getCurrentMatch = () => {
-    if (!potentialMatches || currentMatchId === null) return null
-    return potentialMatches.find(match => match.id === currentMatchId)
-  }
-
-  // Handle match confirmation
-  const handleConfirmMatch = (isDuplicate: boolean) => {
-    if (!potentialMatches || currentMatchId === null) return
-    
-    // Add current match to decided matches
-    setDecidedMatches(prev => [...prev, currentMatchId])
-    
-    // Find next undecided match
-    const nextMatch = potentialMatches.find(
-      match => !decidedMatches.includes(match.id) && match.id !== currentMatchId
-    )
-    
-    if (nextMatch) {
-      setCurrentMatchId(nextMatch.id)
-    } else {
-      setIsDialogOpen(false)
+  // Listen for backend notification for name matching (decoupled from upload)
+  useEffect(() => {
+    window.globalSetPotentialMatches = (matches: Match[]) => {
+      setPotentialMatches(matches)
+      setCurrentMatchIdx(0)
+      setIsDialogOpen(true)
+      setDecidedMatches([])
     }
-    
-    setIsConfirmDialogOpen(false)
-  }
+    return () => {
+      window.globalSetPotentialMatches = undefined
+    }
+  }, [])
 
-  // Show confirmation dialog
+  // Name matching logic
+  const currentMatch = potentialMatches?.[currentMatchIdx]
+  const undecidedMatches = potentialMatches?.filter(m => !decidedMatches.includes(m.id)) || []
+  const totalMatches = potentialMatches?.length || 0
+
+  const handleDialogClose = () => setIsDialogOpen(false)
+
   const showConfirmation = (action: "merge" | "not-duplicate") => {
     setPendingAction(action)
     setIsConfirmDialogOpen(true)
   }
 
-  // Navigate between undecided matches
-  const navigateMatch = (direction: "prev" | "next") => {
-    if (!potentialMatches || currentMatchId === null) return
-    
-    const undecidedMatches = potentialMatches.filter(
-      match => !decidedMatches.includes(match.id)
-    )
-    
-    if (undecidedMatches.length <= 1) return
-    
-    const currentIndex = undecidedMatches.findIndex(
-      match => match.id === currentMatchId
-    )
-    
-    let newIndex
-    if (direction === "prev") {
-      newIndex = currentIndex > 0 ? currentIndex - 1 : undecidedMatches.length - 1
-    } else {
-      newIndex = currentIndex < undecidedMatches.length - 1 ? currentIndex + 1 : 0
+  const handleConfirmMatch = async (isDuplicate: boolean) => {
+    if (!potentialMatches || !currentMatch) return;
+
+    // Notify backend of the user's decision
+    if (window.HybridWebView && window.HybridWebView.SendInvokeMessageToDotNet) {
+      window.HybridWebView.SendInvokeMessageToDotNet("resolveNameMatch", {
+        matchId: currentMatch.id,
+        decision: isDuplicate ? "merge" : "not-duplicate"
+      });
     }
+
+    setDecidedMatches(prev => [...prev, currentMatch.id]);
+    setIsConfirmDialogOpen(false);
+
+    const nextIdx = potentialMatches.findIndex(
+      (m, idx) => !decidedMatches.includes(m.id) && idx !== currentMatchIdx
+    );
+
+    if (nextIdx !== -1) {
+      setCurrentMatchIdx(nextIdx);
+    } else {
+      setIsDialogOpen(false);
+    }
+  }
+
+  const navigateMatch = (direction: "prev" | "next") => {
+    if (!potentialMatches) return
+    const undecided = potentialMatches.filter(m => !decidedMatches.includes(m.id))
+    if (undecided.length <= 1) return
     
-    setCurrentMatchId(undecidedMatches[newIndex].id)
+    const currentUndecidedIdx = undecided.findIndex(m => m.id === currentMatch?.id)
+    let newIdx = direction === "prev"
+      ? currentUndecidedIdx > 0 ? currentUndecidedIdx - 1 : undecided.length - 1
+      : currentUndecidedIdx < undecided.length - 1 ? currentUndecidedIdx + 1 : 0
+    
+    setCurrentMatchIdx(potentialMatches.findIndex(m => m.id === undecided[newIdx].id))
   }
-
-  // Handle dialog close
-  const handleDialogClose = () => {
-    setIsDialogOpen(false)
-  }
-
-  const currentMatch = getCurrentMatch()
-  const undecidedMatches = potentialMatches?.filter(
-    match => !decidedMatches.includes(match.id)
-  ) || []
-  const totalMatches = potentialMatches?.length || 0
 
   return (
     <div className="flex min-h-screen w-full bg-gray-50">
@@ -436,16 +399,14 @@ export default function UploadPage() {
             </CardContent>
           </Card>
 
-          {/* Success message when all matches are resolved */}
-          {uploadStatus.client === "success" && !isDialogOpen && potentialMatches && (
+          {/* Name matching completion message */}
+          {potentialMatches && decidedMatches.length === totalMatches && !isDialogOpen && (
             <Card className="shadow-sm border-green-200 bg-green-50 max-w-2xl mx-auto">
               <CardHeader className="p-4">
                 <div className="flex items-center gap-3">
                   <CheckCircle2 className="h-5 w-5 text-green-600" />
                   <span className="text-green-800 font-medium">
-                    {decidedMatches.length === totalMatches
-                      ? "All potential duplicates reviewed. Data processing complete!"
-                      : "Client data uploaded successfully!"}
+                    All potential duplicates reviewed. Data processing complete!
                   </span>
                 </div>
               </CardHeader>
@@ -454,7 +415,7 @@ export default function UploadPage() {
         </main>
 
         {/* Name Matching Dialog */}
-        <Dialog open={isDialogOpen && currentMatch !== null} onOpenChange={handleDialogClose}>
+        <Dialog open={isDialogOpen && !!currentMatch} onOpenChange={handleDialogClose}>
           <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -462,7 +423,7 @@ export default function UploadPage() {
                 <span>Potential Duplicate Member Found</span>
               </DialogTitle>
               <DialogDescription>
-                {`Reviewing match ${undecidedMatches.findIndex(m => m.id === currentMatchId) + 1} of ${undecidedMatches.length} (${totalMatches} total)`}
+                {`Reviewing match ${undecidedMatches.findIndex(m => m.id === currentMatch?.id) + 1} of ${undecidedMatches.length} (${totalMatches} total)`}
               </DialogDescription>
             </DialogHeader>
 
