@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Shield, BarChart2, Users2, User, Book, FileText, Upload, Settings } from "lucide-react"
+import { Shield, BarChart2, Users2, User, Book, FileText, Upload, Settings, Database  } from "lucide-react"
 
 export function AdminSidebar() {
   const pathname = usePathname()
@@ -14,7 +14,7 @@ export function AdminSidebar() {
     { href: "/david/members", icon: User, label: "Members" },
     { href: "/david/loans", icon: Book, label: "Loans" },
     { href: "/david/reports", icon: FileText, label: "Reports" },
-    { href: "/david/upload", icon: Upload, label: "Upload Data" },
+    // { href: "/david/upload", icon: Upload, label: "Upload Data" },
     //{ href: "/david/loan-product-config", icon: Settings, label: "Loan Products" },
   ]
 
