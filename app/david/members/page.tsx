@@ -828,7 +828,7 @@ function ClientFormDialog({
 }
 
 export default function MembersPage() {
-  const [members, setMembers] = useState<Member[]>([]);
+  const [members, setMembers] = useState<Member[]>(initialMembers);
   const [searchText, setSearchText] = useState("");
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "none">("none");
@@ -912,7 +912,7 @@ useEffect(() => {
   };
 
   // Ask .NET to load members
-  HybridWebView.SendInvokeMessageToDotNet("getMembers");
+  // HybridWebView.SendInvokeMessageToDotNet("getMembers");
 
 }, []);
 
