@@ -309,7 +309,7 @@ const DashboardPage = () => {
 
     // Request dashboard data from .NET
     if (typeof HybridWebView !== 'undefined') {
-      HybridWebView.SendInvokeMessageToDotNet("getDashboardData");
+      // HybridWebView.SendInvokeMessageToDotNet("getDashboardData");
     } else {
       // Fallback to sample data if not in HybridWebView context
       const sampleData = {
@@ -353,7 +353,7 @@ const DashboardPage = () => {
      
     }
 
-      HybridWebView.SendInvokeMessageToDotNet("getDashboardInfo");
+      // HybridWebView.SendInvokeMessageToDotNet("getDashboardInfo");
 
   }, []);
 
