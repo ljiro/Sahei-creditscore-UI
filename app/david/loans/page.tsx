@@ -53,6 +53,7 @@ import {
 } from "lucide-react"
 import { useRef } from "react";
 import HybridWebView from "../hybridwebview/HybridWebView.js";
+import { Checkbox } from "@/components/ui/checkbox"
 
 const statusStyles = {
   Approved: "bg-green-100 text-green-800 hover:bg-green-100 border-green-200",
@@ -63,6 +64,9 @@ const statusStyles = {
 }
 
 type LoanStatus = keyof typeof statusStyles
+type MembershipStatus = "Active" | "Dormant" | "Suspended" | "Closed"
+type ClosureReason = "N/A" | "Voluntary" | "Policy Violation" | "Non-Payment" | "Deceased" | "Other"
+type RiskAssessmentLevel = "Very Low Risk" | "Low Risk" | "Medium Risk" | "High Risk" | "Very High Risk"
 
 interface Payment {
   id: string
@@ -73,6 +77,82 @@ interface Payment {
   remainingBalance: number
   status: "Paid" | "Pending" | "Overdue"
   method?: string
+}
+
+interface PersonalDetails {
+  firstName: string
+  middleName: string
+  lastName: string
+  contactNumber: string
+  birthdate: string
+  sex: "Male" | "Female"
+  age: number
+  presentAddress: string
+  yearsOfStay: number
+  educationType?: "Elementary" | "High School" | "Vocational" | "College" | "Post-graduate" | "None"
+  civilStatus: "Single" | "Married" | "Widowed" | "Separated"
+  membershipDate: string
+  membershipStatus: MembershipStatus
+  closureReason: ClosureReason
+  dependents: Dependent[]
+  spouseName?: string
+  spouseContact?: string
+  spouseBirthdate?: string
+  spouseMonthlyIncomeMin?: number
+  spouseMonthlyIncomeMax?: number
+  monthlyIncome: number
+  tin?: string
+  sss?: string
+  philhealth?: string
+  savings?: number
+  shareCapital?: number
+  termDeposit?: number
+  map?: number
+}
+
+interface Dependent {
+  id: number
+  isInSchool: boolean
+}
+
+interface Asset {
+  id: number
+  name: string
+  location: string
+  isPledged: boolean
+}
+
+interface Beneficiary {
+  id: number
+  name: string
+  birthdate: string
+  relationship: string
+  contactNumber: string
+}
+
+interface SourceOfIncome {
+  type: "Business" | "Employed"
+  // Business fields
+  businessType?: "Sari-sari Store" | "Direct Selling" | "Wagwagan" | "Farming" | "Mining" | "Eatery" | "Pension" | "Remittance" | "Others"
+  businessTypeOther?: string
+  businessIncomeMin?: number
+  businessIncomeMax?: number
+  // Employed fields
+  supervisorName?: string
+  companyName?: string
+  employmentStatus?: "Regular" | "Contractual" | "Probationary" | "Part-time" | "Freelance"
+  salaryMin?: number
+  salaryMax?: number
+  dateEmployed?: string
+  workingHours?: number
+  proofOfIncomeType?: "Pay Slip" | "Bank Statement" | "Business Permit"
+  businessPermitStatus?: "Renewed" | "Not Renewed" | "New Business Permit"
+}
+
+interface OtherId {
+  id: number
+  name: string
+  number: string
 }
 
 interface Loan {
@@ -96,6 +176,19 @@ interface Loan {
   monthlyPayment: number
   collateralType?: string
   paymentFrequency: string
+  finalOutcome?: "Paid in Full" | "Defaulted" | "N/A"
+  loanBehaviourStatus?: "Pending" | "Active" | "Paid" | "In Arrears" | "Defaulted" | "Rejected" | "N/A"
+  delinquencies?: number
+  maxOverdueDays?: number
+  riskAssessment?: RiskAssessmentLevel
+  dateGranted?: string
+  personalDetails?: PersonalDetails
+  sourceOfIncome?: SourceOfIncome
+  assets?: Asset[]
+  beneficiaries?: Beneficiary[]
+  actualPayments?: number
+  totalPayments?: number
+  daysOverdue?: number
 }
 
 const initialLoans: Loan[] = [
@@ -163,7 +256,7 @@ const initialLoans: Loan[] = [
     collateralType: "Secured",
     paymentFrequency: "Monthly",
     paymentHistory: [],
-  },
+  }
 ]
 
 function PaymentDialog({
@@ -617,6 +710,11 @@ function LoanFormDialog({
   onSave: (loan: Loan) => void
   mode: "create" | "edit"
 }) {
+  const [personalDetails, setPersonalDetails] = useState<Partial<PersonalDetails>>(loan?.personalDetails || {})
+  const [sourceOfIncome, setSourceOfIncome] = useState<Partial<SourceOfIncome>>(loan?.sourceOfIncome || { type: "Business" })
+  const [assets, setAssets] = useState<Asset[]>(loan?.assets || [])
+  const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>(loan?.beneficiaries || [])
+  const [otherIds, setOtherIds] = useState<OtherId[]>([])
   const [formData, setFormData] = useState<Partial<Loan>>(
     loan || {
       clientName: "",
@@ -634,6 +732,68 @@ function LoanFormDialog({
     },
   )
   const [loanDuration, setLoanDuration] = useState(12)
+  const [step, setStep] = useState(1)
+  const [isAnimating, setIsAnimating] = useState(false)
+
+  const handleNext = (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsAnimating(true)
+    setTimeout(() => {
+      setStep(2)
+      setIsAnimating(false)
+    }, 300) // Animation duration
+  }
+
+  const handleBack = () => {
+    setIsAnimating(true)
+    setTimeout(() => {
+      setStep(1)
+      setIsAnimating(false)
+    }, 300) // Animation duration
+  }
+
+  const handleDependentsChange = (newCount: number) => {
+    const count = Math.max(0, newCount)
+    const currentDependents = personalDetails.dependents || []
+    const newDependents: Dependent[] = []
+
+    for (let i = 0; i < count; i++) {
+      if (currentDependents[i]) {
+        newDependents.push(currentDependents[i])
+      } else {
+        newDependents.push({ id: Date.now() + i, isInSchool: false })
+      }
+    }
+    setPersonalDetails({ ...personalDetails, dependents: newDependents })
+  }
+
+    // Handlers for dynamic beneficiaries
+  const addBeneficiary = () => {
+    setBeneficiaries([
+      ...beneficiaries,
+      { id: Date.now(), name: "", relationship: "", birthdate: "", contactNumber: "" },
+    ])
+  }
+  const removeBeneficiary = (id: number) => {
+    setBeneficiaries(beneficiaries.filter((b) => b.id !== id))
+  }
+
+  // Handlers for dynamic assets
+  const addAsset = () => {
+    setAssets([...assets, { id: Date.now(), name: "", location: "", isPledged: false }])
+  }
+  const removeAsset = (id: number) => {
+    setAssets(assets.filter((a) => a.id !== id))
+  }
+
+  // Handlers for dynamic IDs
+  const addOtherId = () => {
+    setOtherIds([...otherIds, { id: Date.now(), name: "", number: "" }])
+  }
+  const removeOtherId = (id: number) => {
+    setOtherIds(otherIds.filter((otherId) => otherId.id !== id))
+  }
+
 
   const formatDuration = (months: number) => {
     if (months < 12) return `${months} month${months > 1 ? "s" : ""}`
@@ -649,11 +809,14 @@ function LoanFormDialog({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Combine all data to create the final loan object
+    const fullClientName = `${personalDetails.firstName || ""} ${personalDetails.middleName?.[0] || ""} ${personalDetails.lastName || ""}`.trim()
     const monthlyPayment = formData.amount ? (formData.amount * 1.12) / loanDuration : 0
 
     const newLoan: Loan = {
       ...formData,
       id: loan?.id || `LN${String(Date.now()).slice(-3)}`,
+      clientName: fullClientName,
       applicationDate: loan?.applicationDate || new Date().toISOString().split("T")[0],
       duration: `${loanDuration} months`,
       remainingBalance: loan?.remainingBalance || formData.amount || 0,
@@ -662,183 +825,1040 @@ function LoanFormDialog({
       creditScore: loan?.creditScore || 75,
       monthlyPayment,
       paymentHistory: loan?.paymentHistory || [],
+      // Attach the detailed data
+      personalDetails,
+      sourceOfIncome,
+      assets,
+      beneficiaries,
     } as Loan
 
     onSave(newLoan)
+    setStep(1)
   }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{mode === "create" ? "Register New Loan" : `Edit Loan - ${loan?.id}`}</DialogTitle>
+          <DialogTitle>
+            {mode === "create" ? `Register New Loan - Step ${step} of 2` : `Edit Loan - ${loan?.id}`}
+          </DialogTitle>
           <DialogDescription>
-            {mode === "create" ? "Fill out the details for the new loan" : "Update the loan information"}
+            {step === 1 ? "Step 1: Member's Personal Details" : "Step 2: Loan Details and Co-Makers"}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="clientName">Client Name *</Label>
-              <Input
-                id="clientName"
-                value={formData.clientName || ""}
-                onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="clientId">Client ID</Label>
-              <Input
-                id="clientId"
-                value={formData.clientId || ""}
-                onChange={(e) => setFormData({ ...formData, clientId: e.target.value })}
-              />
-            </div>
-          </div>
+        <form onSubmit={step === 1 ? handleNext : handleSubmit} className="space-y-6 p-1">
+          <div className={`transition-opacity duration-300 ${isAnimating ? "opacity-0" : "opacity-100"}`}>
+            {step === 1 && (
+              <div className="space-y-6">
+                {/* Personal Information Section */}
+                <fieldset className="border p-4 rounded-md">
+                  <legend className="px-2 font-medium text-sm">Personal Information</legend>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <Label>First Name</Label>
+                      <Input placeholder="Juan" />
+                    </div>
+                    <div>
+                      <Label>Middle Name</Label>
+                      <Input placeholder="Reyes" />
+                    </div>
+                    <div>
+                      <Label>Last Name</Label>
+                      <Input placeholder="Dela Cruz" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                      <Label>Contact Number</Label>
+                      <Input type="tel" placeholder="09171234567" />
+                    </div>
+                    <div>
+                      <Label>Birthdate</Label>
+                      <Input type="date" />
+                    </div>
+                    <div>
+                      <Label>Sex</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select sex" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Male">Male</SelectItem>
+                          <SelectItem value="Female">Female</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <Label>Present Address</Label>
+                      <Textarea placeholder="123 Rizal St, Baguio City" />
+                    </div>
+                    <div>
+                      <Label>Years at Present Address</Label>
+                      <Input type="number" min="0" placeholder="5" />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="civilStatus">Civil Status</Label>
+                      <Select
+                        value={personalDetails.civilStatus || ""}
+                        onValueChange={(value) =>
+                          setPersonalDetails({
+                            ...personalDetails,
+                            civilStatus: value as "Single" | "Married" | "Widowed" | "Separated",
+                          })
+                        }
+                      >
+                        <SelectTrigger id="civilStatus">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Single">Single</SelectItem>
+                          <SelectItem value="Married">Married</SelectItem>
+                          <SelectItem value="Widowed">Widowed</SelectItem>
+                          <SelectItem value="Separated">Separated</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="educationType">Education</Label>
+                      <Select
+                        value={personalDetails.educationType || ""}
+                        onValueChange={(value) =>
+                          setPersonalDetails({
+                            ...personalDetails,
+                            educationType: value as any,
+                          })
+                        }
+                      >
+                        <SelectTrigger id="educationType">
+                          <SelectValue placeholder="Select education" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="None">None</SelectItem>
+                          <SelectItem value="Elementary">Elementary</SelectItem>
+                          <SelectItem value="High School">High School</SelectItem>
+                          <SelectItem value="Vocational">Vocational</SelectItem>
+                          <SelectItem value="College">College</SelectItem>
+                          <SelectItem value="Post-graduate">Post-graduate</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="numberOfDependents">Number of Dependents</Label>
+                      <Input
+                        id="numberOfDependents"
+                        type="number"
+                        min="0"
+                        placeholder="0"
+                        value={personalDetails.dependents?.length || 0}
+                        onChange={(e) => handleDependentsChange(Number.parseInt(e.target.value, 10) || 0)}
+                      />
+                    </div>
+                  </div>
+                  
+                  {personalDetails.civilStatus === "Married" && (
+                    <div className="mt-4 p-4 border rounded-md bg-gray-50/50">
+                      <h4 className="font-medium mb-4 text-sm text-gray-600">Spouse Information</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="spouseName">Spouse's Name</Label>
+                          <Input
+                            id="spouseName"
+                            placeholder="e.g., Maria Dela Cruz"
+                            value={personalDetails.spouseName || ""}
+                            onChange={(e) => setPersonalDetails({ ...personalDetails, spouseName: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="spouseContact">Spouse's Contact Number</Label>
+                          <Input
+                            id="spouseContact"
+                            type="tel"
+                            placeholder="09179876543"
+                            value={personalDetails.spouseContact || ""}
+                            onChange={(e) => setPersonalDetails({ ...personalDetails, spouseContact: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="spouseBirthdate">Spouse's Birthdate</Label>
+                          <Input
+                            id="spouseBirthdate"
+                            type="date"
+                            value={personalDetails.spouseBirthdate || ""}
+                            onChange={(e) =>
+                              setPersonalDetails({ ...personalDetails, spouseBirthdate: e.target.value })
+                            }
+                          />
+                        </div>
+                        <div>
+                          <Label>Spouse's Monthly Income (Range)</Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              placeholder="Min"
+                              value={personalDetails.spouseMonthlyIncomeMin || ""}
+                              onChange={(e) => {
+                                const min = Number(e.target.value)
+                                const max = personalDetails.spouseMonthlyIncomeMax || 0
+                                setPersonalDetails({
+                                  ...personalDetails,
+                                  spouseMonthlyIncomeMin: min,
+                                  spouseMonthlyIncomeMax: min > max ? min : max,
+                                })
+                              }}
+                            />
+                            <span className="text-gray-500">-</span>
+                            <Input
+                              type="number"
+                              placeholder="Max"
+                              value={personalDetails.spouseMonthlyIncomeMax || ""}
+                              onChange={(e) => {
+                                const max = Number(e.target.value)
+                                const min = personalDetails.spouseMonthlyIncomeMin || 0
+                                setPersonalDetails({
+                                  ...personalDetails,
+                                  spouseMonthlyIncomeMax: max,
+                                  spouseMonthlyIncomeMin: max < min ? max : min,
+                                })
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="type">Loan Type *</Label>
-              <Select value={formData.type || ""} onValueChange={(value) => setFormData({ ...formData, type: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select loan type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Personal Loan">Personal Loan</SelectItem>
-                  <SelectItem value="Business Loan">Business Loan</SelectItem>
-                  <SelectItem value="Emergency Loan">Emergency Loan</SelectItem>
-                  <SelectItem value="Auto Loan">Auto Loan</SelectItem>
-                  <SelectItem value="Home Loan">Home Loan</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="amount">Loan Amount (₱) *</Label>
-              <Input
-                id="amount"
-                type="number"
-                min="0"
-                value={formData.amount || 0}
-                onChange={(e) => setFormData({ ...formData, amount: Number.parseInt(e.target.value) || 0 })}
-                required
-              />
-            </div>
-          </div>
+                  {personalDetails.dependents && personalDetails.dependents.length > 0 && (
+                    <div className="col-span-1 md:col-span-3 mt-4 space-y-2">
+                      <Label>Dependent Details</Label>
+                      {personalDetails.dependents.map((dependent, index) => (
+                        <div
+                          key={dependent.id}
+                          className="flex items-center justify-between p-2 bg-gray-50 rounded-md border"
+                        >
+                          <p className="text-sm font-medium">Dependent #{index + 1}</p>
+                          <div className="flex items-center gap-2">
+                            <Checkbox
+                              id={`dependent-school-${dependent.id}`}
+                              checked={dependent.isInSchool}
+                              onCheckedChange={(checked) => {
+                                const updatedDependents = [...(personalDetails.dependents || [])]
+                                updatedDependents[index] = { ...dependent, isInSchool: !!checked }
+                                setPersonalDetails({
+                                  ...personalDetails,
+                                  dependents: updatedDependents,
+                                })
+                              }}
+                            />
+                            <Label htmlFor={`dependent-school-${dependent.id}`} className="text-sm">
+                              In School?
+                            </Label>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </fieldset>
 
-          <div>
-            <Label htmlFor="purpose">Purpose *</Label>
-            <Input
-              id="purpose"
-              value={formData.purpose || ""}
-              onChange={(e) => setFormData({ ...formData, purpose: e.target.value })}
-              required
-            />
-          </div>
+                {/* Membership Information Section */}
+                <fieldset className="border p-4 rounded-md">
+                  <legend className="px-2 font-medium text-sm">Membership Information</legend>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div>
+                      <Label htmlFor="membershipDate" className="text-sm font-medium text-gray-700">
+                        Membership Date *
+                      </Label>
+                      <Input
+                        id="membershipDate"
+                        type="date"
+                        value={personalDetails.membershipDate || ""}
+                        onChange={(e) => setPersonalDetails({ ...personalDetails, membershipDate: e.target.value })}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="membershipStatus" className="text-sm font-medium text-gray-700">
+                        Membership Status *
+                      </Label>
+                      <Select
+                        value={personalDetails.membershipStatus || ""}
+                        onValueChange={(value) =>
+                          setPersonalDetails({ ...personalDetails, membershipStatus: value as MembershipStatus })
+                        }
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Active">Active</SelectItem>
+                          <SelectItem value="Dormant">Dormant</SelectItem>
+                          <SelectItem value="Suspended">Suspended</SelectItem>
+                          <SelectItem value="Closed">Closed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="collateralType">Collateral Type</Label>
-              <Select
-                value={formData.collateralType || "Unsecured"}
-                onValueChange={(value) => setFormData({ ...formData, collateralType: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Secured">Secured</SelectItem>
-                  <SelectItem value="Unsecured">Unsecured</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="paymentFrequency">Payment Frequency</Label>
-              <Select
-                value={formData.paymentFrequency || "Monthly"}
-                onValueChange={(value) => setFormData({ ...formData, paymentFrequency: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Weekly">Weekly</SelectItem>
-                  <SelectItem value="Bi-Weekly">Bi-Weekly</SelectItem>
-                  <SelectItem value="Semi-Monthly">Semi-Monthly</SelectItem>
-                  <SelectItem value="Monthly">Monthly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                  {personalDetails.membershipStatus === "Closed" && (
+                    <div>
+                      <Label htmlFor="closureReason" className="text-sm font-medium text-gray-700">
+                        Closure Reason *
+                      </Label>
+                      <Select
+                        value={personalDetails.closureReason || ""}
+                        onValueChange={(value) =>
+                          setPersonalDetails({ ...personalDetails, closureReason: value as ClosureReason })
+                        }
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Select reason" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="N/A">N/A</SelectItem>
+                          <SelectItem value="Voluntary">Voluntary</SelectItem>
+                          <SelectItem value="Policy Violation">Policy Violation</SelectItem>
+                          <SelectItem value="Non-Payment">Non-Payment</SelectItem>
+                          <SelectItem value="Deceased">Deceased</SelectItem>
+                          <SelectItem value="Other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                </fieldset>                
 
-          <div>
-            <Label htmlFor="duration">Duration</Label>
-            <div className="flex items-center gap-4 mt-2">
-              <Slider
-                id="duration"
-                min={1}
-                max={60}
-                step={1}
-                value={[loanDuration]}
-                onValueChange={(value) => setLoanDuration(value[0])}
-                className="flex-1"
-              />
-              <div className="w-32">
-                <Input
-                  type="number"
-                  min={1}
-                  max={60}
-                  value={loanDuration}
-                  onChange={(e) => {
-                    const value = Number.parseInt(e.target.value, 10)
-                    if (!Number.isNaN(value) && value >= 1 && value <= 60) {
-                      setLoanDuration(value)
-                    }
-                  }}
-                  className="text-right"
-                />
-                <p className="text-xs text-gray-500 mt-1">{formatDuration(loanDuration)}</p>
+                {/* Source of Income Section */}
+                <fieldset className="border p-4 rounded-md">
+                  <legend className="px-2 font-medium text-sm">Source of Income</legend>
+                  <Select
+                    value={sourceOfIncome.type}
+                    onValueChange={(v) => setSourceOfIncome({ type: v as any })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select income source type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Business">Business</SelectItem>
+                      <SelectItem value="Employed">Employed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {sourceOfIncome.type === "Business" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <Label>Business Type</Label>
+                        <Select
+                          value={sourceOfIncome.businessType || ""}
+                          onValueChange={(businessType) => setSourceOfIncome({ ...sourceOfIncome, businessType: businessType as any })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select business type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Sari-sari Store">Sari-sari Store</SelectItem>
+                            <SelectItem value="Direct Selling">Direct Selling</SelectItem>
+                            <SelectItem value="Wagwagan">Wagwagan</SelectItem>
+                            <SelectItem value="Farming">Farming</SelectItem>
+                            <SelectItem value="Mining">Mining</SelectItem>
+                            <SelectItem value="Eatery">Eatery</SelectItem>
+                            <SelectItem value="Pension">Pension</SelectItem>
+                            <SelectItem value="Remittance">Remittance</SelectItem>
+                            <SelectItem value="Others">Others</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      {sourceOfIncome.businessType === "Others" && (
+                        <div>
+                          <Label>If other, please specify</Label>
+                          <Input
+                            placeholder="e.g., Online Selling"
+                            value={sourceOfIncome.businessTypeOther || ""}
+                            onChange={(e) =>
+                              setSourceOfIncome({ ...sourceOfIncome, businessTypeOther: e.target.value })
+                            }
+                          />
+                        </div>
+                      )}
+                      <div>
+                        <Label>Income per Month (Range)</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            placeholder="Min"
+                            value={sourceOfIncome.businessIncomeMin || ""}
+                            onChange={(e) => {
+                              const min = Number(e.target.value)
+                              const max = sourceOfIncome.businessIncomeMax || 0
+                              setSourceOfIncome({
+                                ...sourceOfIncome,
+                                businessIncomeMin: min,
+                                businessIncomeMax: min > max ? min : max,
+                              })
+                            }}
+                          />
+                          <span className="text-gray-500">-</span>
+                          <Input
+                            type="number"
+                            placeholder="Max"
+                            value={sourceOfIncome.businessIncomeMax || ""}
+                            onChange={(e) => {
+                              const max = Number(e.target.value)
+                              const min = sourceOfIncome.businessIncomeMin || 0
+                              setSourceOfIncome({
+                                ...sourceOfIncome,
+                                businessIncomeMax: max,
+                                businessIncomeMin: max < min ? max : min,
+                              })
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {sourceOfIncome.type === "Employed" && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <Input
+                        placeholder="Supervisor's Name"
+                        value={sourceOfIncome.supervisorName || ""}
+                        onChange={(e) => setSourceOfIncome({ ...sourceOfIncome, supervisorName: e.target.value })}
+                      />
+                      <Input
+                        placeholder="Company Name"
+                        value={sourceOfIncome.companyName || ""}
+                        onChange={(e) => setSourceOfIncome({ ...sourceOfIncome, companyName: e.target.value })}
+                      />
+                      <div>
+                        <Label>Employment Status</Label>
+                        <Select
+                          value={sourceOfIncome.employmentStatus || ""}
+                          onValueChange={(value) =>
+                            setSourceOfIncome({ ...sourceOfIncome, employmentStatus: value as any })
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Regular">Regular</SelectItem>
+                            <SelectItem value="Contractual">Contractual</SelectItem>
+                            <SelectItem value="Probationary">Probationary</SelectItem>
+                            <SelectItem value="Part-time">Part-time</SelectItem>
+                            <SelectItem value="Freelance">Freelance</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Occupation</Label>
+                        <Input placeholder="e.g., Teacher" />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label>Salary (Range)</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            placeholder="Min"
+                            value={sourceOfIncome.salaryMin || ""}
+                            onChange={(e) => {
+                              const min = Number(e.target.value)
+                              const max = sourceOfIncome.salaryMax || 0
+                              setSourceOfIncome({
+                                ...sourceOfIncome,
+                                salaryMin: min,
+                                salaryMax: min > max ? min : max,
+                              })
+                            }}
+                          />
+                          <span className="text-gray-500">-</span>
+                          <Input
+                            type="number"
+                            placeholder="Max"
+                            value={sourceOfIncome.salaryMax || ""}
+                            onChange={(e) => {
+                              const max = Number(e.target.value)
+                              const min = sourceOfIncome.salaryMin || 0
+                              setSourceOfIncome({
+                                ...sourceOfIncome,
+                                salaryMax: max,
+                                salaryMin: max < min ? max : min,
+                              })
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label>Date Employed</Label>
+                        <Input
+                          type="date"
+                          value={sourceOfIncome.dateEmployed || ""}
+                          onChange={(e) => setSourceOfIncome({ ...sourceOfIncome, dateEmployed: e.target.value })}
+                        />
+                      </div>
+                      <div>
+                        <Label>Working Hours per Day</Label>
+                        <Input
+                          type="number"
+                          placeholder="e.g., 8"
+                          value={sourceOfIncome.workingHours || ""}
+                          onChange={(e) =>
+                            setSourceOfIncome({ ...sourceOfIncome, workingHours: Number(e.target.value) })
+                          }
+                        />
+                      </div>
+                    </div>
+                  )}
+                </fieldset>
+
+                {/* Assets Section */}
+                <fieldset className="border p-4 rounded-md">
+                  <legend className="px-2 font-medium text-sm">Assets</legend>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="savings">Savings (₱)</Label>
+                      <Input
+                        id="savings"
+                        type="number"
+                        placeholder="0.00"
+                        value={personalDetails.savings || ""}
+                        onChange={(e) => setPersonalDetails({ ...personalDetails, savings: Number(e.target.value) })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="shareCapital">Share Capital (₱)</Label>
+                      <Input
+                        id="shareCapital"
+                        type="number"
+                        placeholder="0.00"
+                        value={personalDetails.shareCapital || ""}
+                        onChange={(e) =>
+                          setPersonalDetails({ ...personalDetails, shareCapital: Number(e.target.value) })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="termDeposit">Term Deposit (TD) (₱)</Label>
+                      <Input
+                        id="termDeposit"
+                        type="number"
+                        placeholder="0.00"
+                        value={personalDetails.termDeposit || ""}
+                        onChange={(e) =>
+                          setPersonalDetails({ ...personalDetails, termDeposit: Number(e.target.value) })
+                        }
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="map">Mutual Aid Program (MAP) (₱)</Label>
+                      <Input
+                        id="map"
+                        type="number"
+                        placeholder="0.00"
+                        value={personalDetails.map || ""}
+                        onChange={(e) => setPersonalDetails({ ...personalDetails, map: Number(e.target.value) })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-4 mt-4 border-t">
+                    <h4 className="font-medium text-sm mb-2">Owned Physical Assets</h4>
+                    {assets.map((asset, index) => (
+                      <div key={asset.id} className="space-y-2 border-b pb-4 mb-4">
+                        <div className="flex justify-between items-center">
+                          <Label>Asset #{index + 1}</Label>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeAsset(asset.id)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <Input placeholder="Asset Name (e.g., House, Vehicle)" />
+                          <Input placeholder="Location" />
+                        </div>
+                        <div className="flex items-center gap-2 pt-2">
+                          <Checkbox id={`isPledged-${asset.id}`} />
+                          <Label htmlFor={`isPledged-${asset.id}`}>Pledge as collateral?</Label>
+                        </div>
+                      </div>
+                    ))}
+                    <Button type="button" variant="outline" size="sm" onClick={addAsset}>
+                      Add Physical Asset
+                    </Button>
+                  </div>
+                </fieldset>
+
+                {/* Beneficiaries Section */}
+                <fieldset className="border p-4 rounded-md">
+                  <legend className="px-2 font-medium text-sm">Beneficiaries</legend>
+                  {beneficiaries.map((beneficiary, index) => (
+                    <div key={beneficiary.id} className="space-y-2 border-b pb-4 mb-4">
+                      <div className="flex justify-between items-center">
+                        <Label>Beneficiary #{index + 1}</Label>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeBeneficiary(beneficiary.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor={`beneficiary-name-${beneficiary.id}`} className="text-xs">
+                            Name
+                          </Label>
+                          <Input id={`beneficiary-name-${beneficiary.id}`} placeholder="Beneficiary Name" />
+                        </div>
+                        <div>
+                          <Label htmlFor={`beneficiary-rel-${beneficiary.id}`} className="text-xs">
+                            Relationship
+                          </Label>
+                          <Select
+                            value={
+                              ["Spouse", "Child", "Parent", "Sibling"].includes(beneficiary.relationship)
+                                ? beneficiary.relationship
+                                : "Others"
+                            }
+                            onValueChange={(value) => {
+                              const updatedBeneficiaries = [...beneficiaries]
+                              const current = updatedBeneficiaries[index]
+                              current.relationship = value === "Others" ? "" : value
+                              setBeneficiaries(updatedBeneficiaries)
+                            }}
+                          >
+                            <SelectTrigger id={`beneficiary-rel-${beneficiary.id}`}>
+                              <SelectValue placeholder="Select relationship" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Spouse">Spouse</SelectItem>
+                              <SelectItem value="Child">Child</SelectItem>
+                              <SelectItem value="Parent">Parent</SelectItem>
+                              <SelectItem value="Sibling">Sibling</SelectItem>
+                              <SelectItem value="Others">Others</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {beneficiary.relationship === "" ||
+                        !["Spouse", "Child", "Parent", "Sibling"].includes(beneficiary.relationship) ? (
+                          <div className="md:col-span-2">
+                            <Label htmlFor={`beneficiary-rel-other-${beneficiary.id}`} className="text-xs">
+                              If other, please specify
+                            </Label>
+                            <Input
+                              id={`beneficiary-rel-other-${beneficiary.id}`}
+                              placeholder="e.g., Cousin, Guardian"
+                              value={beneficiary.relationship}
+                              onChange={(e) => {
+                                const updatedBeneficiaries = [...beneficiaries]
+                                updatedBeneficiaries[index].relationship = e.target.value
+                                setBeneficiaries(updatedBeneficiaries)
+                              }}
+                            />
+                          </div>
+                        ) : null}                        
+                        <div>
+                          <Label htmlFor={`beneficiary-bday-${beneficiary.id}`} className="text-xs">
+                            Birthdate
+                          </Label>
+                          <Input id={`beneficiary-bday-${beneficiary.id}`} type="date" />
+                        </div>
+                        <div>
+                          <Label htmlFor={`beneficiary-contact-${beneficiary.id}`} className="text-xs">
+                            Contact Number
+                          </Label>
+                          <Input id={`beneficiary-contact-${beneficiary.id}`} type="tel" placeholder="Contact Number" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <Button type="button" variant="outline" size="sm" onClick={addBeneficiary}>
+                    Add Beneficiary
+                  </Button>
+                </fieldset>
+
+                {/* Document Upload Section */}
+                <fieldset className="border p-4 rounded-md">
+                  <legend className="px-2 font-medium text-sm">Required Documents</legend>
+                  <div className="space-y-6">
+                    {/* Brgy. Clearance */}
+                    <div>
+                      <Label>Brgy. Clearance</Label>
+                      <Input type="file" className="mt-1" />
+                    </div>
+
+                    {/* Proof of Income */}
+                    <div className="pt-4 border-t">
+                      <Label className="font-medium">Proof of Income</Label>
+                      <div className="mt-2 space-y-4 p-4 border rounded-md bg-gray-50/50">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="proofOfIncomeType" className="text-xs">
+                              Type of Proof
+                            </Label>
+                            <Select
+                              value={sourceOfIncome.proofOfIncomeType}
+                              onValueChange={(value) =>
+                                setSourceOfIncome({
+                                  ...sourceOfIncome,
+                                  proofOfIncomeType: value as any,
+                                })
+                              }
+                            >
+                              <SelectTrigger id="proofOfIncomeType">
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Pay Slip">Pay Slip</SelectItem>
+                                <SelectItem value="Bank Statement">Bank Statement</SelectItem>
+                                <SelectItem value="Business Permit">Business Permit</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          {sourceOfIncome.proofOfIncomeType === "Business Permit" && (
+                            <div>
+                              <Label htmlFor="businessPermitStatus" className="text-xs">
+                                Permit Status
+                              </Label>
+                              <Select
+                                value={sourceOfIncome.businessPermitStatus}
+                                onValueChange={(value) =>
+                                  setSourceOfIncome({
+                                    ...sourceOfIncome,
+                                    businessPermitStatus: value as any,
+                                  })
+                                }
+                              >
+                                <SelectTrigger id="businessPermitStatus">
+                                  <SelectValue placeholder="Select status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="New Business Permit">New Business Permit</SelectItem>
+                                  <SelectItem value="Renewed">Renewed</SelectItem>
+                                  <SelectItem value="Not Renewed">Not Renewed</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <Label className="text-xs">Upload File</Label>
+                          <Input type="file" className="mt-1" />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Electricity Bill */}
+                    <div className="pt-4 border-t">
+                      <Label>Electricity Bill</Label>
+                      <Input type="file" className="mt-1" />
+                    </div>
+
+                    {/* Water Bill */}
+                    <div className="pt-4 border-t">
+                      <Label>Water Bill</Label>
+                      <Input type="file" className="mt-1" />
+                    </div>
+                  </div>
+                </fieldset>
+
+                {/* IDs Section */}
+                <fieldset className="border p-4 rounded-md">
+                  <legend className="px-2 font-medium text-sm">Valid IDs</legend>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <Input placeholder="TIN" />
+                    <Input placeholder="SSS Number" />
+                    <Input placeholder="Philhealth Number" />
+                  </div>
+                  {otherIds.map((otherId, index) => (
+                    <div key={otherId.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 items-end">
+                      <Input placeholder="Name of ID (e.g., Passport)" />
+                      <div className="md:col-span-2 flex gap-2">
+                        <Input placeholder="ID Number" className="flex-grow" />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeOtherId(otherId.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                  <Button type="button" variant="outline" size="sm" onClick={addOtherId}>
+                    Add Other ID
+                  </Button>
+                </fieldset>
               </div>
-            </div>
-          </div>
+            )}
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="interestRate">Interest Rate</Label>
-              <Input
-                id="interestRate"
-                value={formData.interestRate || "12%"}
-                onChange={(e) => setFormData({ ...formData, interestRate: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status || "Pending"}
-                onValueChange={(value) => setFormData({ ...formData, status: value as LoanStatus })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Pending">Pending</SelectItem>
-                  <SelectItem value="Approved">Approved</SelectItem>
-                  <SelectItem value="Declined">Declined</SelectItem>
-                  <SelectItem value="Disbursed">Disbursed</SelectItem>
-                  <SelectItem value="Paid">Paid</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            {step === 2 && (
+              <div className="space-y-6">
+                {/* Loan Details Section */}
+                <fieldset className="border p-4 rounded-md space-y-4">
+                  <legend className="px-2 font-medium text-sm">Loan Details</legend>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Type of Loan</Label>
+                      <Select>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select loan type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Personal Loan">Personal Loan</SelectItem>
+                          <SelectItem value="Business Loan">Business Loan</SelectItem>
+                          <SelectItem value="Restructured Loan">Restructured Loan</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Loan Amount (₱)</Label>
+                      <Input type="number" min="0" placeholder="50000" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Purpose</Label>
+                    <Input placeholder="e.g., For business expansion" />
+                  </div>
+                  <div>
+                    <Label>Loan Term</Label>
+                    <div className="flex items-center gap-4 mt-1">
+                      <Slider
+                        min={1}
+                        max={60}
+                        step={1}
+                        value={[loanDuration]}
+                        onValueChange={(v) => setLoanDuration(v[0])}
+                        className="flex-1"
+                      />
+                      <div className="w-32 text-right">
+                        <Input
+                          type="number"
+                          min={1}
+                          max={60}
+                          value={loanDuration}
+                          onChange={(e) => setLoanDuration(Number(e.target.value))}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">{formatDuration(loanDuration)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Payment Frequency</Label>
+                    <Select>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select frequency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Weekly">Weekly</SelectItem>
+                        <SelectItem value="Semi-Monthly">Semi-Monthly</SelectItem>
+                        <SelectItem value="Monthly">Monthly</SelectItem>
+                        <SelectItem value="Quarterly">Quarterly</SelectItem>
+                        <SelectItem value="Lumpsum">Lumpsum</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Loan Behaviour Status</Label>
+                    <Select
+                      value={formData.loanBehaviourStatus}
+                      onValueChange={(value) => setFormData({ ...formData, loanBehaviourStatus: value as any })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select behaviour status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Active">Active</SelectItem>
+                        <SelectItem value="Paid">Paid</SelectItem>
+                        <SelectItem value="In Arrears">In Arrears</SelectItem>
+                        <SelectItem value="Defaulted">Defaulted</SelectItem>
+                        <SelectItem value="Rejected">Rejected</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {formData.loanBehaviourStatus &&
+                    !["Pending", "Rejected"].includes(formData.loanBehaviourStatus) && (
+                      <div className="pt-4 mt-4 border-t space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {["Paid", "In Arrears", "Defaulted"].includes(formData.loanBehaviourStatus) && (
+                            <>
+                              <div>
+                                <Label>No. of Delinquencies</Label>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  placeholder="0"
+                                  value={formData.delinquencies || ""}
+                                  onChange={(e) =>
+                                    setFormData({ ...formData, delinquencies: Number(e.target.value) })
+                                  }
+                                />
+                              </div>
+                              <div>
+                                <Label>Maximum Overdue Days</Label>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  placeholder="0"
+                                  value={formData.maxOverdueDays || ""}
+                                  onChange={(e) =>
+                                    setFormData({ ...formData, maxOverdueDays: Number(e.target.value) })
+                                  }
+                                />
+                              </div>
+                            </>
+                          )}
+
+                          {formData.loanBehaviourStatus === "Paid" && (
+                            <div>
+                              <Label>Loan Outcome</Label>
+                              <Select
+                                value={formData.finalOutcome}
+                                onValueChange={(value) =>
+                                  setFormData({ ...formData, finalOutcome: value as any })
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select Loan Outcome" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Paid in Full">Paid in Full</SelectItem>
+                                  <SelectItem value="Defaulted">Defaulted</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          )}
+
+                          <div>
+                            <Label>Date Granted</Label>
+                            <Input
+                              type="date"
+                              value={formData.dateGranted || ""}
+                              onChange={(e) => setFormData({ ...formData, dateGranted: e.target.value })}
+                            />
+                          </div>
+                          <div>
+                            <Label>Interest Rate (%)</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              placeholder="12"
+                              value={formData.interestRate?.replace("%", "") || ""}
+                              onChange={(e) => setFormData({ ...formData, interestRate: `${e.target.value}%` })}
+                            />
+                          </div>
+                          <div>
+                            <Label>Installment Amount (₱)</Label>
+                            <Input
+                              type="number"
+                              min="0"
+                              placeholder="4500"
+                              value={formData.monthlyPayment || ""}
+                              onChange={(e) =>
+                                setFormData({ ...formData, monthlyPayment: Number(e.target.value) })
+                              }
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <Label>Loan Officer Risk Assessment</Label>
+                          <Select
+                            value={formData.riskAssessment || ""}
+                            onValueChange={(value) =>
+                              setFormData({ ...formData, riskAssessment: value as RiskAssessmentLevel })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select risk level" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="Very Low Risk">Very Low Risk</SelectItem>
+                              <SelectItem value="Low Risk">Low Risk</SelectItem>
+                              <SelectItem value="Medium Risk">Medium Risk</SelectItem>
+                              <SelectItem value="High Risk">High Risk</SelectItem>
+                              <SelectItem value="Very High Risk">Very High Risk</SelectItem>
+                              <SelectItem value="N/A">N/A</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                    )}
+                </fieldset>
+
+                {/* Co-Makers Section */}
+                <fieldset className="border p-4 rounded-md space-y-4">
+                  <legend className="px-2 font-medium text-sm">Co-Maker Information</legend>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label>First Name</Label>
+                        <Input placeholder="John" />
+                      </div>
+                      <div>
+                        <Label>Middle Name</Label>
+                        <Input placeholder="Doe" />
+                      </div>
+                      <div>
+                        <Label>Last Name</Label>
+                        <Input placeholder="Smith" />
+                      </div>
+                      <div>
+                        <Label>Contact Number</Label>
+                        <Input type="tel" placeholder="0917xxxxxxx" />
+                      </div>
+                    <div className="md:col-span-2">
+                      <Label>Amount to Pledge as Liability (₱)</Label>
+                      <Input type="number" min="0" placeholder="0" />
+                    </div>
+                  </div>
+                </fieldset>
+
+                {/* SHOULD BE IN LOANDETAILSPANEL() Approval Section */}
+                {/* <fieldset className="border p-4 rounded-md space-y-4">
+                  <legend className="px-2 font-medium text-sm text-red-600">For Office Use Only</legend>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Credit Investigation By</Label>
+                      <Input placeholder="CI Personnel Name" />
+                    </div>
+                    <div>
+                      <Label>Amount Approved (₱)</Label>
+                      <Input type="number" min="0" />
+                    </div>
+                  </div>
+                </fieldset> */}
+              </div>
+            )}
           </div>
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel
             </Button>
+            {step === 2 && (
+              <Button type="button" variant="outline" onClick={handleBack}>
+                Back
+              </Button>
+            )}
             <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-              <Save className="h-4 w-4 mr-2" />
-              {mode === "create" ? "Register Loan" : "Update Loan"}
+              {step === 1 ? (
+                "Next"
+              ) : (
+                <>
+                  <Save className="h-4 w-4 mr-2" />
+                  {mode === "create" ? "Register Loan" : "Update Loan"}
+                </>
+              )}
             </Button>
           </DialogFooter>
         </form>
@@ -939,7 +1959,7 @@ export default function LoansPage() {
         
     };
 
-    HybridWebView.SendInvokeMessageToDotNet("getLoans");
+    // HybridWebView.SendInvokeMessageToDotNet("getLoans");
 
   }, []);
 useEffect(() => {
