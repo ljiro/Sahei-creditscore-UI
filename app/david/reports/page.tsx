@@ -375,7 +375,7 @@ export default function LoanReportsPage() {
       setReports(mappedReports);
     };
 
-    HybridWebView.SendInvokeMessageToDotNet("getPageReportToJS");
+    // HybridWebView.SendInvokeMessageToDotNet("getPageReportToJS");
 
     return () => {
       (window as any).globalSetReportsPage = undefined;
@@ -582,10 +582,10 @@ export default function LoanReportsPage() {
 
       console.log("Data report sent: ", payload);
 
-      HybridWebView.SendInvokeMessageToDotNet(
-        "getPageReportFullToJS",
-        payload
-      );
+      // HybridWebView.SendInvokeMessageToDotNet(
+      //   "getPageReportFullToJS",
+      //   payload
+      // );
     };
 
     generateFullReport();
