@@ -62,19 +62,23 @@ const initialMembers: Member[] = [
     firstName: "Juan",
     lastName: "Dela Cruz",
     fullName: "Juan Dela Cruz",
-    gender: "Male",
+    sex: "Male",
     dateOfBirth: "1985-05-15",
     contact: "09123456789",
     address: "123 Main St, Manila",
     email: "juandelacruz@example.com",
-    educationLevel: "Bachelor's Degree",
+    educationType: "Vocational Graduate",
     civilStatus: "Married",
     dependents: 2,
-    industry: "Information Technology",
-    monthlyIncome: 75000,
-    savingsBalance: 150000,
-    monthlyExpenses: 35000,
     membershipStatus: "Active",
+    sourceOfIncome: {
+      hasEmployment: true,
+      hasBusiness: false,
+      companyName: "Acme Corporation",
+      employmentStatus: "Full-Time",
+      salaryMin: 70000,
+      salaryMax: 80000,
+    },
     loans: [
       {
         id: "LN001",
@@ -83,7 +87,6 @@ const initialMembers: Member[] = [
         amount: 50000,
         applicationDate: "2025-05-15",
         duration: "12 months",
-        validatedBy: "Maria Santos",
         status: "Approved",
       },
     ],
@@ -96,18 +99,25 @@ const initialMembers: Member[] = [
     lastName: "Santos",
     fullName: "Maria Santos",
     email: "mariasantos@example.com",
-    gender: "Female",
+    sex: "Female",
     dateOfBirth: "1990-08-22",
     contact: "09234567890",
     address: "456 Oak Ave, Quezon City",
-    educationLevel: "Master's Degree",
+    educationType: "Post-Graduate",
     civilStatus: "Single",
     dependents: 0,
-    industry: "Business Owner",
-    monthlyIncome: 120000,
-    savingsBalance: 350000,
-    monthlyExpenses: 45000,
     membershipStatus: "Active",
+    sourceOfIncome: {
+      hasEmployment: true,
+      hasBusiness: true,
+      businessType: "Direct Selling",
+      businessIncomeMin: 40000,
+      businessIncomeMax: 60000,
+      companyName: "Global Tech Inc.",
+      employmentStatus: "Part-Time",
+      salaryMin: 55000,
+      salaryMax: 65000,
+    },
     loans: [
       {
         id: "LN002",
@@ -116,7 +126,6 @@ const initialMembers: Member[] = [
         amount: 150000,
         applicationDate: "2025-05-20",
         duration: "24 months",
-        validatedBy: "Juan Dela Cruz",
         status: "Approved",
       },
     ],
@@ -130,39 +139,62 @@ interface Member {
   firstName: string;
   middleName?: string;
   lastName: string;
-  suffix?: string;
-  gender?: string;
-  dateOfBirth?: string;
-  educationLevel?: string;
-  civilStatus?: string;
-  membershipDate?: string;
-  membershipStatus: string;
   fullName: string;
+  suffix?: string;
+  sex?: "Male" | "Female";
+  dateOfBirth?: string;
+  educationType?:
+    | "Post-Graduate"
+    | "College Graduate"
+    | "College Undergraduate"
+    | "Vocational Graduate"
+    | "Highschool Graduate"
+    | "Highschool Undergraduate"
+    | "Elementary Graduate"
+    | "Elementary Undergraduate"
+    | "None";
+  civilStatus?: "Single" | "Married" | "Lived-in Partner" | "Legally Separated" | "Annulled" | "Widowed";
+  membershipDate?: string;
+  membershipStatus: "Active" | "Dormant" | "Suspended" | "Closed";
   email?: string;
   contact?: string;
   address?: string;
-  dependents?: number;
-  industry?: string;
-  monthlyIncome?: number;
-  savingsBalance?: number;
-  monthlyExpenses?: number;
+  isPmsCompleted?: boolean;
+  tinNumber?: string;
+  occupation?: string;
+  dependents?: number; // Add dependents
   creditScore?: number;
-  loans?: Array<{
-    id: string;
-    type: string;
-    purpose: string;
-    amount: number;
-    applicationDate: string;
-    duration: string;
-    validatedBy: string;
-    status: string;
-  }>;
-  remarks?: Array<{
-    id: string;
-    officer: string;
-    comment: string;
-    date: string;
-  }>;
+  sourceOfIncome?: SourceOfIncome;
+  loans?: Loan[]; 
+  remarks?: any[];
+}
+
+interface SourceOfIncome {
+  // use boolean flags to support both business and employment fields
+  hasBusiness?: boolean;
+  hasEmployment?: boolean; // Business fields
+  businessType?: "Sari-sari Store" | "Direct Selling" | "Wagwagan" | "Farming" | "Mining" | "Eatery" | "Pension" | "Remittance" | "Others";
+  businessTypeOther?: string;
+  businessIncomeMin?: number;
+  businessIncomeMax?: number;
+  // Employed fields
+  supervisorName?: string;
+  companyName?: string;
+  employmentStatus?: "Full-Time" | "Part-Time" | "Contractual/Project-Based" | "Self-Employed" | "Unemployed" | "Retired" | "Homemaker";
+  salaryMin?: number;
+  salaryMax?: number;
+  dateEmployed?: string;
+  workingHours?: number;
+}
+
+interface Loan {
+  id: string;
+  type: string;
+  purpose: string;
+  amount: number;
+  applicationDate: string;
+  duration: string;
+  status: "Approved" | "Pending" | "Rejected";
 }
 
 const statusConfig = {
@@ -244,6 +276,33 @@ function ClientDetailsPanel({
 }) {
   const [isAddRemarkOpen, setIsAddRemarkOpen] = useState(false);
 
+    const getIncomeDisplay = () => {
+      const source = client.sourceOfIncome || {};
+  
+      const businessMin = source.hasBusiness ? source.businessIncomeMin || 0 : 0;
+      const businessMax = source.hasBusiness ? source.businessIncomeMax || 0 : 0;
+      const employmentMin = source.hasEmployment ? source.salaryMin || 0 : 0;
+      const employmentMax = source.hasEmployment ? source.salaryMax || 0 : 0;
+
+    const totalMin = businessMin + employmentMin;
+    const totalMax = businessMax + employmentMax;
+
+    let label = "Monthly Income";
+    if (source.hasBusiness && source.hasEmployment) {
+      label = "Combined Income";
+    } else if (source.hasBusiness) {
+      label = "Business Income";
+    } else if (source.hasEmployment) {
+      label = "Employment Income";
+    }
+
+    const value = `₱${totalMin.toLocaleString()} - ₱${totalMax.toLocaleString()}`;
+
+    return { label, value };
+  };
+
+  const incomeInfo = getIncomeDisplay();
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[900px] bg-white rounded-lg max-h-[90vh] overflow-y-auto">
@@ -276,8 +335,8 @@ function ClientDetailsPanel({
                     <BadgeInfo className="h-5 w-5 text-blue-500" />
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Gender</p>
-                    <p className="font-medium text-gray-800">{client.gender || "N/A"}</p>
+                    <p className="text-sm text-gray-500">Sex</p>
+                    <p className="font-medium text-gray-800">{client.sex || "N/A"}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -329,7 +388,7 @@ function ClientDetailsPanel({
                     <Label className="text-sm text-gray-500">Education</Label>
                     <div className="flex items-center gap-2 mt-1">
                       <GraduationCap className="h-4 w-4 text-gray-400" />
-                      <p className="text-gray-800">{client.educationLevel || "N/A"}</p>
+                      <p className="text-gray-800">{client.educationType || "N/A"}</p>
                     </div>
                   </div>
                   <div>
@@ -342,13 +401,6 @@ function ClientDetailsPanel({
                   <div>
                     <Label className="text-sm text-gray-500">Dependents</Label>
                     <p className="text-gray-800">{client.dependents || 0}</p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-500">Industry</Label>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Briefcase className="h-4 w-4 text-gray-400" />
-                      <p className="text-gray-800">{client.industry || "N/A"}</p>
-                    </div>
                   </div>
                 </div>
               </CardContent>
@@ -364,22 +416,8 @@ function ClientDetailsPanel({
               <CardContent className="grid gap-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-sm text-gray-500">Monthly Income</Label>
-                    <p className="text-gray-800 font-medium">
-                      ₱{(client.monthlyIncome || 0).toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-500">Monthly Expenses</Label>
-                    <p className="text-gray-800 font-medium">
-                      ₱{(client.monthlyExpenses || 0).toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <Label className="text-sm text-gray-500">Savings Balance</Label>
-                    <p className="text-gray-800 font-medium">
-                      ₱{(client.savingsBalance || 0).toLocaleString()}
-                    </p>
+                    <Label className="text-sm text-gray-500">{incomeInfo.label}</Label>
+                    <p className="text-gray-800 font-medium">{incomeInfo.value}</p>
                   </div>
                   <div>
                     <Label className="text-sm text-gray-500">Credit Score</Label>
@@ -424,7 +462,6 @@ function ClientDetailsPanel({
                   <Table>
                     <TableHeader className="bg-gray-50">
                       <TableRow className="hover:bg-gray-50">
-                        <TableHead className="text-gray-600 font-medium">Loan ID</TableHead>
                         <TableHead className="text-gray-600 font-medium">Type</TableHead>
                         <TableHead className="text-gray-600 font-medium">Purpose</TableHead>
                         <TableHead className="text-gray-600 font-medium">Amount</TableHead>
@@ -435,7 +472,6 @@ function ClientDetailsPanel({
                     <TableBody>
                       {(client.loans || []).map((loan) => (
                         <TableRow key={loan.id} className="border-gray-200 hover:bg-gray-50">
-                          <TableCell className="font-medium text-gray-800">{loan.id}</TableCell>
                           <TableCell className="text-gray-700">{loan.type}</TableCell>
                           <TableCell className="text-gray-700">{loan.purpose}</TableCell>
                           <TableCell className="text-gray-700 font-medium">
@@ -573,20 +609,18 @@ function ClientFormDialog({
     client || {
       firstName: "",
       lastName: "",
-      gender: "",
+      middleName: "",
+      suffix: "",
+      sex: "Male",
       dateOfBirth: "",
       contact: "",
       address: "",
-      educationLevel: "",
-      civilStatus: "",
-      dependents: 0,
-      industry: "",
-      monthlyIncome: 0,
-      savingsBalance: 0,
-      monthlyExpenses: 0,
+      educationType: "None",
+      civilStatus: "Single",
+      isPmsCompleted: false,
+      tinNumber: "",
+      occupation: "",
       membershipStatus: "Active",
-      loans: [],
-      creditScore: 0,
     }
   );
 
@@ -603,10 +637,8 @@ function ClientFormDialog({
       }`.trim(),
       dateOfBirth: formData.dateOfBirth || "",
       civilStatus: formData.civilStatus || "",
-      membershipDate: client?.membershipDate || new Date().toISOString().split("T")[0],
+      membershipDate: formData.membershipDate || new Date().toISOString().split("T")[0],
       membershipStatus: formData.membershipStatus || "Active",
-      loans: client?.loans || [],
-      remarks: client?.remarks || [],
     } as Member;
 
     onSave(newMember);
@@ -616,199 +648,216 @@ function ClientFormDialog({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{mode === "create" ? "Register New Member" : `Edit Member - ${client?.fullName}`}</DialogTitle>
+          <DialogTitle>
+            {mode === "create"
+              ? "Register New Member"
+              : `Edit Member - ${client?.firstName || ""} ${client?.lastName || ""}`.trim()}
+          </DialogTitle>          
           <DialogDescription>
             {mode === "create" ? "Fill out the details for the new member" : "Update the member information"}
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-4 border-b pb-4">
+            <h3 className="text-lg font-medium text-gray-900">Personal Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="firstName">First Name *</Label>
+                <Input
+                  id="firstName"
+                  value={formData.firstName || ""}
+                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="lastName">Last Name *</Label>
+                <Input
+                  id="lastName"
+                  value={formData.lastName || ""}
+                  onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="middleName">Middle Name</Label>
+                <Input
+                  id="middleName"
+                  value={formData.middleName || ""}
+                  onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="suffix">Suffix</Label>
+                <Input
+                  id="suffix"
+                  value={formData.suffix || ""}
+                  onChange={(e) => setFormData({ ...formData, suffix: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="sex">Sex</Label>
+                <Select
+                  value={formData.sex || ""}
+                  onValueChange={(value) => setFormData({ ...formData, sex: value as "Male" | "Female" })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select sex" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Male">Male</SelectItem>
+                    <SelectItem value="Female">Female</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="dateOfBirth">Birthdate</Label>
+                <Input
+                  id="dateOfBirth"
+                  type="date"
+                  value={formData.dateOfBirth || ""}
+                  onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                />
+              </div>
+            </div>
+
             <div>
-              <Label htmlFor="firstName">First Name *</Label>
-              <Input
-                id="firstName"
-                value={formData.firstName || ""}
-                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                required
+              <Label htmlFor="address">Home Address</Label>
+              <Textarea
+                id="address"
+                value={formData.address || ""}
+                onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                rows={2}
               />
             </div>
-            <div>
-              <Label htmlFor="lastName">Last Name *</Label>
-              <Input
-                id="lastName"
-                value={formData.lastName || ""}
-                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                required
-              />
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="contact">Contact Number *</Label>
+                <Input
+                  id="contact"
+                  value={formData.contact || ""}
+                  onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="civilStatus">Civil Status</Label>
+                <Select
+                  value={formData.civilStatus || ""}
+                  onValueChange={(value) => setFormData({ ...formData, civilStatus: value as any })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Single">Single</SelectItem>
+                    <SelectItem value="Married">Married</SelectItem>
+                    <SelectItem value="Lived-in Partner">Lived-in Partner</SelectItem>
+                    <SelectItem value="Legally Separated">Legally Separated</SelectItem>
+                    <SelectItem value="Annulled">Annulled</SelectItem>
+                    <SelectItem value="Widowed">Widowed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="educationType">Education</Label>
+                <Select
+                  value={formData.educationType || ""}
+                  onValueChange={(value) => setFormData({ ...formData, educationType: value as any })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select education level" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Post-Graduate">Post-Graduate</SelectItem>
+                    <SelectItem value="College Graduate">College Graduate</SelectItem>
+                    <SelectItem value="College Undergraduate">College Undergraduate</SelectItem>
+                    <SelectItem value="Vocational Graduate">Vocational Graduate</SelectItem>
+                    <SelectItem value="Highschool Graduate">Highschool Graduate</SelectItem>
+                    <SelectItem value="Highschool Undergraduate">Highschool Undergraduate</SelectItem>
+                    <SelectItem value="Elementary Graduate">Elementary Graduate</SelectItem>
+                    <SelectItem value="Elementary Undergraduate">Elementary Undergraduate</SelectItem>
+                    <SelectItem value="None">None</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="occupation">Occupation</Label>
+                <Input
+                  id="occupation"
+                  value={formData.occupation || ""}
+                  onChange={(e) => setFormData({ ...formData, occupation: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="tinNumber">TIN Number</Label>
+                <Input
+                  id="tinNumber"
+                  value={formData.tinNumber || ""}
+                  onChange={(e) => setFormData({ ...formData, tinNumber: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="isPmsCompleted">PMS Completed?</Label>
+                <Select
+                  value={formData.isPmsCompleted ? "Yes" : "No"}
+                  onValueChange={(value) => setFormData({ ...formData, isPmsCompleted: value === "Yes" })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Yes">Yes</SelectItem>
+                    <SelectItem value="No">No</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="middleName">Middle Name</Label>
-              <Input
-                id="middleName"
-                value={formData.middleName || ""}
-                onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="suffix">Suffix</Label>
-              <Input
-                id="suffix"
-                value={formData.suffix || ""}
-                onChange={(e) => setFormData({ ...formData, suffix: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="gender">Gender</Label>
-              <Select
-                value={formData.gender || ""}
-                onValueChange={(value) => setFormData({ ...formData, gender: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Male">Male</SelectItem>
-                  <SelectItem value="Female">Female</SelectItem>
-                  <SelectItem value="Other">Other</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="dateOfBirth">Birthday</Label>
-              <Input
-                id="dateOfBirth"
-                type="date"
-                value={formData.dateOfBirth || ""}
-                onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="contact">Contact Number *</Label>
-              <Input
-                id="contact"
-                value={formData.contact || ""}
-                onChange={(e) => setFormData({ ...formData, contact: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="membershipStatus">Status</Label>
-              <Select
-                value={formData.membershipStatus || "Active"}
-                onValueChange={(value) => setFormData({ ...formData, membershipStatus: value as any })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Active">Active</SelectItem>
-                  <SelectItem value="Dormant">Dormant</SelectItem>
-                  <SelectItem value="Suspended">Suspended</SelectItem>
-                  <SelectItem value="Closed">Closed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="address">Address</Label>
-            <Textarea
-              id="address"
-              value={formData.address || ""}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              rows={2}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="educationLevel">Education</Label>
-              <Input
-                id="educationLevel"
-                value={formData.educationLevel || ""}
-                onChange={(e) => setFormData({ ...formData, educationLevel: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="civilStatus">Marital Status</Label>
-              <Select
-                value={formData.civilStatus || ""}
-                onValueChange={(value) => setFormData({ ...formData, civilStatus: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Single">Single</SelectItem>
-                  <SelectItem value="Married">Married</SelectItem>
-                  <SelectItem value="Divorced">Divorced</SelectItem>
-                  <SelectItem value="Widowed">Widowed</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="dependents">Dependents</Label>
-              <Input
-                id="dependents"
-                type="number"
-                min="0"
-                value={formData.dependents || 0}
-                onChange={(e) => setFormData({ ...formData, dependents: Number.parseInt(e.target.value) || 0 })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="industry">Industry</Label>
-              <Input
-                id="industry"
-                value={formData.industry || ""}
-                onChange={(e) => setFormData({ ...formData, industry: e.target.value })}
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="monthlyIncome">Monthly Income (₱)</Label>
-              <Input
-                id="monthlyIncome"
-                type="number"
-                min="0"
-                value={formData.monthlyIncome || 0}
-                onChange={(e) => setFormData({ ...formData, monthlyIncome: Number.parseInt(e.target.value) || 0 })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="monthlyExpenses">Monthly Expenses (₱)</Label>
-              <Input
-                id="monthlyExpenses"
-                type="number"
-                min="0"
-                value={formData.monthlyExpenses || 0}
-                onChange={(e) => setFormData({ ...formData, monthlyExpenses: Number.parseInt(e.target.value) || 0 })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="savingsBalance">Savings Balance (₱)</Label>
-              <Input
-                id="savingsBalance"
-                type="number"
-                min="0"
-                value={formData.savingsBalance || 0}
-                onChange={(e) => setFormData({ ...formData, savingsBalance: Number.parseInt(e.target.value) || 0 })}
-              />
+          <div className="space-y-4">
+            <h3 className="text-lg font-medium text-gray-900">Membership Information</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="membershipDate">Membership Date</Label>
+                <Input
+                  id="membershipDate"
+                  type="date"
+                  value={formData.membershipDate || ""}
+                  onChange={(e) => setFormData({ ...formData, membershipDate: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="membershipStatus">Membership Status</Label>
+                <Select
+                  value={formData.membershipStatus || "Active"}
+                  onValueChange={(value) => setFormData({ ...formData, membershipStatus: value as any })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Active">Active</SelectItem>
+                    <SelectItem value="Dormant">Dormant</SelectItem>
+                    <SelectItem value="Suspended">Suspended</SelectItem>
+                    <SelectItem value="Closed">Closed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
 
@@ -834,87 +883,100 @@ export default function MembersPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "none">("none");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<Member | null>(null);
+  const [isLoading, setIsLoading] = useState(true); // Added for loading state
 
   // HybridWebView integration
-useEffect(() => {
-  (window as any).globalSetMembers = (dataFromDotNet: any) => {
-    console.log("✅ Received data from .NET. Data:", dataFromDotNet);
-    
-    let membersJson = [];
-    if (typeof dataFromDotNet === 'string') {
+  useEffect(() => {
+    // Define the callback function that .NET will call with the data.
+    (window as any).globalSetMembers = (dataFromDotNet: any) => {
+      console.log("✅ Received member data from .NET:", dataFromDotNet);
+      setIsLoading(true);
       try {
-        membersJson = JSON.parse(dataFromDotNet);
-      } catch (e) {
-        console.error("Error parsing JSON string from .NET:", e);
-        return;
+        let rawMembers = [];
+        if (typeof dataFromDotNet === "string") {
+          try {
+            rawMembers = JSON.parse(dataFromDotNet);
+          } catch (e) {
+            console.error("Error parsing JSON string from .NET:", e);
+            setMembers(initialMembers); // Fallback on parsing error
+            return;
+          }
+        } else if (Array.isArray(dataFromDotNet)) {
+          rawMembers = dataFromDotNet;
+        } else {
+          throw new Error("Received data of unexpected type from .NET");
+        }
+
+        const mappedMembers = rawMembers.map((member: any) => {
+          const fullName = `${member.first_name || ""} ${member.middle_name || ""} ${member.last_name || ""}`
+            .replace(/\s+/g, " ")
+            .trim();
+
+          return {
+            // --- Direct Mappings ---
+            memberId: member.member_id,
+            firstName: member.first_name,
+            middleName: member.middle_name,
+            lastName: member.last_name,
+            fullName: fullName,
+            contact: member.contact_number,
+            address: member.present_address,
+            tinNumber: member.tin,
+            occupation: member.occupation,
+            industry: member.industry,
+            isPmsCompleted: member.is_pms_completed,
+            dependents: member.number_of_dependents,
+            monthlyIncome: member.monthly_income,
+            savingsBalance: member.savings_balance,
+            monthlyExpenses: member.monthly_expenses,
+            creditScore: member.credit_score,
+            sex: member.sex,
+            civilStatus: member.civil_status,
+            educationType: member.education,
+            membershipStatus: member.membership_status,
+
+            // --- Date Formatting ---
+            dateOfBirth: member.date_of_birth ? member.date_of_birth.split("T")[0] : "",
+            membershipDate: member.membership_date ? member.membership_date.split("T")[0] : "",
+
+            // --- Default empty values for any potentially missing fields ---
+            loans: member.loans || [],
+            remarks: member.remarks || [],
+          };
+        });
+
+        console.log("Mapped members for frontend use:", mappedMembers);
+        setMembers(mappedMembers);
+      } catch (error) {
+        console.error("❌ Failed to parse member data from .NET:", error);
+        toast({
+          title: "Data Error",
+          description: "Could not process member data from the backend.",
+          variant: "destructive",
+        });
+        setMembers(initialMembers); // Fallback to mock data
+      } finally {
+        setIsLoading(false);
       }
-    } else if (Array.isArray(dataFromDotNet)) {
-      membersJson = dataFromDotNet;
-    } else {
-        console.error("Received data of unexpected type from .NET:", typeof dataFromDotNet);
-        return;
+    };
+
+    // Send the message to .NET to request the members.
+    try {
+      console.log("🚀 Requesting all member details from .NET backend...");
+      // HybridWebView.SendInvokeMessageToDotNet("GetAllMembersDetails");
+    } catch (error) {
+      console.error("❌ Failed to send 'GetAllMembersDetails' message to .NET:", error);
+      // Fallback to mock data if the webview call fails (for browser development)
+      setMembers(initialMembers);
+      setIsLoading(false);
     }
 
-    const genderMap = { 0: "Male", 1: "Female", 2: "Other" };
-    const educationMap = { 1: "Elementary Undergraduate", 2: "Elementary Graduate", 3: "High School Undergraduate", 4: "High School Graduate", 5: "Vocational", 6: "College Undergraduate", 7: "College Graduate", 8: "Masters Graduate", 9: "Doctorate Graduate", 10: "Other" };
-    const civilStatusMap = { 1: "Single", 2: "Married", 3: "Widowed", 4: "Separated", 5: "Divorced" };
-    const membershipStatusMap = { 0: "Active", 1: "Inactive", 2: "Closed" }; // Adjusted key for "Active" to 0 based on log
+    // Cleanup: Remove the global function when the component unmounts.
+    return () => {
+      delete (window as any).globalSetMembers;
+    };
+  }, []); // The empty dependency array `[]` ensures this runs only once.
 
-    const mapped = membersJson.map((m: any) => {
-      // Safely access nested financial profile
-      const profile = m.MemberFinancialProfile || {};
-
-      return {
-        memberId: m.MemberId,
-        firstName: m.FirstName,
-        lastName: m.LastName,
-        middleName: m.MiddleName || "",
-        suffix: m.Suffix || "",
-        fullName: m.FullName || `${m.FirstName || ""} ${m.LastName || ""}`.trim(),
-        
-        gender: genderMap[m.Gender] || "N/A",
-        educationLevel: educationMap[m.EducationLevel] || "N/A",
-        civilStatus: civilStatusMap[m.CivilStatus] || "N/A",
-        membershipStatus: membershipStatusMap[m.MembershipStatus] || "Unknown",
-
-        dateOfBirth: m.DateOfBirth ? m.DateOfBirth.split("T")[0] : "",
-        membershipDate: m.MembershipDate ? m.MembershipDate.split("T")[0] : "",
-
-        // Access nested contact & address info
-        contact: m.Contact || "",
-        address: m.Address || "",
-        
-        // Access financial data from profile object
-        dependents: m.Dependents || 0,
-        industry: m.Industry || "",
-        monthlyIncome: m.MonthlyIncome || 0,
-        savingsBalance: m.SavingsBalance || 0,
-        monthlyExpenses: m.MonthlyExpenses || 0,
-        creditScore: m.CreditScore || 0,
-        
-        // Access loans from the correct property: m.LoanAccounts
-        loans: (m.Loans || []).map((loan: any) => ({
-          id: loan.id,
-          type: loan.type,
-          purpose: loan.purpose,
-          amount: loan.amount,
-          applicationDate: loan.applicationDate,
-          duration: loan.duration,
-          validatedBy: loan.validatedBy,
-          status: loan.status,
-        })),
-
-        remarks: m.Remarks || [],
-      };
-    });
-
-    setMembers(mapped);
-  };
-
-  // Ask .NET to load members
-  // HybridWebView.SendInvokeMessageToDotNet("getMembers");
-
-}, []);
 
   const filteredMembers = members.filter((member) =>
     member.fullName.toLowerCase().includes(searchText.toLowerCase())
@@ -932,28 +994,35 @@ useEffect(() => {
     );
   };
 
-  const handleCreateMember = (newMember: Member) => {
-    const income = newMember.monthlyIncome || 0;
-    const expenses = newMember.monthlyExpenses || 0;
-    const savings = newMember.savingsBalance || 0;
+  const handleCreateMember = (memberPayload: Member) => {
+    console.log("📤 Preparing to send new member payload to .NET:", memberPayload);
 
-    const creditScore = Math.min(
-      100,
-      Math.max(0, Math.floor((income - expenses) / 1000) + Math.floor(savings / 10000) + 50)
-    );
+    // Use object destructuring to create a new object without memberId, fullName, remarks.
+    // This is the recommended, type-safe approach.
+    const { memberId, fullName, remarks, ...payloadForBackend } = memberPayload;
 
-    const memberWithScore = { 
-      ...newMember, 
-      creditScore,
-      remarks: newMember.remarks || [] 
-    };
-    setMembers((prev) => [...prev, memberWithScore]);
-    setIsCreateDialogOpen(false);
+    try {
+      // Send the payload without the memberId to the .NET backend
+      console.log("✅ Actual payload for .NET:", payloadForBackend);
+      HybridWebView.SendInvokeMessageToDotNet("RegisterMember", payloadForBackend);
+      console.log("✅ Successfully sent 'RegisterMember' message to .NET");
 
-    toast({
-      title: "Success",
-      description: `Member ${newMember.fullName} has been registered successfully.`,
-    });
+      // Optimistically update the UI using the original object with the client-side ID
+      setMembers((prev) => [...prev, memberPayload]);
+      setIsCreateDialogOpen(false);
+
+      toast({
+        title: "Success",
+        description: `Member ${memberPayload?.firstName || ""} ${memberPayload?.lastName || ""}`.trim() + " has been registered successfully.",
+      });
+    } catch (error) {
+      console.error("❌ Failed to send 'RegisterMember' message to .NET:", error);
+      toast({
+        title: "Registration Failed",
+        description: "Could not send member data to the backend. Please check the console for errors.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleUpdateMember = (updatedMember: Member) => {
@@ -1091,7 +1160,7 @@ useEffect(() => {
                   <TableHead className="text-gray-700">Contact</TableHead>
                   <TableHead className="text-gray-700">Credit Score</TableHead>
                   <TableHead className="text-gray-700">Total Loans</TableHead>
-                  <TableHead className="text-gray-700">Status</TableHead>
+                  <TableHead className="text-gray-700">Membership Status</TableHead>
                   <TableHead className="text-gray-700">Actions</TableHead>
                 </TableRow>
               </TableHeader>
