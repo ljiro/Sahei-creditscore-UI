@@ -56,83 +56,83 @@ import {
 
 import HybridWebView from "../hybridwebview/HybridWebView.js";
 
-const initialMembers: Member[] = [
-  {
-    memberId: 1,
-    firstName: "Juan",
-    lastName: "Dela Cruz",
-    fullName: "Juan Dela Cruz",
-    sex: "Male",
-    dateOfBirth: "1985-05-15",
-    contact: "09123456789",
-    address: "123 Main St, Manila",
-    email: "juandelacruz@example.com",
-    educationType: "Vocational Graduate",
-    civilStatus: "Married",
-    dependents: 2,
-    membershipStatus: "Active",
-    sourceOfIncome: {
-      hasEmployment: true,
-      hasBusiness: false,
-      companyName: "Acme Corporation",
-      employmentStatus: "Full-Time",
-      salaryMin: 70000,
-      salaryMax: 80000,
-    },
-    loans: [
-      {
-        id: "LN001",
-        type: "Personal Loan",
-        purpose: "Home Renovation",
-        amount: 50000,
-        applicationDate: "2025-05-15",
-        duration: "12 months",
-        status: "Approved",
-      },
-    ],
-    creditScore: 85,
-    membershipDate: "2023-01-10",
-  },
-  {
-    memberId: 3,
-    firstName: "Maria",
-    lastName: "Santos",
-    fullName: "Maria Santos",
-    email: "mariasantos@example.com",
-    sex: "Female",
-    dateOfBirth: "1990-08-22",
-    contact: "09234567890",
-    address: "456 Oak Ave, Quezon City",
-    educationType: "Post-Graduate",
-    civilStatus: "Single",
-    dependents: 0,
-    membershipStatus: "Active",
-    sourceOfIncome: {
-      hasEmployment: true,
-      hasBusiness: true,
-      businessType: "Direct Selling",
-      businessIncomeMin: 40000,
-      businessIncomeMax: 60000,
-      companyName: "Global Tech Inc.",
-      employmentStatus: "Part-Time",
-      salaryMin: 55000,
-      salaryMax: 65000,
-    },
-    loans: [
-      {
-        id: "LN002",
-        type: "Business Loan",
-        purpose: "Capital Expansion",
-        amount: 150000,
-        applicationDate: "2025-05-20",
-        duration: "24 months",
-        status: "Approved",
-      },
-    ],
-    creditScore: 92,
-    membershipDate: "2022-11-05",
-  },
-];
+// const initialMembers: Member[] = [
+//   {
+//     memberId: 1,
+//     firstName: "Juan",
+//     lastName: "Dela Cruz",
+//     fullName: "Juan Dela Cruz",
+//     sex: "Male",
+//     dateOfBirth: "1985-05-15",
+//     contact: "09123456789",
+//     address: "123 Main St, Manila",
+//     email: "juandelacruz@example.com",
+//     educationType: "Vocational Graduate",
+//     civilStatus: "Married",
+//     dependents: 2,
+//     membershipStatus: "Active",
+//     sourceOfIncome: {
+//       hasEmployment: true,
+//       hasBusiness: false,
+//       companyName: "Acme Corporation",
+//       employmentStatus: "Full-Time",
+//       salaryMin: 70000,
+//       salaryMax: 80000,
+//     },
+//     loans: [
+//       {
+//         id: "LN001",
+//         type: "Personal Loan",
+//         purpose: "Home Renovation",
+//         amount: 50000,
+//         applicationDate: "2025-05-15",
+//         duration: "12 months",
+//         status: "Approved",
+//       },
+//     ],
+//     creditScore: 85,
+//     membershipDate: "2023-01-10",
+//   },
+//   {
+//     memberId: 3,
+//     firstName: "Maria",
+//     lastName: "Santos",
+//     fullName: "Maria Santos",
+//     email: "mariasantos@example.com",
+//     sex: "Female",
+//     dateOfBirth: "1990-08-22",
+//     contact: "09234567890",
+//     address: "456 Oak Ave, Quezon City",
+//     educationType: "Post-Graduate",
+//     civilStatus: "Single",
+//     dependents: 0,
+//     membershipStatus: "Active",
+//     sourceOfIncome: {
+//       hasEmployment: true,
+//       hasBusiness: true,
+//       businessType: "Direct Selling",
+//       businessIncomeMin: 40000,
+//       businessIncomeMax: 60000,
+//       companyName: "Global Tech Inc.",
+//       employmentStatus: "Part-Time",
+//       salaryMin: 55000,
+//       salaryMax: 65000,
+//     },
+//     loans: [
+//       {
+//         id: "LN002",
+//         type: "Business Loan",
+//         purpose: "Capital Expansion",
+//         amount: 150000,
+//         applicationDate: "2025-05-20",
+//         duration: "24 months",
+//         status: "Approved",
+//       },
+//     ],
+//     creditScore: 92,
+//     membershipDate: "2022-11-05",
+//   },
+// ];
 
 interface Member {
   memberId: number;
@@ -877,7 +877,7 @@ function ClientFormDialog({
 }
 
 export default function MembersPage() {
-  const [members, setMembers] = useState<Member[]>(initialMembers);
+  const [members, setMembers] = useState<Member[]>([]);
   const [searchText, setSearchText] = useState("");
   const [selectedMember, setSelectedMember] = useState<Member | null>(null);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc" | "none">("none");
@@ -887,8 +887,9 @@ export default function MembersPage() {
 
   // HybridWebView integration
   useEffect(() => {
-    // Define the callback function that .NET will call with the data.
-    (window as any).globalSetMembers = (dataFromDotNet: any) => {
+    // Define the callback function and attach it to the window object.
+    // This function will handle the data when it arrives from .NET.
+    (window as any).handleMembersDataResponse = (dataFromDotNet: any) => {
       console.log("✅ Received member data from .NET:", dataFromDotNet);
       setIsLoading(true);
       try {
@@ -898,7 +899,7 @@ export default function MembersPage() {
             rawMembers = JSON.parse(dataFromDotNet);
           } catch (e) {
             console.error("Error parsing JSON string from .NET:", e);
-            setMembers(initialMembers); // Fallback on parsing error
+            setMembers([]); // Fallback on parsing error
             return;
           }
         } else if (Array.isArray(dataFromDotNet)) {
@@ -908,40 +909,57 @@ export default function MembersPage() {
         }
 
         const mappedMembers = rawMembers.map((member: any) => {
-          const fullName = `${member.first_name || ""} ${member.middle_name || ""} ${member.last_name || ""}`
+          // Use camelCase properties from the payload for the fullName calculation.
+          const fullName = `${member.firstName || ""} ${member.middleName || ""} ${member.lastName || ""}`
             .replace(/\s+/g, " ")
             .trim();
 
+          // Parse the nested JSON strings for sourceOfIncome and loans.
+          let sourceOfIncome = {};
+          try {
+            if (member.sourceOfIncome && typeof member.sourceOfIncome === 'string') {
+              sourceOfIncome = JSON.parse(member.sourceOfIncome);
+            }
+          } catch (e) {
+            console.error("Could not parse sourceOfIncome for memberId:", member.memberId, e);
+          }
+
+          let loans = [];
+          try {
+            if (member.loans && typeof member.loans === 'string') {
+              loans = JSON.parse(member.loans);
+            }
+          } catch (e) {
+            console.error("Could not parse loans for memberId:", member.memberId, e);
+          }
+
           return {
-            // --- Direct Mappings ---
-            memberId: member.member_id,
-            firstName: member.first_name,
-            middleName: member.middle_name,
-            lastName: member.last_name,
+            // Map directly from the camelCase payload properties.
+            memberId: member.memberId,
+            firstName: member.firstName,
+            middleName: member.middleName,
+            lastName: member.lastName,
             fullName: fullName,
-            contact: member.contact_number,
-            address: member.present_address,
-            tinNumber: member.tin,
-            occupation: member.occupation,
-            industry: member.industry,
-            isPmsCompleted: member.is_pms_completed,
-            dependents: member.number_of_dependents,
-            monthlyIncome: member.monthly_income,
-            savingsBalance: member.savings_balance,
-            monthlyExpenses: member.monthly_expenses,
-            creditScore: member.credit_score,
+            contact: member.contact,
+            address: member.address,
+            email: member.email,
+            dependents: member.dependents,
+            creditScore: member.creditScore,
+            
+            dateOfBirth: member.dateOfBirth ? member.dateOfBirth.split("T")[0] : "",
+            membershipDate: member.membershipDate ? member.membershipDate.split("T")[0] : "",
+
             sex: member.sex,
-            civilStatus: member.civil_status,
-            educationType: member.education,
-            membershipStatus: member.membership_status,
+            civilStatus: member.civilStatus,
+            educationType: member.educationType,
+            membershipStatus: member.membershipStatus,
 
-            // --- Date Formatting ---
-            dateOfBirth: member.date_of_birth ? member.date_of_birth.split("T")[0] : "",
-            membershipDate: member.membership_date ? member.membership_date.split("T")[0] : "",
-
-            // --- Default empty values for any potentially missing fields ---
-            loans: member.loans || [],
-            remarks: member.remarks || [],
+            // Use the correctly parsed nested objects.
+            sourceOfIncome: sourceOfIncome,
+            loans: loans,
+            
+            // Provide defaults for other interface properties not in the payload.
+            remarks: [], 
           };
         });
 
@@ -954,26 +972,26 @@ export default function MembersPage() {
           description: "Could not process member data from the backend.",
           variant: "destructive",
         });
-        setMembers(initialMembers); // Fallback to mock data
+        setMembers([]); // Fallback to mock data
       } finally {
         setIsLoading(false);
       }
     };
 
     // Send the message to .NET to request the members.
+    // This is done *after* the callback is defined, ensuring it exists when .NET calls it.
     try {
       console.log("🚀 Requesting all member details from .NET backend...");
-      // HybridWebView.SendInvokeMessageToDotNet("GetAllMembersDetails");
+      HybridWebView.SendInvokeMessageToDotNet("GetAllMembersDetails");
     } catch (error) {
       console.error("❌ Failed to send 'GetAllMembersDetails' message to .NET:", error);
-      // Fallback to mock data if the webview call fails (for browser development)
-      setMembers(initialMembers);
+      setMembers([]);
       setIsLoading(false);
     }
 
-    // Cleanup: Remove the global function when the component unmounts.
+    // Step 3: Cleanup the global function when the component unmounts.
     return () => {
-      delete (window as any).globalSetMembers;
+      delete (window as any).handleMembersDataResponse;
     };
   }, []); // The empty dependency array `[]` ensures this runs only once.
 
