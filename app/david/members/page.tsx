@@ -135,11 +135,11 @@ import HybridWebView from "../hybridwebview/HybridWebView.js";
 // ];
 
 interface Member {
-  memberId: number;
-  firstName: string;
+  memberId?: number;
+  firstName?: string;
   middleName?: string;
-  lastName: string;
-  fullName: string;
+  lastName?: string;
+  fullName?: string;
   suffix?: string;
   sex?: "Male" | "Female";
   dateOfBirth?: string;
@@ -167,6 +167,7 @@ interface Member {
   sourceOfIncome?: SourceOfIncome;
   loans?: Loan[]; 
   remarks?: any[];
+  totalLoans?: number; // Total number of loans applied by the member
 }
 
 interface SourceOfIncome {
@@ -889,7 +890,7 @@ export default function MembersPage() {
   useEffect(() => {
     // Define the callback function and attach it to the window object.
     // This function will handle the data when it arrives from .NET.
-    (window as any).handleMembersDataResponse = (dataFromDotNet: any) => {
+    (window as any).handleGetMembersSummaryForMembersPageResponse = (dataFromDotNet: any) => {
       console.log("✅ Received member data from .NET:", dataFromDotNet);
       setIsLoading(true);
       try {
@@ -910,53 +911,54 @@ export default function MembersPage() {
 
         const mappedMembers = rawMembers.map((member: any) => {
           // Use camelCase properties from the payload for the fullName calculation.
-          const fullName = `${member.firstName || ""} ${member.middleName || ""} ${member.lastName || ""}`
-            .replace(/\s+/g, " ")
-            .trim();
+          // const fullName = `${member.firstName || ""} ${member.middleName || ""} ${member.lastName || ""}`
+          //   .replace(/\s+/g, " ")
+          //   .trim();
 
           // Parse the nested JSON strings for sourceOfIncome and loans.
-          let sourceOfIncome = {};
-          try {
-            if (member.sourceOfIncome && typeof member.sourceOfIncome === 'string') {
-              sourceOfIncome = JSON.parse(member.sourceOfIncome);
-            }
-          } catch (e) {
-            console.error("Could not parse sourceOfIncome for memberId:", member.memberId, e);
-          }
+          // let sourceOfIncome = {};
+          // try {
+          //   if (member.sourceOfIncome && typeof member.sourceOfIncome === 'string') {
+          //     sourceOfIncome = JSON.parse(member.sourceOfIncome);
+          //   }
+          // } catch (e) {
+          //   console.error("Could not parse sourceOfIncome for memberId:", member.memberId, e);
+          // }
 
-          let loans = [];
-          try {
-            if (member.loans && typeof member.loans === 'string') {
-              loans = JSON.parse(member.loans);
-            }
-          } catch (e) {
-            console.error("Could not parse loans for memberId:", member.memberId, e);
-          }
+          // let loans = [];
+          // try {
+          //   if (member.loans && typeof member.loans === 'string') {
+          //     loans = JSON.parse(member.loans);
+          //   }
+          // } catch (e) {
+          //   console.error("Could not parse loans for memberId:", member.memberId, e);
+          // }
 
           return {
             // Map directly from the camelCase payload properties.
             memberId: member.memberId,
-            firstName: member.firstName,
-            middleName: member.middleName,
-            lastName: member.lastName,
-            fullName: fullName,
+            // firstName: member.firstName,
+            // middleName: member.middleName,
+            // lastName: member.lastName,
+            fullName: member.name,
             contact: member.contact,
-            address: member.address,
-            email: member.email,
-            dependents: member.dependents,
+            // address: member.address,
+            // email: member.email,
+            // dependents: member.dependents,
             creditScore: member.creditScore,
+            totalLoans: member.totalLoans,
             
-            dateOfBirth: member.dateOfBirth ? member.dateOfBirth.split("T")[0] : "",
-            membershipDate: member.membershipDate ? member.membershipDate.split("T")[0] : "",
+            // dateOfBirth: member.dateOfBirth ? member.dateOfBirth.split("T")[0] : "",
+            // membershipDate: member.membershipDate ? member.membershipDate.split("T")[0] : "",
 
-            sex: member.sex,
-            civilStatus: member.civilStatus,
-            educationType: member.educationType,
+            // sex: member.sex,
+            // civilStatus: member.civilStatus,
+            // educationType: member.educationType,
             membershipStatus: member.membershipStatus,
 
             // Use the correctly parsed nested objects.
-            sourceOfIncome: sourceOfIncome,
-            loans: loans,
+            // sourceOfIncome: sourceOfIncome,
+            // loans: loans,
             
             // Provide defaults for other interface properties not in the payload.
             remarks: [], 
@@ -982,16 +984,16 @@ export default function MembersPage() {
     // This is done *after* the callback is defined, ensuring it exists when .NET calls it.
     try {
       console.log("🚀 Requesting all member details from .NET backend...");
-      HybridWebView.SendInvokeMessageToDotNet("GetAllMembersDetails");
+      HybridWebView.SendInvokeMessageToDotNet("GetMembersSummaryForMembersPage");
     } catch (error) {
-      console.error("❌ Failed to send 'GetAllMembersDetails' message to .NET:", error);
+      console.error("❌ Failed to send 'GetMembersSummaryForMembersPage' message to .NET:", error);
       setMembers([]);
       setIsLoading(false);
     }
 
     // Step 3: Cleanup the global function when the component unmounts.
     return () => {
-      delete (window as any).handleMembersDataResponse;
+      delete (window as any).handleGetMembersSummaryForMembersPageResponse;
     };
   }, []); // The empty dependency array `[]` ensures this runs only once.
 
@@ -1228,9 +1230,12 @@ export default function MembersPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-gray-700">
-                      <Badge variant={(member.loans || []).length > 0 ? "default" : "outline"}>
-                        {(member.loans || []).length} {(member.loans || []).length === 1 ? "loan" : "loans"}
+                      <Badge variant={(member.totalLoans || 0) > 0 ? "default" : "outline"}>
+                        {(member.totalLoans || 0)} {(member.totalLoans === 1 ? "loan" : "loans")}
                       </Badge>
+                      {/* <Badge variant={(member.loans || []).length > 0 ? "default" : "outline"}>
+                        {(member.loans || []).length} {(member.loans || []).length === 1 ? "loan" : "loans"}
+                      </Badge> */}
                     </TableCell>
                     <TableCell className="text-gray-700">
                       <Badge
