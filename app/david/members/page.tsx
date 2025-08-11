@@ -890,7 +890,7 @@ export default function MembersPage() {
   useEffect(() => {
     // Define the callback function and attach it to the window object.
     // This function will handle the data when it arrives from .NET.
-    (window as any).handleGetMembersSummaryForMembersPageResponse = (dataFromDotNet: any) => {
+    (window as any).handleMembersDataResponse = (dataFromDotNet: any) => {
       console.log("✅ Received member data from .NET:", dataFromDotNet);
       setIsLoading(true);
       try {
@@ -898,6 +898,7 @@ export default function MembersPage() {
         if (typeof dataFromDotNet === "string") {
           try {
             rawMembers = JSON.parse(dataFromDotNet);
+            console.log("Parsed members from JSON string:", rawMembers);
           } catch (e) {
             console.error("Error parsing JSON string from .NET:", e);
             setMembers([]); // Fallback on parsing error
@@ -905,60 +906,48 @@ export default function MembersPage() {
           }
         } else if (Array.isArray(dataFromDotNet)) {
           rawMembers = dataFromDotNet;
+          console.log("Received members as array:", rawMembers);
         } else {
           throw new Error("Received data of unexpected type from .NET");
         }
 
         const mappedMembers = rawMembers.map((member: any) => {
           // Use camelCase properties from the payload for the fullName calculation.
-          // const fullName = `${member.firstName || ""} ${member.middleName || ""} ${member.lastName || ""}`
-          //   .replace(/\s+/g, " ")
-          //   .trim();
+          const fullName = `${member.firstName || ""} ${member.middleName || ""} ${member.lastName || ""}`
+            .replace(/\s+/g, " ")
+            .trim();
 
-          // Parse the nested JSON strings for sourceOfIncome and loans.
-          // let sourceOfIncome = {};
-          // try {
-          //   if (member.sourceOfIncome && typeof member.sourceOfIncome === 'string') {
-          //     sourceOfIncome = JSON.parse(member.sourceOfIncome);
-          //   }
-          // } catch (e) {
-          //   console.error("Could not parse sourceOfIncome for memberId:", member.memberId, e);
-          // }
-
-          // let loans = [];
-          // try {
-          //   if (member.loans && typeof member.loans === 'string') {
-          //     loans = JSON.parse(member.loans);
-          //   }
-          // } catch (e) {
-          //   console.error("Could not parse loans for memberId:", member.memberId, e);
-          // }
+          const sourceOfIncome = member.sourceOfIncome || {};
+          const loans = member.loans || [];
 
           return {
             // Map directly from the camelCase payload properties.
             memberId: member.memberId,
-            // firstName: member.firstName,
-            // middleName: member.middleName,
-            // lastName: member.lastName,
-            fullName: member.name,
+            firstName: member.firstName,
+            middleName: member.middleName,
+            lastName: member.lastName,
+            fullName: fullName,
+            // fullName: member.name,
             contact: member.contact,
-            // address: member.address,
-            // email: member.email,
-            // dependents: member.dependents,
+            address: member.address,
+            email: member.email,
+            dependents: member.dependents,
             creditScore: member.creditScore,
-            totalLoans: member.totalLoans,
             
-            // dateOfBirth: member.dateOfBirth ? member.dateOfBirth.split("T")[0] : "",
-            // membershipDate: member.membershipDate ? member.membershipDate.split("T")[0] : "",
+            dateOfBirth: member.dateOfBirth ? member.dateOfBirth.split("T")[0] : "",
+            membershipDate: member.membershipDate ? member.membershipDate.split("T")[0] : "",
 
-            // sex: member.sex,
-            // civilStatus: member.civilStatus,
-            // educationType: member.educationType,
+            sex: member.sex,
+            civilStatus: member.civilStatus,
+            educationType: member.educationType,
             membershipStatus: member.membershipStatus,
 
             // Use the correctly parsed nested objects.
-            // sourceOfIncome: sourceOfIncome,
-            // loans: loans,
+            sourceOfIncome: sourceOfIncome,
+            loans: loans,
+
+            // Derive totalLoans from the length of the loans array
+            totalLoans: loans.length,
             
             // Provide defaults for other interface properties not in the payload.
             remarks: [], 
@@ -984,27 +973,27 @@ export default function MembersPage() {
     // This is done *after* the callback is defined, ensuring it exists when .NET calls it.
     try {
       console.log("🚀 Requesting all member details from .NET backend...");
-      HybridWebView.SendInvokeMessageToDotNet("GetMembersSummaryForMembersPage");
+      HybridWebView.SendInvokeMessageToDotNet("GetAllMembersDetails");
     } catch (error) {
-      console.error("❌ Failed to send 'GetMembersSummaryForMembersPage' message to .NET:", error);
+      console.error("❌ Failed to send 'GetAllMembersDetails' message to .NET:", error);
       setMembers([]);
       setIsLoading(false);
     }
 
     // Step 3: Cleanup the global function when the component unmounts.
     return () => {
-      delete (window as any).handleGetMembersSummaryForMembersPageResponse;
+      delete (window as any).handleMembersDataResponse;
     };
   }, []); // The empty dependency array `[]` ensures this runs only once.
 
 
   const filteredMembers = members.filter((member) =>
-    member.fullName.toLowerCase().includes(searchText.toLowerCase())
+    member.fullName?.toLowerCase().includes(searchText.toLowerCase())
   );
 
   const sortedMembers = [...filteredMembers].sort((a, b) => {
-    if (sortOrder === "asc") return a.fullName.localeCompare(b.fullName);
-    if (sortOrder === "desc") return b.fullName.localeCompare(a.fullName);
+    if (sortOrder === "asc") return a.fullName?.localeCompare(b.fullName || "") || 0;
+    if (sortOrder === "desc") return b.fullName?.localeCompare(a.fullName || "") || 0;
     return 0;
   });
 
@@ -1195,10 +1184,7 @@ export default function MembersPage() {
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback className="bg-blue-100 text-blue-800">
-                            {member.fullName
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")}
+                            {member.fullName?.split(" ").map((n) => n[0]).join("")}
                           </AvatarFallback>
                         </Avatar>
                         <span>{member.fullName}</span>
