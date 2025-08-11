@@ -939,7 +939,7 @@ export default function LoansPage() {
         
     };
 
-    HybridWebView.SendInvokeMessageToDotNet("getLoans");
+    HybridWebView.SendInvokeMessageToDotNet("GetLoanDetailsForLoansPage");
 
   }, []);
 useEffect(() => {
