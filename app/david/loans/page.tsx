@@ -56,6 +56,7 @@ import HybridWebView from "../hybridwebview/HybridWebView.js";
 import { Checkbox } from "@/components/ui/checkbox"
 
 const statusStyles = {
+  Active: "bg-green-100 text-green-800 hover:bg-green-100 border-green-200",
   Pending: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200",
   Disbursed: "bg-blue-100 text-blue-800 hover:bg-blue-100 border-blue-200",
   Declined: "bg-red-100 text-red-800 hover:bg-red-100 border-red-200",
@@ -165,7 +166,7 @@ interface ProofOfIncomeDocument {
 
 interface CoMaker {
   id: number // Temporary frontend ID for list management
-  memberId: string // The actual ID of the member from the database
+  memberId: number // The actual ID of the member from the database
   name: string // Full name for display
   contactNumber: string // Fetched from member data for display
   liabilityAmount: number
@@ -182,7 +183,7 @@ interface LoanDocuments {
 interface Loan {
   id: number
   clientName: string
-  clientId: string
+  clientId: number | null
   type: string
   purpose: string
   amount: number
@@ -196,10 +197,10 @@ interface Loan {
   // creditScore: number
   // coApplicantNumber: number
   // guarantorNumber: number
-  paymentHistory: Payment[]
+  paymentHistory?: Payment[]
   monthlyPayment: number
   // collateralType?: string
-  paymentFrequency: string
+  paymentFrequency?: string
   finalOutcome?: "Paid in Full" | "Defaulted" | "N/A"
   loanBehaviourStatus?: "Pending" | "Active" | "Paid" | "In Arrears" | "Defaulted" | "Rejected" | "N/A"
   delinquencies?: number
@@ -223,95 +224,95 @@ interface Loan {
   documents?: LoanDocuments
 }
 
-const mockMembers: (PersonalDetails & { clientId: string })[] = [
-  {
-    clientId: "CL001",
-    firstName: "Juan",
-    middleName: "Reyes",
-    lastName: "Dela Cruz",
-    contactNumber: "09171234567",
-    birthdate: "1985-01-15",
-    sex: "Male",
-    age: 40,
-    presentAddress: "123 Rizal St, Baguio City",
-    yearsOfStay: 15,
-    civilStatus: "Married",
-    educationType: "College Graduate",
-    membershipDate: "2010-06-01",
-    membershipStatus: "Active",
-    dependents: [{ id: 1, isInSchool: true }],
-    spouseName: "Juana Dela Cruz",
-    spouseContact: "09177654321",
-    spouseBirthdate: "1986-02-20",
-    spouseMonthlyIncomeMin: 25000,
-    spouseMonthlyIncomeMax: 30000,
-    monthlyIncome: 0, // This is now derived from sourceOfIncome
-    tin: "111-222-333-000",
-    sss: "11-2222222-3",
-    philhealth: "11-222222222-3",
-    savings: 150000,
-    shareCapital: 75000,
-    termDeposit: 50000,
-    map: 10000,
-  },
-  {
-    clientId: "CL002",
-    firstName: "Maria",
-    middleName: "Santos",
-    lastName: "Garcia",
-    contactNumber: "09182345678",
-    birthdate: "1990-05-20",
-    sex: "Female",
-    age: 35,
-    presentAddress: "456 Bonifacio St, Trancoville, Baguio City",
-    yearsOfStay: 10,
-    civilStatus: "Single",
-    educationType: "Post-Graduate",
-    membershipDate: "2015-02-10",
-    membershipStatus: "Active",
-    dependents: [],
-    monthlyIncome: 0,
-    tin: "444-555-666-000",
-    sss: "44-5555555-6",
-    philhealth: "44-555555555-6",
-    savings: 250000,
-    shareCapital: 120000,
-    termDeposit: 100000,
-    map: 15000,
-  },
-  {
-    clientId: "CL003",
-    firstName: "Pedro",
-    middleName: "Cruz",
-    lastName: "Penduko",
-    contactNumber: "09193456789",
-    birthdate: "1992-11-30",
-    sex: "Male",
-    age: 32,
-    presentAddress: "789 Kennon Road, Baguio City",
-    yearsOfStay: 7,
-    civilStatus: "Single",
-    educationType: "Vocational Graduate",
-    membershipDate: "2018-09-15",
-    membershipStatus: "Active",
-    dependents: [],
-    monthlyIncome: 0,
-    tin: "777-888-999-000",
-    sss: "77-8888888-9",
-    philhealth: "77-888888888-9",
-    savings: 80000,
-    shareCapital: 40000,
-    termDeposit: 20000,
-    map: 5000,
-  },
-]
+// const mockMembers: (PersonalDetails & { clientId: number })[] = [
+//   {
+//     clientId: 1,
+//     firstName: "Juan",
+//     middleName: "Reyes",
+//     lastName: "Dela Cruz",
+//     contactNumber: "09171234567",
+//     birthdate: "1985-01-15",
+//     sex: "Male",
+//     age: 40,
+//     presentAddress: "123 Rizal St, Baguio City",
+//     yearsOfStay: 15,
+//     civilStatus: "Married",
+//     educationType: "College Graduate",
+//     membershipDate: "2010-06-01",
+//     membershipStatus: "Active",
+//     dependents: [{ id: 1, isInSchool: true }],
+//     spouseName: "Juana Dela Cruz",
+//     spouseContact: "09177654321",
+//     spouseBirthdate: "1986-02-20",
+//     spouseMonthlyIncomeMin: 25000,
+//     spouseMonthlyIncomeMax: 30000,
+//     monthlyIncome: 0, // This is now derived from sourceOfIncome
+//     tin: "111-222-333-000",
+//     sss: "11-2222222-3",
+//     philhealth: "11-222222222-3",
+//     savings: 150000,
+//     shareCapital: 75000,
+//     termDeposit: 50000,
+//     map: 10000,
+//   },
+//   {
+//     clientId: 2,
+//     firstName: "Maria",
+//     middleName: "Santos",
+//     lastName: "Garcia",
+//     contactNumber: "09182345678",
+//     birthdate: "1990-05-20",
+//     sex: "Female",
+//     age: 35,
+//     presentAddress: "456 Bonifacio St, Trancoville, Baguio City",
+//     yearsOfStay: 10,
+//     civilStatus: "Single",
+//     educationType: "Post-Graduate",
+//     membershipDate: "2015-02-10",
+//     membershipStatus: "Active",
+//     dependents: [],
+//     monthlyIncome: 0,
+//     tin: "444-555-666-000",
+//     sss: "44-5555555-6",
+//     philhealth: "44-555555555-6",
+//     savings: 250000,
+//     shareCapital: 120000,
+//     termDeposit: 100000,
+//     map: 15000,
+//   },
+//   {
+//     clientId: 3,
+//     firstName: "Pedro",
+//     middleName: "Cruz",
+//     lastName: "Penduko",
+//     contactNumber: "09193456789",
+//     birthdate: "1992-11-30",
+//     sex: "Male",
+//     age: 32,
+//     presentAddress: "789 Kennon Road, Baguio City",
+//     yearsOfStay: 7,
+//     civilStatus: "Single",
+//     educationType: "Vocational Graduate",
+//     membershipDate: "2018-09-15",
+//     membershipStatus: "Active",
+//     dependents: [],
+//     monthlyIncome: 0,
+//     tin: "777-888-999-000",
+//     sss: "77-8888888-9",
+//     philhealth: "77-888888888-9",
+//     savings: 80000,
+//     shareCapital: 40000,
+//     termDeposit: 20000,
+//     map: 5000,
+//   },
+// ]
 
 // const initialLoans: Loan[] = [
 //   // SCENARIO 1: Loan for an existing member (Juan Dela Cruz), currently active.
 //   {
 //     id: 1,
 //     clientName: "Juan Dela Cruz",
-//     clientId: "CL001",
+//     clientId: 1,
 //     type: "Personal Loan",
 //     purpose: "Home Renovation and Improvements",
 //     amount: 75000,
@@ -322,19 +323,19 @@ const mockMembers: (PersonalDetails & { clientId: string })[] = [
 //     interestRate: "12%",
 //     monthlyPayment: 3531.25,
 //     paymentFrequency: "Monthly",
-//     paymentHistory: [
-//       {
-//         id: "PAY001",
-//         date: "2025-07-01",
-//         amount: 3531.25,
-//         principal: 2781.25,
-//         interest: 750,
-//         remainingBalance: 72218.75,
-//         status: "Paid",
-//         method: "Bank Transfer",
-//       },
-//     ],
-//     personalDetails: mockMembers.find((m) => m.clientId === "CL001"),
+//     // paymentHistory: [
+//     //   {
+//     //     id: "PAY001",
+//     //     date: "2025-07-01",
+//     //     amount: 3531.25,
+//     //     principal: 2781.25,
+//     //     interest: 750,
+//     //     remainingBalance: 72218.75,
+//     //     status: "Paid",
+//     //     method: "Bank Transfer",
+//     //   },
+//     // ],
+//     personalDetails: mockMembers.find((m) => m.clientId === 1),
 //     sourceOfIncome: {
 //       hasEmployment: true,
 //       hasBusiness: false,
@@ -348,7 +349,7 @@ const mockMembers: (PersonalDetails & { clientId: string })[] = [
 //     coMakers: [
 //       {
 //         id: 301,
-//         memberId: "CL002", // Maria Santos is the co-maker
+//         memberId: 2, // Maria Santos is the co-maker
 //         name: "Maria Santos Garcia",
 //         contactNumber: "09182345678",
 //         liabilityAmount: 25000,
@@ -369,7 +370,7 @@ const mockMembers: (PersonalDetails & { clientId: string })[] = [
 //   {
 //     id: 2,
 //     clientName: "Maria Santos Garcia",
-//     clientId: "CL002",
+//     clientId: 2,
 //     type: "Business Loan",
 //     purpose: "Capital for new online business",
 //     amount: 200000,
@@ -381,7 +382,7 @@ const mockMembers: (PersonalDetails & { clientId: string })[] = [
 //     monthlyPayment: 0,
 //     paymentFrequency: "Monthly",
 //     paymentHistory: [],
-//     personalDetails: mockMembers.find((m) => m.clientId === "CL002"),
+//     personalDetails: mockMembers.find((m) => m.clientId === 2),
 //     sourceOfIncome: {
 //       hasBusiness: true,
 //       businessType: "Direct Selling",
@@ -400,7 +401,7 @@ const mockMembers: (PersonalDetails & { clientId: string })[] = [
 //   {
 //     id: 3,
 //     clientName: "Lou Diamond Morados",
-//     clientId: "CL004", // A new ID that would be generated by the backend.
+//     clientId: 3, // A new ID that would be generated by the backend.
 //     type: "Personal Loan",
 //     purpose: "For educational expenses",
 //     amount: 30000,
@@ -448,7 +449,7 @@ const mockMembers: (PersonalDetails & { clientId: string })[] = [
 //     coMakers: [
 //       {
 //         id: 302,
-//         memberId: "CL003", // Pedro Penduko is the co-maker
+//         memberId: 3, // Pedro Penduko is the co-maker
 //         name: "Pedro Penduko",
 //         contactNumber: "09193456789",
 //         liabilityAmount: 15000,
@@ -614,13 +615,13 @@ function LoanDetailsPanel({
   onClose,
   onEdit,
   onDelete,
-  onProcessPayment,
+  // onProcessPayment,
 }: {
   loan: Loan
   onClose: () => void
   onEdit: (loan: Loan) => void
   onDelete: (loanId: number) => void
-  onProcessPayment: (loanId: number, payment: Omit<Payment, "id">) => void
+  // onProcessPayment: (loanId: number, payment: Omit<Payment, "id">) => void
 }) {
   const [isPaymentDialogOpen, setIsPaymentDialogOpen] = useState(false)
 
@@ -707,7 +708,7 @@ function LoanDetailsPanel({
               <CardContent className="grid gap-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-sm text-gray-500">Client Name</Label>
+                    <Label className="text-sm text-gray-500">Member Name</Label>
                     <p className="text-gray-800 font-medium">{loan.clientName}</p>
                   </div>
                   <div>
@@ -718,10 +719,10 @@ function LoanDetailsPanel({
                     <Label className="text-sm text-gray-500">Purpose</Label>
                     <p className="text-gray-800 font-medium">{loan.purpose}</p>
                   </div>
-                  <div>
+                  {/* <div>
                     <Label className="text-sm text-gray-500">Remaining Balance</Label>
                     <p className="text-gray-800 font-medium">₱{loan.remainingBalance.toLocaleString()}</p>
-                  </div>
+                  </div> */}
                   <div>
                     <Label className="text-sm text-gray-500">Monthly Payment</Label>
                     <p className="text-gray-800 font-medium">₱{loan.monthlyPayment.toLocaleString()}</p>
@@ -775,7 +776,7 @@ function LoanDetailsPanel({
                       </div>
                     </div>
                   )}
-                  {(loan.status === "Paid" || loan.status === "Disbursed") && (
+                  {/* {(loan.status === "Paid" || loan.status === "Disbursed") && (
                     <div className="space-y-2">
                       <Label className="text-sm text-gray-500">Payment Actions</Label>
                       <Button
@@ -788,7 +789,7 @@ function LoanDetailsPanel({
                         Process Payment
                       </Button>
                     </div>
-                  )}
+                  )} */}
                 </div>
               </CardContent>
             </Card>
@@ -799,11 +800,11 @@ function LoanDetailsPanel({
             <CardHeader className="pb-4">
               <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                 <DollarSign className="h-5 w-5 text-amber-500" />
-                Payment History ({loan.paymentHistory.length})
+                Payment History ({loan.paymentHistory?.length})
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {loan.paymentHistory.length > 0 ? (
+              {loan.paymentHistory && loan.paymentHistory.length > 0 ? (
                 <div className="border border-gray-200 rounded-lg overflow-hidden">
                   <Table>
                     <TableHeader className="bg-gray-50">
@@ -818,7 +819,7 @@ function LoanDetailsPanel({
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {loan.paymentHistory.map((payment) => (
+                      {loan.paymentHistory?.map((payment) => (
                         <TableRow key={payment.id} className="border-gray-200 hover:bg-gray-50">
                           <TableCell className="text-gray-700">{payment.date}</TableCell>
                           <TableCell className="text-gray-700 font-medium">
@@ -914,13 +915,13 @@ function LoanFormDialog({
   onClose: () => void
   onSave: (loan: Loan) => void
   mode: "create" | "edit"
-  members: (PersonalDetails & { clientId: string })[]
+  members: (PersonalDetails & { clientId: number })[] // FIX: Change type to number
   isLoadingMembers: boolean
 }) {
 
-  const [selectedMember, setSelectedMember] = useState<(PersonalDetails & { clientId: string }) | null>(null)
+  const [selectedMember, setSelectedMember] = useState<(PersonalDetails & { clientId: number }) | null>(null)
   const [memberSearchQuery, setMemberSearchQuery] = useState("")
-  const [memberSearchResults, setMemberSearchResults] = useState<(PersonalDetails & { clientId: string })[]>([])
+  const [memberSearchResults, setMemberSearchResults] = useState<(PersonalDetails & { clientId: number })[]>([]) 
   const [isSearching, setIsSearching] = useState(false)
 
   const handleMemberSearch = (query: string) => {
@@ -932,15 +933,15 @@ function LoanFormDialog({
     const results = members.filter(
       (member) =>
         `${member.firstName} ${member.lastName}`.toLowerCase().includes(query.toLowerCase()) ||
-        member.clientId.toLowerCase().includes(query.toLowerCase()),
-    )
+        String(member.clientId).toLowerCase().includes(query.toLowerCase()) // Convert to string for search
+    );
     setMemberSearchResults(results)
   }
 
-  const handleSelectMember = (member: PersonalDetails & { clientId: string }) => {
+  const handleSelectMember = (member: PersonalDetails & { clientId: number }) => {
     setSelectedMember(member)
     setPersonalDetails(member)
-    setFormData((prev) => ({ ...prev, clientId: member.clientId, clientName: `${member.firstName} ${member.lastName}` }))
+    setFormData((prev) => ({ ...prev, clientId: member.clientId, clientName: `${member.firstName} ${member.lastName}` }));
     setMemberSearchQuery("")
     setMemberSearchResults([])
   }
@@ -948,7 +949,7 @@ function LoanFormDialog({
   const handleClearSelection = () => {
     setSelectedMember(null)
     setPersonalDetails({}) // Reset to empty
-    setFormData((prev) => ({ ...prev, clientId: "", clientName: "" }))
+    setFormData((prev) => ({ ...prev, clientId: null, clientName: "" })); // Use null instead of ""
   }
 
   const [personalDetails, setPersonalDetails] = useState<Partial<PersonalDetails>>(loan?.personalDetails || {})
@@ -988,7 +989,7 @@ function LoanFormDialog({
   
   const [coMakers, setCoMakers] = useState<CoMaker[]>(loan?.coMakers || [])
   const [coMakerSearchQuery, setCoMakerSearchQuery] = useState("")
-  const [coMakerSearchResults, setCoMakerSearchResults] = useState<(PersonalDetails & { clientId: string })[]>([])
+  const [coMakerSearchResults, setCoMakerSearchResults] = useState<(PersonalDetails & { clientId: number })[]>([])
   const [isCoMakerSearching, setIsCoMakerSearching] = useState(false)
 
   // Handlers for co-maker search and selection
@@ -1007,12 +1008,12 @@ function LoanFormDialog({
       (member) =>
         !existingMemberIds.includes(member.clientId) &&
         (`${member.firstName} ${member.lastName}`.toLowerCase().includes(query.toLowerCase()) ||
-          member.clientId.toLowerCase().includes(query.toLowerCase())),
-    )
-    setCoMakerSearchResults(results)
+          String(member.clientId).toLowerCase().includes(query.toLowerCase())) // Convert to string for search
+    );
+    setCoMakerSearchResults(results);
   }
 
-  const handleSelectCoMaker = (member: PersonalDetails & { clientId: string }) => {
+  const handleSelectCoMaker = (member: PersonalDetails & { clientId: number }) => { 
     const newCoMaker: CoMaker = {
       id: Date.now(),
       memberId: member.clientId,
@@ -1102,7 +1103,7 @@ function LoanFormDialog({
       // This is the new, comprehensive default object for a new loan application.
       id: 0,
       clientName: "",
-      clientId: "",
+      clientId: null,  // Changed from string to null to match Loan interface
       type: "Personal Loan",
       purpose: "",
       amount: 0,
@@ -1135,9 +1136,7 @@ function LoanFormDialog({
         dependents: [],
         monthlyIncome: 0,
       },
-      sourceOfIncome: {
-        type: "Employed",
-      },
+      sourceOfIncome: {},
       assets: [],
       beneficiaries: [],
       coMakers: [],
@@ -2618,6 +2617,7 @@ function LoanFormDialog({
 
 export default function LoansPage() {
   const [loans, setLoans] = useState<Loan[]>([])
+  const [isLoadingLoans, setIsLoadingLoans] = useState(true);
   const [searchText, setSearchText] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("All")
   const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null)
@@ -2627,10 +2627,10 @@ export default function LoansPage() {
   const hasRequestedUpdate = useRef<boolean>(false);
 
   // State to hold all members fetched from the backend.
-  const [allMembers, setAllMembers] = useState<(PersonalDetails & { clientId: string })[]>([])
+  const [allMembers, setAllMembers] = useState<(PersonalDetails & { clientId: number })[]>([]) // FIX: Change type to number
   const [isLoadingMembers, setIsLoadingMembers] = useState(true)
 
-  // useEffect to fetch members from .NET when the component mounts.
+  // Fetch members from .NET when the component mounts that is used by <SearchComponent /> in <LoanFormDialog />.
   useEffect(() => {
     // Define the callback function that .NET will call with the data.
     ;(window as any).handleMembersSummaryResponse = (dataFromDotNet: any) => {
@@ -2648,7 +2648,7 @@ export default function LoansPage() {
 
         const mappedMembers = rawMembers.map((member: any) => ({
           // --- Direct Mappings ---
-          clientId: String(member.member_id), // Assuming the backend will send 'member_id'
+          clientId: member.member_id, // Assuming the backend will send 'member_id'
           firstName: member.first_name,
           middleName: member.middle_name,
           lastName: member.last_name,
@@ -2703,7 +2703,7 @@ export default function LoansPage() {
 
     // Send the message to .NET to request the members.
     try {
-      console.log("🚀 Requesting all members from .NET backend...")
+      console.log("🚀 Requesting members summary from .NET backend...")
       HybridWebView.SendInvokeMessageToDotNet("GetMembersSummary")
     } catch (error) {
       console.error("❌ Failed to send 'GetMembersSummary' message to .NET:", error)
@@ -2718,92 +2718,95 @@ export default function LoansPage() {
     }
   }, []) // The empty dependency array `[]` ensures this runs only once.
 
-  // HybridWebView integration for receiving loan data from .NET
-  //   useEffect(() => {
-  //   (window as any).globalSetLoans = (dataFromDotNet: any) => {
-  //     console.log("✅ Received loan data from .NET:", dataFromDotNet);
-      
-  //     let loansJson = [];
-  //     if (typeof dataFromDotNet === 'string') {
-  //       try {
-  //         loansJson = JSON.parse(dataFromDotNet);
-  //       } catch (e) {
-  //         console.error("Error parsing JSON string from .NET:", e);
-  //         return;
-  //       }
-  //     } else if (Array.isArray(dataFromDotNet)) {
-  //       loansJson = dataFromDotNet;
-  //     } else {
-  //       console.error("Received data of unexpected type from .NET:", typeof dataFromDotNet);
-  //       return;
-  //     }
+  // Fetch loan related data from .NET
+  useEffect(() => {
+    (window as any).handleAllLoansDetailsResponse = (dataFromDotNet: any) => {
+      console.log("✅ Received loan data from .NET:", dataFromDotNet);
+      try {
+        let loansJson = [];
+        if (typeof dataFromDotNet === "string") {
+          try {
+            loansJson = JSON.parse(dataFromDotNet);
+          } catch (e) {
+            console.error("Error parsing JSON string from .NET:", e);
+            setLoans([]); // Clear loans on parsing error
+            return;
+          }
+        } else if (Array.isArray(dataFromDotNet)) {
+          loansJson = dataFromDotNet;
+        } else {
+          console.error("Received data of unexpected type from .NET:", typeof dataFromDotNet);
+          setLoans([]); // Clear loans on type error
+          return;
+        }
 
-  //     const loanStatusMap: Record<string, LoanStatus> = {
-  //       "Pending": "Pending",
-  //       "Active": "Disbursed",
-  //       "In Arrears": "Disbursed", // A loan in arrears is still an active, disbursed loan.
-  //       "Paid": "Paid",
-  //       "Defaulted": "Defaulted",
-  //       "Rejected": "Declined",
-  //     };
+        const loanStatusMap: Record<string, LoanStatus> = {
+          Pending: "Pending",
+          Active: "Disbursed",
+          "In Arrears": "Disbursed", // A loan in arrears is still an active, disbursed loan.
+          Paid: "Paid",
+          Defaulted: "Defaulted",
+          Rejected: "Declined",
+        };
 
-  //     const paymentStatusMap: Record<string, "Paid" | "Pending" | "Overdue"> = {
-  //       "Paid": "Paid",
-  //       "Pending": "Pending",
-  //       "Overdue": "Overdue"
-  //     };
+        const mappedLoans = loansJson.map((loanData: any) => {
+          // The backend sends `applicationDate` which might have a time component.
+          const applicationDate = loanData.applicationDate ? loanData.applicationDate.split("T")[0] : "";
 
-  //     const mappedLoans = loansJson.map((loanData: any) => {
-  //       // Find the most recent payment if any exists
-  //       const payments = loanData.LedgerEntries
-  //         ?.filter((entry: any) => entry.Type === "Payment")
-  //         .map((payment: any, index: number) => ({
-  //           id: `PAY${loanData.LoanId}-${index}`,
-  //           date: payment.TransactionDate.split('T')[0],
-  //           amount: payment.Credit,
-  //           principal: payment.Credit * 0.9, // Assuming 10% interest
-  //           interest: payment.Credit * 0.1,
-  //           remainingBalance: payment.RunningBalance,
-  //           status: paymentStatusMap["Paid"], // Default to Paid for ledger entries
-  //           method: payment.Notes?.includes('bank') ? 'Bank Transfer' : 'Cash'
-  //         })) || [];
+          return {
+            id: loanData.loanId,
+            clientName: loanData.memberName,
+            clientId: loanData.memberId || null, // The provided query doesn't select memberId, defaulting to null.
+            type: loanData.loanType,
+            purpose: loanData.purpose,
+            amount: loanData.loanAmount,
+            applicationDate: applicationDate,
+            duration: loanData.duration,
+            status: loanStatusMap[loanData.loanStatus] || "Pending", // Use map with fallback
+            interestRate: loanData.interestRate,
+            monthlyPayment: loanData.monthlyPayment,
+            paymentFrequency: loanData.paymentFrequency,
 
-  //       const disbursementEntry = loanData.LedgerEntries?.find((entry: any) => entry.Type === "Disbursement");
-        
-  //       return {
-  //         id: loanData.LoanId,
-  //         clientName: loanData.MemberFullName, // You'll need to get this from your data
-  //         clientId: loanData.MemberId, // You'll need to get this from your data
-  //         type: loanData.ProductType,
-  //         purpose: "Business Expansion", // Default purpose
-  //         amount: loanData.PrincipalAmount,
-  //         applicationDate: loanData.DateGranted.split('T')[0],
-  //         duration: `${loanData.TermMonths} months`,
-  //         status: loanStatusMap[loanData.LoanStatus] || "Pending",
-  //         interestRate: `${(loanData.InterestRate * 100).toFixed(2)}%`,
-  //         remainingBalance: loanData.LedgerEntries?.slice(-1)[0]?.RunningBalance || loanData.PrincipalAmount,
-  //         nextPayment: payments.length > 0 ? 
-  //           new Date(new Date(payments[payments.length-1].date).getTime() + 30*24*60*60*1000).toISOString().split('T')[0] : 
-  //           new Date(new Date(loanData.DateGranted).getTime() + 30*24*60*60*1000).toISOString().split('T')[0],
-  //         validatedBy: "Loan Officer", // Default value
-  //         creditScore: 75, // Default value
-  //         coApplicantNumber: loanData.CoMakers?.length || 0,
-  //         guarantorNumber: loanData.CoMakers?.filter((c: any) => c.Status === "Active").length || 0,
-  //         paymentHistory: payments,
-  //         monthlyPayment: loanData.InstallmentAmount,
-  //         collateralType: loanData.CoMakers?.length > 0 ? "Secured" : "Unsecured",
-  //         paymentFrequency: loanData.PayFrequency
-  //       } as Loan;
-  //     });
+            // --- Default values for fields not in the new query ---
+            loanBehaviourStatus: loanData.loanStatus, // Store the original status
+            paymentHistory: [], // No payment history in this query
 
-  //     setLoans(mappedLoans);
+            // Set other required fields from the Loan interface to default values
+            finalOutcome: "N/A",
+            delinquencies: 0,
+            maxOverdueDays: 0,
+          } as Loan;
+        });
 
-        
-  //   };
+        setLoans(mappedLoans);
+      } catch (error) {
+        console.error("❌ Failed to process loan data from .NET:", error);
+        toast({
+          title: "Data Error",
+          description: "Could not process loan data from the backend.",
+          variant: "destructive",
+        });
+        setLoans([]);
+      } finally {
+        setIsLoadingLoans(false);
+      }
+    };
 
-  //   // HybridWebView.SendInvokeMessageToDotNet("getLoans");
+    try {
+      console.log("🚀 Requesting all loans from .NET backend...");
+      HybridWebView.SendInvokeMessageToDotNet("GetAllLoansDetails");
+    } catch (error) {
+      console.error("❌ Failed to send 'GetAllLoansDetails' message to .NET:", error);
+      setLoans([]);
+      setIsLoadingLoans(false);
+    }
 
-  // }, []);
+    // Cleanup: Remove the global function when the component unmounts.
+    return () => {
+      delete (window as any).handleAllLoansDetailsResponse;
+    };
+  }, []);
+
 // useEffect(() => {
 //   // Complete frontend to PostgreSQL enum mapping
 //   const statusMap: Record<string, string> = {
@@ -2896,25 +2899,25 @@ export default function LoansPage() {
       return matchesSearch && matchesStatus;
   });
 
-  const mapBehaviourToDisplayStatus = (
-    behaviourStatus?: "Pending" | "Active" | "Paid" | "In Arrears" | "Defaulted" | "Rejected" | "N/A",
-  ): LoanStatus => {
-    switch (behaviourStatus) {
-      case "Pending":
-        return "Pending"
-      case "Active":
-      case "In Arrears":
-        return "Disbursed"
-      case "Paid":
-        return "Paid"
-      case "Rejected":
-        return "Declined"
-      case "Defaulted":
-        return "Defaulted" // Correct mapping
-      default:
-        return "Pending"
-    }
-  }
+  // const mapBehaviourToDisplayStatus = (
+  //   behaviourStatus?: "Pending" | "Active" | "Paid" | "In Arrears" | "Defaulted" | "Rejected" | "N/A",
+  // ): LoanStatus => {
+  //   switch (behaviourStatus) {
+  //     case "Pending":
+  //       return "Pending"
+  //     case "Active":
+  //     case "In Arrears":
+  //       return "Disbursed"
+  //     case "Paid":
+  //       return "Paid"
+  //     case "Rejected":
+  //       return "Declined"
+  //     case "Defaulted":
+  //       return "Defaulted" // Correct mapping
+  //     default:
+  //       return "Pending"
+  //   }
+  // }
 
   const handleCreateLoan = (loanPayload: Loan) => {
     // This function receives the "massive payload" from the form dialog.
@@ -2981,62 +2984,62 @@ export default function LoansPage() {
     }
   };
 
-//   const handleUpdateLoan = (updatedLoan: Loan) => {
-//   setLoans(prev => prev.map(loan => 
-//     loan.id === updatedLoan.id ? updatedLoan : loan
-//   ));
-//   setEditingLoan(null);
-//   setSelectedLoan(updatedLoan);
-//   setUpdateLoan(updatedLoan); // This will trigger the useEffect
+  const handleUpdateLoan = (updatedLoan: Loan) => {
+  setLoans(prev => prev.map(loan => 
+    loan.id === updatedLoan.id ? updatedLoan : loan
+  ));
+  setEditingLoan(null);
+  setSelectedLoan(updatedLoan);
+  setUpdateLoan(updatedLoan); // This will trigger the useEffect
   
-//   toast({
-//     title: "Success",
-//     description: `Loan ${updatedLoan.id} has been updated successfully.`,
-//   });
-// };
+  toast({
+    title: "Success",
+    description: `Loan ${updatedLoan.id} has been updated successfully.`,
+  });
+};
 
-//   const handleDeleteLoan = (loanId: number) => {
-//     const loanToDelete = loans.find((l) => l.id === loanId)
-//     setLoans((prev) => prev.filter((loan) => loan.id !== loanId))
-//     setSelectedLoan(null)
-
-//     toast({
-//       title: "Success",
-//       description: `Loan ${loanToDelete?.id} has been deleted successfully.`,
-//       variant: "destructive",
-//     })
-//   }
-
-//   const handleProcessPayment = (loanId: number, payment: Omit<Payment, "id">) => {
-//     const paymentWithId = { ...payment, id: `PAY${Date.now()}` }
-
-//     setLoans((prev) =>
-//       prev.map((loan) => {
-//         if (loan.id === loanId) {
-//           const updatedLoan = {
-//             ...loan,
-//             paymentHistory: [...loan.paymentHistory, paymentWithId],
-//             remainingBalance: payment.remainingBalance,
-//             status: payment.remainingBalance <= 0 ? ("Paid" as LoanStatus) : loan.status,
-//           }
-//           setSelectedLoan(updatedLoan)
-//           return updatedLoan
-//         }
-//         return loan
-//       }),
-//     )
-
-//     toast({
-//       title: "Payment Processed",
-//       description: `Payment of ₱${payment.amount.toLocaleString()} has been recorded successfully.`,
-//     })
-//   }
-
-//   const handleEditLoan = (loan: Loan) => {
-//     setEditingLoan(loan)
+  const handleEditLoan = (loan: Loan) => {
+    setEditingLoan(loan)
     
-//     setSelectedLoan(null)
-//   }
+    setSelectedLoan(null)
+  }
+
+  const handleDeleteLoan = (loanId: number) => {
+    const loanToDelete = loans.find((l) => l.id === loanId)
+    setLoans((prev) => prev.filter((loan) => loan.id !== loanId))
+    setSelectedLoan(null)
+
+    toast({
+      title: "Success",
+      description: `Loan ${loanToDelete?.id} has been deleted successfully.`,
+      variant: "destructive",
+    })
+  }
+
+  // const handleProcessPayment = (loanId: number, payment: Omit<Payment, "id">) => {
+  //   const paymentWithId = { ...payment, id: `PAY${Date.now()}` }
+
+  //   setLoans((prev) =>
+  //     prev.map((loan) => {
+  //       if (loan.id === loanId) {
+  //         const updatedLoan = {
+  //           ...loan,
+  //           paymentHistory: [...(loan.paymentHistory || []), paymentWithId],
+  //           remainingBalance: payment.remainingBalance,
+  //           status: payment.remainingBalance <= 0 ? ("Paid" as LoanStatus) : loan.status,
+  //         }
+  //         setSelectedLoan(updatedLoan)
+  //         return updatedLoan
+  //       }
+  //       return loan
+  //     }),
+  //   )
+
+  //   toast({
+  //     title: "Payment Processed",
+  //     description: `Payment of ₱${payment.amount.toLocaleString()} has been recorded successfully.`,
+  //   })
+  // }
 
   return (
     <div className="flex flex-col w-full">
@@ -3169,7 +3172,7 @@ export default function LoansPage() {
           onClose={() => setSelectedLoan(null)}
           onEdit={handleEditLoan}
           onDelete={handleDeleteLoan}
-          onProcessPayment={handleProcessPayment}
+          // onProcessPayment={handleProcessPayment}
         />
       )}
 
